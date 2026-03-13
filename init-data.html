@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Initialisation données — EPS YDM 2026</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<style>
+  body { font-family: monospace; background: #07192e; color: #f0ead8; padding: 40px; max-width: 900px; margin: 0 auto; }
+  h1 { color: #e8b84b; font-size: 1.4rem; margin-bottom: 6px; }
+  .sub { color: rgba(240,234,216,0.5); font-size: 0.8rem; margin-bottom: 30px; }
+  .btn {
+    display: block; width: 100%; padding: 18px;
+    background: linear-gradient(135deg, #c8922a, #e8b84b);
+    color: #07192e; font-size: 1.1rem; font-weight: 900;
+    border: none; border-radius: 6px; cursor: pointer;
+    margin-bottom: 20px; font-family: monospace;
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .btn:hover { opacity: 0.9; }
+  .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+  .log { background: #0d2545; border: 1px solid rgba(200,146,42,0.3); border-radius: 6px;
+         padding: 20px; height: 400px; overflow-y: auto; font-size: 0.78rem; line-height: 1.8; }
+  .ok   { color: #2daa6a; }
+  .warn { color: #e8b84b; }
+  .err  { color: #e05050; }
+  .head { color: #a06cd5; font-weight: bold; border-bottom: 1px solid rgba(160,108,213,0.3); margin: 8px 0 4px; padding-bottom: 4px; }
+  .success-box { margin-top: 20px; background: rgba(45,170,106,0.15); border: 1px solid rgba(45,170,106,0.4);
+                 border-radius: 6px; padding: 16px; display: none; }
+  .success-box h3 { color: #2daa6a; margin: 0 0 8px; }
+  .success-box p  { color: rgba(240,234,216,0.75); font-size: 0.82rem; margin: 4px 0; }
+  .warning-box { background: rgba(200,146,42,0.1); border: 1px solid rgba(200,146,42,0.4);
+                 border-radius: 6px; padding: 16px; margin-bottom: 20px; font-size: 0.82rem;
+                 color: rgba(240,234,216,0.8); line-height: 1.65; }
+  .warning-box strong { color: #e8b84b; }
+</style>
+</head>
+<body>
+
+<h1>🏫 Initialisation Firebase — Collège Yves du Manoir</h1>
+<p class="sub">Chargement des APSA · BO EPS spécial n°11 · 26/11/2015 · Cycle 3 &amp; Cycle 4</p>
+
+<div class="warning-box">
+  ⚠️ <strong>À utiliser une seule fois !</strong> Ce script insère toutes les APSA dans Firebase Realtime Database.
+  Si tu le relances, les données seront écrasées. Assure-toi d'avoir configuré les règles Realtime Database en mode test.
+</div>
+
+<button class="btn" id="btn-init" onclick="lancerInitialisation()">
+  🚀 Insérer toutes les APSA dans Firebase
+</button>
+
+<div class="log" id="log"></div>
+
+<div class="success-box" id="success-box">
+  <h3>✅ Initialisation terminée avec succès !</h3>
+  <p>Tu peux maintenant retourner sur l'interface admin et créer tes cycles APSA.</p>
+  <p>→ <a href="../admin/login.html" style="color:#e8b84b">Accès admin</a></p>
+  <p>→ <strong>Supprime ce fichier</strong> (init-data.html) de ton dépôt GitHub une fois terminé.</p>
+</div>
+
+<script>
+// ──────────────────────────────────────────────────────────────
+//  CONFIG FIREBASE
+// ──────────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey:            "AIzaSyBt_P5FLg105eCF-DVL_Fp5hctk6-qz_68",
+  authDomain:        "projet-eps-ydm-2026.firebaseapp.com",
+  databaseURL:       "https://projet-eps-ydm-2026-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "projet-eps-ydm-2026",
+  storageBucket:     "projet-eps-ydm-2026.firebasestorage.app",
+  messagingSenderId: "504635237273",
+  appId:             "1:504635237273:web:8bcefc790c3f09fa276908"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ──────────────────────────────────────────────────────────────
+//  DONNÉES APSA — BO EPS spécial n°11 · 26/11/2015
+//  Domaines du Socle commun (Décret 2015-372) :
+//    D1.1 Les langages pour penser et communiquer (verbal/symbolique)
+//    D1.4 Les langages pour penser et communiquer (corps / mouvement)
+//    D2   Les méthodes et outils pour apprendre
+//    D3   La formation de la personne et du citoyen
+//    D4   Les systèmes naturels et les systèmes techniques
+//    D5   Les représentations du monde et l'activité humaine
+// ──────────────────────────────────────────────────────────────
+const APSA_DATA = [
+
+  // ════════════════════════════════════════════
+  // CA1 — PRODUIRE UNE PERFORMANCE OPTIMALE
+  // Mesurable à une échéance donnée
+  // ════════════════════════════════════════════
+  {
+    id: "epreuves_combinees",
+    nom: "Épreuves combinées",
+    champAppr: "CA1",
+    description: "Courir, sauter, lancer pour produire et améliorer ses propres performances dans plusieurs disciplines athlétiques",
+    objectifs: [
+      { id: "obj1", texte: "Réaliser des performances dans au moins 3 disciplines (ex : 50m, longueur, vortex) et les mesurer objectivement", domaine: "D4" },
+      { id: "obj2", texte: "Gérer l'enchaînement des efforts et la récupération entre les épreuves pour optimiser chaque performance", domaine: "D4" },
+      { id: "obj3", texte: "Tenir une fiche de performance personnelle, analyser ses progrès et se fixer des objectifs réalistes", domaine: "D2" },
+      { id: "obj4", texte: "Assumer les rôles sociaux de chronométreur et juge (saut/lancer) avec honnêteté et rigueur", domaine: "D3" }
+    ]
+  },
+  {
+    id: "demifond",
+    nom: "Demi-fond",
+    champAppr: "CA1",
+    description: "Courir à allure régulière sur durée longue en gérant ses ressources physiologiques pour produire la meilleure performance",
+    objectifs: [
+      { id: "obj1", texte: "Courir à allure régulière sur 6 minutes ou 1000m/1500m en visant une performance cible (épreuve certifiante au DNB)", domaine: "D4" },
+      { id: "obj2", texte: "Identifier sa Vitesse Maximale Aérobie (VMA) et définir son allure cible en pourcentage de VMA", domaine: "D4" },
+      { id: "obj3", texte: "Construire et verbaliser un plan de course : allure de départ, relances, sprint final", domaine: "D2" },
+      { id: "obj4", texte: "Analyser l'écart entre performance projetée et performance réalisée pour réguler l'entraînement", domaine: "D2" }
+    ]
+  },
+  {
+    id: "relais_vitesse",
+    nom: "Relais-vitesse",
+    champAppr: "CA1",
+    description: "Courir vite et transmettre le témoin avec précision pour optimiser une performance collective en relais athlétique",
+    objectifs: [
+      { id: "obj1", texte: "Développer la vitesse maximale sur courte distance (sprint) et maintenir la puissance sur toute la longueur de course", domaine: "D4" },
+      { id: "obj2", texte: "Maîtriser la technique de transmission du témoin : passage en zone d'échange, tempo de l'appel, synchronisation", domaine: "D1.4" },
+      { id: "obj3", texte: "Optimiser la performance collective : déterminer l'ordre de passage, les zones de transmission, les stratégies d'équipe", domaine: "D2" },
+      { id: "obj4", texte: "Coopérer avec ses partenaires pour analyser et améliorer les facteurs de performance du relais", domaine: "D3" }
+    ]
+  },
+  {
+    id: "saut_haies",
+    nom: "Saut de haies",
+    champAppr: "CA1",
+    description: "Courir vite en franchissant des obstacles avec efficacité et régularité pour produire une performance chronométrée",
+    objectifs: [
+      { id: "obj1", texte: "Construire un cycle de course régulier entre les haies : maîtriser le nombre d'appuis (3 ou 5) entre chaque obstacle", domaine: "D1.4" },
+      { id: "obj2", texte: "Maîtriser le franchissement : attaque de la jambe avant tendue, ramener actif de la jambe arrière (rotation)", domaine: "D1.4" },
+      { id: "obj3", texte: "Optimiser le rythme de course pour maintenir la vitesse maximale sur toute la distance sans rupture", domaine: "D4" },
+      { id: "obj4", texte: "Produire une performance mesurée (temps) et identifier les points techniques limitants pour progresser", domaine: "D2" }
+    ]
+  },
+  {
+    id: "circuit_training",
+    nom: "Circuit training",
+    champAppr: "CA1",
+    description: "Développer sa condition physique globale en concevant et réalisant un entraînement structuré par ateliers",
+    objectifs: [
+      { id: "obj1", texte: "Réaliser un circuit sollicitant les qualités physiques variées : force, endurance, souplesse, vitesse, coordination", domaine: "D4" },
+      { id: "obj2", texte: "Gérer l'intensité de l'effort et la récupération entre les ateliers à l'aide d'indicateurs physiologiques (fréquence cardiaque)", domaine: "D4" },
+      { id: "obj3", texte: "Concevoir progressivement un circuit personnalisé adapté à ses objectifs de développement physique", domaine: "D2" },
+      { id: "obj4", texte: "Évaluer ses progrès à l'aide d'indicateurs quantifiés (répétitions, temps, charge) et ajuster son programme", domaine: "D2" }
+    ]
+  },
+
+  // ════════════════════════════════════════════
+  // CA2 — S'ADAPTER À L'ENVIRONNEMENT
+  // Développer sa motricité en milieu varié
+  // ════════════════════════════════════════════
+  {
+    id: "orientation",
+    nom: "Course d'orientation",
+    champAppr: "CA2",
+    description: "Lire l'espace et s'y déplacer avec précision, stratégie et efficacité dans un milieu naturel ou aménagé",
+    objectifs: [
+      { id: "obj1", texte: "Orienter sa carte par rapport au terrain et identifier sa position à tout moment (triangulation, points d'appel)", domaine: "D5" },
+      { id: "obj2", texte: "Choisir un itinéraire en évaluant les critères de sécurité, de rapidité et de difficulté technique", domaine: "D2" },
+      { id: "obj3", texte: "Coopérer avec un partenaire en binôme : partager les décisions de navigation, se corriger mutuellement", domaine: "D3" },
+      { id: "obj4", texte: "Utiliser les courbes de niveau et les symboles cartographiques pour anticiper le relief et la nature du terrain", domaine: "D5" }
+    ]
+  },
+
+  // ════════════════════════════════════════════
+  // CA3 — S'EXPRIMER DEVANT LES AUTRES
+  // Prestation artistique ou acrobatique
+  // ════════════════════════════════════════════
+  {
+    id: "gym_sol",
+    nom: "Gym au sol",
+    champAppr: "CA3",
+    description: "Réaliser et présenter un enchaînement acrobatique au sol devant un jury selon des critères codifiés",
+    objectifs: [
+      { id: "obj1", texte: "Maîtriser les éléments fondamentaux : roulade avant, roulade arrière, ATR (appui tendu renversé), pont, roue", domaine: "D1.4" },
+      { id: "obj2", texte: "Construire un enchaînement de 6 à 8 éléments avec liaisons fluides, tenue de corps et expression", domaine: "D1.4" },
+      { id: "obj3", texte: "Intégrer la notion de prestation codifiée : amplitude des mouvements, alignements segmentaires, attitude générale", domaine: "D5" },
+      { id: "obj4", texte: "Assumer le rôle de juge en utilisant une grille d'observation simplifiée pour développer le regard critique", domaine: "D3" }
+    ]
+  },
+  {
+    id: "gym_agres",
+    nom: "Gym aux agrès",
+    champAppr: "CA3",
+    description: "Réaliser des éléments techniques sur engins et construire un enchaînement devant un jury",
+    objectifs: [
+      { id: "obj1", texte: "Maîtriser les éléments spécifiques sur au moins un engin (barres asymétriques, poutre, saut de cheval, cheval d'arçons)", domaine: "D1.4" },
+      { id: "obj2", texte: "Construire un enchaînement sur agrès intégrant montée, éléments de liaison, descente soignée", domaine: "D1.4" },
+      { id: "obj3", texte: "Gérer les protocoles de sécurité spécifiques aux agrès : parade active, vérification du matériel, zones d'évolution", domaine: "D3" },
+      { id: "obj4", texte: "Développer la maîtrise spatiale en hauteur : sens de la verticalité, de la suspension, de l'appui renversé", domaine: "D4" }
+    ]
+  },
+  {
+    id: "acrosport",
+    nom: "Acrosport",
+    champAppr: "CA3",
+    description: "Composer et présenter un numéro acrobatique collectif synchronisé intégrant figures et liaisons chorégraphiées",
+    objectifs: [
+      { id: "obj1", texte: "Réaliser des figures statiques (pyramides d'équilibre) et dynamiques (portés en mouvement) avec maîtrise et sécurité", domaine: "D1.4" },
+      { id: "obj2", texte: "Construire des transitions chorégraphiées fluides et des liaisons rythmées entre chaque figure", domaine: "D1.4" },
+      { id: "obj3", texte: "Assumer les trois rôles complémentaires : porteur (stabilité, sécurité), voltigeur (légèreté, tonicité), pareur (sécurité active)", domaine: "D3" },
+      { id: "obj4", texte: "Composer un numéro de 1 à 2 minutes intégrant au moins 5 figures de niveaux variés avec intention artistique", domaine: "D5" }
+    ]
+  },
+  {
+    id: "cirque",
+    nom: "Arts du cirque",
+    champAppr: "CA3",
+    description: "Composer et interpréter un numéro de cirque pluridisciplinaire avec intention artistique et mise en scène devant un public",
+    objectifs: [
+      { id: "obj1", texte: "Maîtriser une discipline circassienne : jonglage (3 objets minimum), diabolo, fil de funambule, acrobatie au sol", domaine: "D1.4" },
+      { id: "obj2", texte: "Composer un numéro de 2 à 3 minutes avec mise en scène, structure narrative et intention dramaturgique claire", domaine: "D5" },
+      { id: "obj3", texte: "Présenter devant un public élargi (autres classes, familles) avec présence scénique affirmée", domaine: "D1.4" },
+      { id: "obj4", texte: "Rédiger une note d'intention artistique : thème choisi, émotion recherchée, organisation de la représentation", domaine: "D1.1" }
+    ]
+  },
+  {
+    id: "danse",
+    nom: "Danse",
+    champAppr: "CA3",
+    description: "Composer et interpréter une création chorégraphique originale avec intention expressive en utilisant les paramètres du mouvement",
+    objectifs: [
+      { id: "obj1", texte: "Utiliser les quatre paramètres du mouvement : espace (niveaux, directions, trajets), temps (rythme, durée), énergie (tonus, poids), relation (solo, duo, groupe)", domaine: "D1.4" },
+      { id: "obj2", texte: "Écrire, mémoriser et interpréter une phrase chorégraphique de 8 à 16 temps en lien avec une intention expressive", domaine: "D1.4" },
+      { id: "obj3", texte: "Improviser collectivement à partir de contraintes créatives (image, objet, texte, musique) pour nourrir la composition", domaine: "D5" },
+      { id: "obj4", texte: "Développer le regard artistique : observer une prestation, formuler une appréciation sensible et argumentée", domaine: "D5" }
+    ]
+  },
+  {
+    id: "parkour",
+    nom: "Parkour",
+    champAppr: "CA3",
+    description: "Se déplacer avec fluidité, créativité et maîtrise dans un environnement urbain aménagé en composant un run personnel",
+    objectifs: [
+      { id: "obj1", texte: "Maîtriser les techniques fondamentales : saut en précision, réception amortie, franchissement d'obstacle, passage de bras (saut de chat)", domaine: "D1.4" },
+      { id: "obj2", texte: "Construire un enchaînement fluide de mouvements entre plusieurs obstacles en gérant l'élan et l'équilibre dynamique", domaine: "D1.4" },
+      { id: "obj3", texte: "Composer et présenter un run personnel intégrant des éléments de style et d'intention (ligne choisie, figures signature)", domaine: "D5" },
+      { id: "obj4", texte: "Développer une gestion lucide du risque : évaluer ses capacités réelles avant de s'engager dans une figure", domaine: "D3" }
+    ]
+  },
+
+  // ════════════════════════════════════════════
+  // CA4 — CONDUIRE ET MAÎTRISER UN AFFRONTEMENT
+  // Collectif ou interindividuel
+  // ════════════════════════════════════════════
+  {
+    id: "handball",
+    nom: "Handball",
+    champAppr: "CA4",
+    description: "S'opposer collectivement dans un sport collectif à la main en construisant un jeu organisé en attaque et en défense",
+    objectifs: [
+      { id: "obj1", texte: "Comprendre et appliquer les principes fondamentaux : conserver / progresser / marquer en attaque ; récupérer / protéger en défense", domaine: "D2" },
+      { id: "obj2", texte: "Développer la communication motrice : passe adaptée, démarquage actif, appel de balle, soutien du porteur", domaine: "D1.4" },
+      { id: "obj3", texte: "Identifier et assumer ses rôles : attaquant avec et sans ballon, défenseur en marquage individuel", domaine: "D3" },
+      { id: "obj4", texte: "Connaître et respecter les règles fondamentales du handball ; assumer le rôle d'arbitre avec honnêteté", domaine: "D3" }
+    ]
+  },
+  {
+    id: "futsal",
+    nom: "Futsal",
+    champAppr: "CA4",
+    description: "Construire un jeu collectif technique en espace réduit en développant habiletés balle au pied et principes tactiques",
+    objectifs: [
+      { id: "obj1", texte: "Maîtriser les fondamentaux techniques balle au pied : conduite en changement de direction, passe courte précise, tir cadré", domaine: "D1.4" },
+      { id: "obj2", texte: "Appliquer les principes du jeu en espace réduit : jeu en une touche, appui-remise, triangulation, permutation de postes", domaine: "D2" },
+      { id: "obj3", texte: "Comprendre et appliquer des systèmes défensifs collectifs : pressing haut, repli défensif organisé, couverture", domaine: "D2" },
+      { id: "obj4", texte: "Gérer les situations de coups de pied arrêtés (coup franc, corner, remise en jeu latérale) avec organisation collective", domaine: "D3" }
+    ]
+  },
+  {
+    id: "basket",
+    nom: "Basket-ball",
+    champAppr: "CA4",
+    description: "Développer la tactique collective en appliquant des systèmes de jeu offensifs et défensifs élaborés à effectif complet",
+    objectifs: [
+      { id: "obj1", texte: "Utiliser la pénétration, le tir à mi-distance et la passe décisive dans des situations de jeu 5 contre 5", domaine: "D2" },
+      { id: "obj2", texte: "Construire un écran simple (pick and roll) et exploiter collectivement le déséquilibre défensif créé", domaine: "D2" },
+      { id: "obj3", texte: "Adopter une défense en zone (système 2-3 ou 1-2-2) et comprendre ses ajustements face aux différentes attaques", domaine: "D2" },
+      { id: "obj4", texte: "Analyser le jeu de son équipe lors d'une pause et proposer des corrections pertinentes (rôle de meneur/entraîneur)", domaine: "D3" }
+    ]
+  },
+  {
+    id: "football",
+    nom: "Football",
+    champAppr: "CA4",
+    description: "Maîtriser l'affrontement collectif en grand espace avec technique balle au pied et organisation collective",
+    objectifs: [
+      { id: "obj1", texte: "Maîtriser les fondamentaux techniques : conduite en vitesse, passe de précision (pied dominant et non-dominant), contrôle orienté, tir", domaine: "D1.4" },
+      { id: "obj2", texte: "Appliquer les principes du jeu en grand espace : création d'espaces libres, jeu en profondeur et en largeur, appels en couloirs", domaine: "D2" },
+      { id: "obj3", texte: "Construire un système défensif collectif : ligne défensive, repli rapide, pressing haut organisé sur signal", domaine: "D2" },
+      { id: "obj4", texte: "Exploiter les situations de jeu à phases arrêtées (corners, coups francs directs et indirects) avec schémas préparés", domaine: "D3" }
+    ]
+  },
+  {
+    id: "badminton",
+    nom: "Badminton",
+    champAppr: "CA4",
+    description: "Construire le point par une tactique d'opposition individuelle en utilisant la variété des frappes et l'anticipation",
+    objectifs: [
+      { id: "obj1", texte: "Maîtriser les frappes de base : dégagé long défensif, amorti court offensif, smash puissant, service haut et bas réglementaire", domaine: "D1.4" },
+      { id: "obj2", texte: "Construire une tactique simple et efficace : alterner longueur et largeur, profondeur et réseau, pour déséquilibrer l'adversaire", domaine: "D2" },
+      { id: "obj3", texte: "Lire la frappe adverse, anticiper les trajectoires du volant et se replacer systématiquement au centre du terrain", domaine: "D2" },
+      { id: "obj4", texte: "Arbitrer un match en appliquant le règlement officiel simplifié avec rigueur et impartialité", domaine: "D3" }
+    ]
+  },
+  {
+    id: "tennis_table",
+    nom: "Tennis de table",
+    champAppr: "CA4",
+    description: "Construire l'échange et maîtriser l'affrontement individuel rapproché par la variété technique et la stratégie de jeu",
+    objectifs: [
+      { id: "obj1", texte: "Maîtriser les coups de base : coup droit lifté, revers de régularité, service court croisé et service long sur le revers", domaine: "D1.4" },
+      { id: "obj2", texte: "Développer la régularité et la variété dans l'échange : varier la direction (croisé/long de ligne), le rythme (lent/rapide), l'effet", domaine: "D1.4" },
+      { id: "obj3", texte: "Construire des stratégies de jeu : alterner les rythmes, exploiter les faiblesses identifiées, varier court/long", domaine: "D2" },
+      { id: "obj4", texte: "Arbitrer en respectant le code officiel : 2 services alternés, comptage à 11 points, règle de l'égalité (10/10)", domaine: "D3" }
+    ]
+  },
+  {
+    id: "volley",
+    nom: "Volley-ball",
+    champAppr: "CA4",
+    description: "Conduire un affrontement collectif avec maîtrise technique et tactique en maintenant la continuité des échanges sans tenir le ballon",
+    objectifs: [
+      { id: "obj1", texte: "Maîtriser les techniques fondamentales : manchette de réception, passe haute de construction, service flottant, smash d'attaque", domaine: "D1.4" },
+      { id: "obj2", texte: "Construire et respecter une organisation collective : réception en W, rotation 6-6, zones d'attaque et de couverture", domaine: "D2" },
+      { id: "obj3", texte: "Construire des échanges longs en appliquant les 3 touches systématiques : réception manchette → passe haute → attaque", domaine: "D2" },
+      { id: "obj4", texte: "Assumer tous les rôles sociaux dans une activité codifiée : joueur, arbitre de chaise, second arbitre, marqueur, libéro", domaine: "D3" }
+    ]
+  },
+  {
+    id: "baseball",
+    nom: "Baseball / Softball",
+    champAppr: "CA4",
+    description: "Maîtriser un affrontement collectif dans une activité de frappe-course à logique spécifique alternant attaque et défense",
+    objectifs: [
+      { id: "obj1", texte: "Maîtriser les techniques fondamentales : frappe de la balle en poussée (bunt) et en puissance, lancer contrôlé vers la cible, réception en sécurité", domaine: "D1.4" },
+      { id: "obj2", texte: "Comprendre la logique de l'activité : le marquage se fait par la course entre les bases avant que la défense ne récupère la balle", domaine: "D2" },
+      { id: "obj3", texte: "Développer la communication défensive entre joueurs : couverture des bases, relais de lancer, signaux entre partenaires", domaine: "D3" },
+      { id: "obj4", texte: "Respecter les règles spécifiques de l'activité et assumer le rôle d'arbitre avec l'application du code gestuel officiel", domaine: "D3" }
+    ]
+  },
+  {
+    id: "ultimate",
+    nom: "Ultimate",
+    champAppr: "CA4",
+    description: "S'opposer collectivement dans un sport de non-contact avec un disque, fondé sur les valeurs d'auto-arbitrage et d'esprit du jeu",
+    objectifs: [
+      { id: "obj1", texte: "Maîtriser les lancers fondamentaux du disque : revers (backhand), coup droit (forehand), lob haut (hammer)", domaine: "D1.4" },
+      { id: "obj2", texte: "Intérioriser et appliquer les principes d'un sport auto-arbitré : esprit du jeu (Spirit of the Game), fair-play absolu, résolution des litiges", domaine: "D3" },
+      { id: "obj3", texte: "Comprendre et appliquer les principes offensifs (stack vertical, coupe dans l'espace) et défensifs (marquage homme à homme)", domaine: "D2" },
+      { id: "obj4", texte: "Développer la lecture de trajectoire du disque : anticiper la course en fonction de la vitesse, du vent, de l'angle de lancer", domaine: "D2" }
+    ]
+  },
+  {
+    id: "rugby",
+    nom: "Rugby",
+    champAppr: "CA4",
+    description: "S'opposer collectivement dans un sport de contact et de territoire en développant le jeu en largeur, le soutien et la solidarité",
+    objectifs: [
+      { id: "obj1", texte: "Comprendre les principes fondamentaux du jeu de territoire : avancer dans l'axe, déborder sur les côtés, soutenir le porteur de balle", domaine: "D2" },
+      { id: "obj2", texte: "Maîtriser les fondamentaux du contact : plaquage bas réglementaire, formation du ruck et du maul dans le respect strict des règles de sécurité", domaine: "D3" },
+      { id: "obj3", texte: "Développer la solidarité d'équipe : soutien immédiat du porteur, communication des partenaires, couverture défensive collective", domaine: "D3" },
+      { id: "obj4", texte: "Respecter les règles de sécurité inhérentes au contact physique et assumer les rôles d'arbitre et de capitaine", domaine: "D3" }
+    ]
+  },
+  {
+    id: "lutte",
+    nom: "Lutte",
+    champAppr: "CA4",
+    description: "Maîtriser un affrontement interindividuel au contact direct en construisant des assauts sécurisés et maîtrisés",
+    objectifs: [
+      { id: "obj1", texte: "Maîtriser les techniques fondamentales de saisie (contrôle du bras, du buste), de déséquilibre et de contrôle au sol", domaine: "D1.4" },
+      { id: "obj2", texte: "Construire un assaut en gérant son effort et en adaptant ses actions en temps réel aux actions de l'adversaire", domaine: "D4" },
+      { id: "obj3", texte: "Respecter les règles de sécurité et les conventions de pratique : non-blessure, maîtrise de la chute, arrêt sur signal", domaine: "D3" },
+      { id: "obj4", texte: "Comprendre le système de notation de la lutte (exposition des épaules, avantage, point technique) et assumer le rôle d'arbitre-juge", domaine: "D3" }
+    ]
+  }
+];
+
+// ──────────────────────────────────────────────────────────────
+//  LOGGER
+// ──────────────────────────────────────────────────────────────
+const logEl = document.getElementById('log');
+function log(msg, type='') {
+  const line = document.createElement('div');
+  if(type) line.className = type;
+  line.textContent = msg;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ──────────────────────────────────────────────────────────────
+//  INITIALISATION PRINCIPALE
+// ──────────────────────────────────────────────────────────────
+async function lancerInitialisation() {
+  const btn = document.getElementById('btn-init');
+  btn.disabled = true;
+  btn.textContent = '⏳ Chargement en cours...';
+
+  log('═══════════════════════════════════════════════════', 'head');
+  log('  INITIALISATION FIREBASE — EPS YDM 2026', 'head');
+  log('  BO spécial n°11 · 26/11/2015', 'head');
+  log('═══════════════════════════════════════════════════', 'head');
+  log('');
+
+  try {
+    // ── Test connexion ──────────────────────────────
+    log('▶ Test de connexion Firebase Realtime Database...', 'warn');
+    await db.ref('.info/connected').once('value');
+    log('  ✓ Connexion établie avec succès', 'ok');
+    log('');
+
+    // ── Insertion APSA ──────────────────────────────
+    log('▶ Insertion des APSA (BO EPS n°11 · 2015)', 'head');
+    log('');
+
+    const caCount = { CA1: 0, CA2: 0, CA3: 0, CA4: 0 };
+    let total = 0;
+
+    for (const apsa of APSA_DATA) {
+      log(`  📌 ${apsa.champAppr} — ${apsa.nom}`, 'warn');
+
+      // On utilise l'id comme clé dans Realtime Database
+      await db.ref('apsa/' + apsa.id).set({
+        nom:       apsa.nom,
+        champAppr: apsa.champAppr,
+        description: apsa.description,
+        objectifs: apsa.objectifs,
+        dateCreation: new Date().toISOString()
+      });
+
+      caCount[apsa.champAppr]++;
+      total++;
+      log(`      ✓ ${apsa.objectifs.length} objectifs insérés (domaines : ${apsa.objectifs.map(o=>o.domaine).join(', ')})`, 'ok');
+    }
+
+    log('');
+    log('══════════ BILAN ════════════════════════════════', 'head');
+    log(`  ✅ ${total} APSA insérées avec succès`, 'ok');
+    log(`  → CA1 (Performance)    : ${caCount.CA1} APSA`, 'ok');
+    log(`  → CA2 (Environnement)  : ${caCount.CA2} APSA`, 'ok');
+    log(`  → CA3 (Expression)     : ${caCount.CA3} APSA`, 'ok');
+    log(`  → CA4 (Affrontement)   : ${caCount.CA4} APSA`, 'ok');
+    log('');
+    log('  Domaines du Socle utilisés :', 'warn');
+    log('  D1.1 → Langages pour penser (verbal)', 'ok');
+    log('  D1.4 → Langages corporels / mouvement', 'ok');
+    log('  D2   → Méthodes et outils pour apprendre', 'ok');
+    log('  D3   → Formation de la personne et du citoyen', 'ok');
+    log('  D4   → Systèmes naturels (corps en activité)', 'ok');
+    log('  D5   → Représentations du monde et culture', 'ok');
+    log('');
+    log('  🎉 Initialisation terminée ! Tu peux aller', 'ok');
+    log('  créer tes classes, puis tes cycles APSA.', 'ok');
+    log('═══════════════════════════════════════════════════', 'head');
+
+    document.getElementById('success-box').style.display = 'block';
+    btn.textContent = '✅ Initialisation terminée !';
+    btn.style.background = '#2daa6a';
+
+  } catch (err) {
+    log('', '');
+    log('  ❌ ERREUR : ' + err.message, 'err');
+    log('  Vérifiez que les règles Realtime Database sont en mode test.', 'warn');
+    log('  Règles requises :', 'warn');
+    log('  { "rules": { ".read": true, ".write": true } }', 'warn');
+    btn.disabled = false;
+    btn.textContent = '🔄 Réessayer';
+    btn.style.background = '';
+  }
+}
+</script>
+</body>
+</html>
