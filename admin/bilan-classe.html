@@ -137,7 +137,7 @@
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
   requireProf();
@@ -148,8 +148,7 @@
   let cycleCache    = {};
 
   async function init() {
-    const [classesSnap] = await Promise.all([db.collection('classes').orderBy('nom').get()]);
-    toutesClasses = classesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    toutesClasses = await getClasses();
 
     const opts = toutesClasses.map(c => `<option value="${c.id}">${c.nom} (${c.niveau})</option>`).join('');
     document.getElementById('sel-classe').innerHTML = '<option value="">— Classe —</option>' + opts;
@@ -170,8 +169,8 @@
     const sel = document.getElementById('sel-cycle');
     sel.innerHTML = '<option value="">Tous les cycles</option>';
     if (!classeId) return;
-    const snap = await db.collection('cycles').where('classeId','==',classeId).get();
-    const cycles = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const tousCyc = await getTousCycles();
+    const cycles = tousCyc.filter(cy => cy.classeId === classeId);
 
     for (const cy of cycles) {
       if (!apsaCache[cy.apsaId]) {
@@ -202,15 +201,12 @@
     const classe = toutesClasses.find(c => c.id === classeId) || {};
 
     // Charger élèves
-    const elevesSnap = await db.collection('eleves').where('classeId','==',classeId).orderBy('nom').get();
-    const eleves = elevesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const eleves = await getEleves(classeId);
 
     // Charger évaluations
-    let evalsQuery = db.collection('evaluations').where('eleveId','in',
-      eleves.map(e => e.id).length > 0 ? eleves.map(e => e.id) : ['__none__']);
-    if (cycleId) evalsQuery = evalsQuery.where('cycleId','==',cycleId);
-    const evalsSnap = await evalsQuery.get();
-    const evals = evalsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const eleveIds = eleves.map(e => e.id);
+    let evals = eleveIds.length > 0 ? await getEvaluationsParEleves(eleveIds) : [];
+    if (cycleId) evals = evals.filter(ev => ev.cycleId === cycleId);
 
     // Charger APSA
     const apsaIds = [...new Set(evals.map(e => e.apsaId))];

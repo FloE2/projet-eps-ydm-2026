@@ -151,7 +151,7 @@
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
   // ── Paramètres URL ─────────────────────────────────────────
@@ -173,17 +173,17 @@
   async function init() {
     try {
       // Chargement parallèle
-      const [eleveDoc, apsaDoc, evalDoc] = await Promise.all([
-        db.collection('eleves').doc(eleveId).get(),
-        db.collection('apsa').doc(apsaId).get(),
+      const [eleveData, apsaData, evalDoc] = await Promise.all([
+        dbGet('eleves/' + eleveId),
+        dbGet('apsa/' + apsaId),
         getEvaluation(eleveId, cycleId)
       ]);
 
-      if (!eleveDoc.exists) throw new Error("Élève introuvable");
-      if (!apsaDoc.exists)  throw new Error("APSA introuvable");
+      if (!eleveData) throw new Error("Élève introuvable");
+      if (!apsaData)  throw new Error("APSA introuvable");
 
-      eleve = { id: eleveDoc.id, ...eleveDoc.data() };
-      apsa  = { id: apsaDoc.id,  ...apsaDoc.data() };
+      eleve = { id: eleveId, ...eleveData };
+      apsa  = { id: apsaId,  ...apsaData };
 
       if (evalDoc) evalActuelle = evalDoc.resultats || {};
 

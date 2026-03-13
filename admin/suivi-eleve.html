@@ -173,7 +173,7 @@
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
   requireProf();
@@ -184,8 +184,7 @@
 
   // Pré-charger tous les élèves une fois
   async function init() {
-    const snap = await db.collection('eleves').orderBy('nom').get();
-    tousEleves = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    tousEleves = await getTousEleves();
 
     // Vérifier si eleveId en paramètre
     const params = new URLSearchParams(window.location.search);
@@ -240,10 +239,7 @@
     el.innerHTML = `<div class="loader-wrap"><div class="spinner"></div><span>Chargement du parcours...</span></div>`;
 
     // Charger toutes les évaluations de cet élève
-    const evalsSnap = await db.collection('evaluations')
-      .where('eleveId', '==', eleve.id)
-      .orderBy('dateModif', 'asc').get();
-    const evals = evalsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const evals = (await getHistoriqueEleve(eleve.id)).reverse();
 
     // Charger cycles et APSA associés
     const cycleIds = [...new Set(evals.map(e => e.cycleId))];
@@ -252,14 +248,14 @@
     await Promise.all([
       ...cycleIds.map(async id => {
         if (!cycleCache[id]) {
-          const d = await db.collection('cycles').doc(id).get();
-          if (d.exists) cycleCache[id] = { id: d.id, ...d.data() };
+          const data = await dbGet('cycles/' + id);
+          if (data) cycleCache[id] = { id, ...data };
         }
       }),
       ...apsaIds.map(async id => {
         if (!apsaCache[id]) {
-          const d = await db.collection('apsa').doc(id).get();
-          if (d.exists) apsaCache[id] = { id: d.id, ...d.data() };
+          const data = await dbGet('apsa/' + id);
+          if (data) apsaCache[id] = { id, ...data };
         }
       })
     ]);

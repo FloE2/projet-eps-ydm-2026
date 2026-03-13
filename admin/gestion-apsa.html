@@ -209,7 +209,7 @@
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
   requireProf();
@@ -220,16 +220,15 @@
   async function chargerApsa() {
     const el = document.getElementById('liste-apsa');
     try {
-      const snap = await db.collection('apsa').orderBy('champAppr').get();
-      if (snap.empty) {
+      const apsa = await getToutesApsa();
+      if (apsa.length === 0) {
         el.innerHTML = `<div class="alert alert-info">
           ℹ️ Aucune APSA créée. Commencez par en créer une !
           <button class="btn btn-orange btn-sm" onclick="ouvrirModal()" style="margin-left:1rem">+ Créer</button>
         </div>`;
         return;
       }
-      el.innerHTML = snap.docs.map(d => {
-        const a = { id: d.id, ...d.data() };
+      el.innerHTML = apsa.map(a => {
         const niveaux = (a.niveaux || []).join(', ');
         const nbObj = (a.objectifs || []).length;
         return `
@@ -358,13 +357,13 @@
     });
 
     const data = { nom, champAppr: ca, description: desc, niveaux, objectifs,
-                   dateModif: firebase.firestore.FieldValue.serverTimestamp() };
+                   dateModif: new Date().toISOString() };
     try {
       if (apsaEnEdition) {
-        await db.collection('apsa').doc(apsaEnEdition.id).update(data);
+        await dbUpdate('apsa/' + apsaEnEdition.id, data);
         showToast('✓ APSA modifiée !', 'success');
       } else {
-        await db.collection('apsa').add({ ...data, dateCreation: firebase.firestore.FieldValue.serverTimestamp() });
+        await dbPush('apsa', { ...data, dateCreation: new Date().toISOString() });
         showToast('✓ APSA créée !', 'success');
       }
       fermerModal();
@@ -375,14 +374,14 @@
   }
 
   async function editerApsa(id) {
-    const doc = await db.collection('apsa').doc(id).get();
-    if (doc.exists) ouvrirModal({ id, ...doc.data() });
+    const data = await dbGet('apsa/' + id);
+    if (data) ouvrirModal({ id, ...data });
   }
 
   async function supprimerApsa(id, nom) {
     if (!confirm(`Supprimer l'APSA "${nom}" ?\nToutes les évaluations associées resteront dans la base.`)) return;
     try {
-      await db.collection('apsa').doc(id).delete();
+      await dbRemove('apsa/' + id);
       showToast('🗑 APSA supprimée', 'success');
       chargerApsa();
     } catch(e) {

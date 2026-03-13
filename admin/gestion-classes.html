@@ -238,7 +238,7 @@ Clara BERNARD
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
   requireProf();
@@ -260,12 +260,9 @@ Clara BERNARD
 
   // ── Chargement initial ─────────────────────────────────────
   async function init() {
-    const [classesSnap, apsaSnap] = await Promise.all([
-      db.collection('classes').orderBy('nom').get(),
-      db.collection('apsa').orderBy('nom').get()
-    ]);
-    toutesLesClasses = classesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    tousLesApsa      = apsaSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const [classesArr, apsaArr] = await Promise.all([getClasses(), getToutesApsa()]);
+    toutesLesClasses = classesArr;
+    tousLesApsa      = apsaArr;
     chargerClasses();
     remplirSelects();
   }
@@ -317,7 +314,7 @@ Clara BERNARD
     if (!nom) { showToast('⚠️ Entrez un nom de classe', 'error'); return; }
     try {
       const data = { nom, niveau, annee: window.ANNEE_SCOLAIRE };
-      await db.collection('classes').add(data);
+      await dbPush('classes', data);
       showToast('✓ Classe créée !', 'success');
       fermerModal('modal-classe-bg');
       await init();
@@ -326,7 +323,7 @@ Clara BERNARD
 
   async function supprimerClasse(id, nom) {
     if (!confirm(`Supprimer la classe "${nom}" ? Les élèves et évaluations associés ne seront pas supprimés.`)) return;
-    await db.collection('classes').doc(id).delete();
+    await dbRemove('classes/' + id);
     showToast('🗑 Classe supprimée', 'success');
     await init();
   }
@@ -371,11 +368,11 @@ Clara BERNARD
     const classe   = toutesLesClasses.find(c => c.id === classeId);
     if (!prenom||!nom||!classeId) { showToast('⚠️ Tous les champs sont requis', 'error'); return; }
     try {
-      await db.collection('eleves').add({
+      await dbPush('eleves', {
         prenom, nom, classeId,
         classe: classe?.nom || '',
         niveau: classe?.niveau || '',
-        dateAjout: firebase.firestore.FieldValue.serverTimestamp()
+        dateAjout: new Date().toISOString()
       });
       showToast('✓ Élève ajouté !', 'success');
       fermerModal('modal-eleve-bg');
@@ -385,7 +382,7 @@ Clara BERNARD
 
   async function supprimerEleve(id, nom) {
     if (!confirm(`Supprimer l'élève "${nom}" ? Ses évaluations seront conservées.`)) return;
-    await db.collection('eleves').doc(id).delete();
+    await dbRemove('eleves/' + id);
     showToast('🗑 Élève supprimé', 'success');
     const sel = document.getElementById('select-classe-eleves');
     if (sel?.value) chargerElevesClasse(sel.value);
@@ -419,10 +416,10 @@ Clara BERNARD
         prenom = parts[0]; nom = parts.slice(1).join(' ').toUpperCase();
       }
       try {
-        await db.collection('eleves').add({
+        await dbPush('eleves', {
           prenom, nom, classeId,
           classe: classe?.nom||'', niveau: classe?.niveau||'',
-          dateAjout: firebase.firestore.FieldValue.serverTimestamp()
+          dateAjout: new Date().toISOString()
         });
         ok++;
       } catch { erreurs++; }
@@ -437,8 +434,9 @@ Clara BERNARD
   async function chargerCycles() {
     const el = document.getElementById('liste-cycles');
     el.innerHTML = '<div class="loader-wrap"><div class="spinner"></div></div>';
-    const snap = await db.collection('cycles').orderBy('dateCreation','desc').get();
-    if (snap.empty) {
+    const cyclesArr = await getTousCycles();
+    cyclesArr.sort((a,b) => (b.dateCreation||'').localeCompare(a.dateCreation||''));
+    if (cyclesArr.length === 0) {
       el.innerHTML = '<div class="alert alert-info">ℹ️ Aucun cycle créé.</div>'; return;
     }
     const apsaMap = {};
@@ -446,12 +444,11 @@ Clara BERNARD
     const classeMap = {};
     toutesLesClasses.forEach(c => classeMap[c.id] = c);
 
-    el.innerHTML = snap.docs.map(d => {
-      const cy = { id: d.id, ...d.data() };
+    el.innerHTML = cyclesArr.map(cy => {
       const apsa   = apsaMap[cy.apsaId] || {};
       const classe = classeMap[cy.classeId] || {};
-      const debut  = cy.dateDebut ? new Date(cy.dateDebut.seconds*1000).toLocaleDateString('fr-FR') : '—';
-      const fin    = cy.dateFin   ? new Date(cy.dateFin.seconds*1000).toLocaleDateString('fr-FR')   : '—';
+      const debut  = cy.dateDebut ? new Date(cy.dateDebut).toLocaleDateString('fr-FR') : '—';
+      const fin    = cy.dateFin   ? new Date(cy.dateFin).toLocaleDateString('fr-FR') : '—';
       return `
         <div class="cycle-item ${cy.actif?'actif':''}">
           <div class="cycle-info">
@@ -481,11 +478,11 @@ Clara BERNARD
     const actif    = document.getElementById('cy-actif').checked;
     if (!classeId||!apsaId) { showToast('⚠️ Choisissez une classe et une APSA', 'error'); return; }
     try {
-      await db.collection('cycles').add({
+      await dbPush('cycles', {
         classeId, apsaId, actif,
-        dateDebut:  debutVal ? firebase.firestore.Timestamp.fromDate(new Date(debutVal)) : null,
-        dateFin:    finVal   ? firebase.firestore.Timestamp.fromDate(new Date(finVal))   : null,
-        dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+        dateDebut:  debutVal || null,
+        dateFin:    finVal   || null,
+        dateCreation: new Date().toISOString()
       });
       showToast('✓ Cycle créé !', 'success');
       fermerModal('modal-cycle-bg');
@@ -494,14 +491,14 @@ Clara BERNARD
   }
 
   async function toggleCycle(id, actif) {
-    await db.collection('cycles').doc(id).update({ actif: !actif });
+    await dbUpdate('cycles/' + id, { actif: !actif });
     showToast(`✓ Cycle ${!actif?'activé':'désactivé'}`, 'success');
     chargerCycles();
   }
 
   async function supprimerCycle(id) {
     if (!confirm('Supprimer ce cycle ?')) return;
-    await db.collection('cycles').doc(id).delete();
+    await dbRemove('cycles/' + id);
     showToast('🗑 Cycle supprimé', 'success');
     chargerCycles();
   }

@@ -163,7 +163,7 @@
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
   requireProf();
@@ -173,21 +173,18 @@
   async function chargerDashboard() {
     try {
       // Stats parallèles
-      const [classesSnap, elevesSnap, cyclesSnap, evalsSnap] = await Promise.all([
-        db.collection('classes').get(),
-        db.collection('eleves').get(),
-        db.collection('cycles').where('actif','==',true).get(),
-        db.collection('evaluations').get()
+      const [classes, tousElevesArr, tousCycles, toutesEvals] = await Promise.all([
+        getClasses(),
+        getTousEleves(),
+        getTousCycles(),
+        getToutesEvaluations()
       ]);
+      const cycles = tousCycles.filter(c => c.actif === true);
 
-      document.getElementById('stat-classes').textContent = classesSnap.size;
-      document.getElementById('stat-eleves').textContent  = elevesSnap.size;
-      document.getElementById('stat-cycles').textContent  = cyclesSnap.size;
-      document.getElementById('stat-evals').textContent   = evalsSnap.size;
-
-      // Classes avec cycles
-      const classes = classesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      const cycles  = cyclesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      document.getElementById('stat-classes').textContent = classes.length;
+      document.getElementById('stat-eleves').textContent  = tousElevesArr.length;
+      document.getElementById('stat-cycles').textContent  = cycles.length;
+      document.getElementById('stat-evals').textContent   = toutesEvals.length;
 
       // Charger APSA
       const apsaIds = [...new Set(cycles.map(c => c.apsaId))];
@@ -211,7 +208,7 @@
         });
         el.innerHTML = classesTri.map(c => {
           const cyclesClasse = cycles.filter(cy => cy.classeId === c.id);
-          const nbEleves = elevesSnap.docs.filter(e => e.data().classeId === c.id).length;
+          const nbEleves = tousElevesArr.filter(e => e.classeId === c.id).length;
           return `
             <div class="classe-row">
               <div>
@@ -233,23 +230,18 @@
 
       // Dernières évals
       const elEvals = document.getElementById('dernieres-evals');
-      const evalsRec = await db.collection('evaluations')
-        .orderBy('dateModif','desc').limit(10).get();
+      const evalsRec = toutesEvals.slice(0, 10);
 
-      if (evalsRec.empty) {
+      if (evalsRec.length === 0) {
         elEvals.innerHTML = '<p class="text-muted text-small">Aucune auto-évaluation encore enregistrée.</p>';
       } else {
-        // Charger élèves et APSA correspondants
-        const rows = await Promise.all(evalsRec.docs.map(async d => {
-          const ev = d.data();
-          const [eleveDoc, cycleDoc] = await Promise.all([
-            db.collection('eleves').doc(ev.eleveId).get(),
-            db.collection('cycles').doc(ev.cycleId).get()
-          ]);
-          const elv = eleveDoc.exists ? eleveDoc.data() : {};
-          const cy  = cycleDoc.exists ? cycleDoc.data() : {};
+        const rows = await Promise.all(evalsRec.map(async ev => {
+          const eleveData = await dbGet('eleves/' + ev.eleveId);
+          const cycleData = await dbGet('cycles/' + ev.cycleId);
+          const elv = eleveData || {};
+          const cy  = cycleData || {};
           const ap  = apsaMap[ev.apsaId] || await getApsa(ev.apsaId) || {};
-          const ts  = ev.dateModif ? new Date(ev.dateModif.seconds*1000).toLocaleString('fr-FR') : '—';
+          const ts  = ev.dateModif ? new Date(ev.dateModif).toLocaleString('fr-FR') : '—';
           const nbObj = Object.keys(ev.resultats||{}).filter(k => k.startsWith('obj_')).length;
           return `<tr>
             <td><strong>${elv.prenom||'?'} ${(elv.nom||'?').toUpperCase()}</strong></td>

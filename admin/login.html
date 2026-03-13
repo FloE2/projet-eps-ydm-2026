@@ -83,7 +83,7 @@
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
   document.getElementById('college-nm').textContent = window.COLLEGE_NOM + ' · ' + window.COLLEGE_VILLE;
@@ -107,9 +107,9 @@
 
     try {
       let mdpValide = false;
-      const configDoc = await db.collection('config').doc('profs').get();
-      if (configDoc.exists && configDoc.data().password) {
-        mdpValide = (pwd === configDoc.data().password);
+      const configProfs = await getConfigProfs();
+      if (configProfs && configProfs.password) {
+        mdpValide = (pwd === configProfs.password);
       } else {
         mdpValide = (pwd === window.ADMIN_PASSWORD);
       }
