@@ -267,7 +267,7 @@
                 ${niveaux.map(n => `
                   <button
                     class="niveau-btn ${valActuelle === n.code ? 'actif-'+n.code : ''}"
-                    onclick="setNiveau(${num}, '${n.code}', this)"
+                    onclick="setNiveau('${num}', '${n.code}', this)"
                     title="${n.label}">
                     ${n.icon} ${n.code}
                   </button>`).join('')}
