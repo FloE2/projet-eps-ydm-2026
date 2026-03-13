@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sélection de classe — EPS</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .cycle-card {
+      background: var(--white);
+      border: 2px solid var(--gray-1);
+      border-radius: var(--radius);
+      padding: 1rem 1.5rem;
+      margin-bottom: .8rem;
+      cursor: pointer;
+      transition: all .2s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-decoration: none;
+      color: var(--navy);
+    }
+    .cycle-card:hover {
+      border-color: var(--orange);
+      transform: translateX(4px);
+    }
+    .cycle-apsa { font-family: var(--font-h); font-size: 1.1rem; font-weight: 600; }
+    .cycle-meta { font-size: .82rem; color: var(--gray-3); margin-top: .2rem; }
+    .cycle-badge {
+      background: var(--orange);
+      color: #fff;
+      font-family: var(--font-h);
+      font-size: .75rem;
+      padding: .2rem .6rem;
+      border-radius: 12px;
+      letter-spacing: .05em;
+    }
+    .step { display: none; }
+    .step.active { display: block; }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      color: var(--gray-3);
+      cursor: pointer;
+      font-size: .9rem;
+      margin-bottom: 1.5rem;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .back-btn:hover { color: var(--blue-lt); }
+    .search-input {
+      margin-bottom: 1.2rem;
+      position: relative;
+    }
+    .search-input input {
+      padding-left: 2.8rem;
+    }
+    .search-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gray-3);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a href="../index.html" class="topbar-logo">⚡ EPS</a>
+  <span class="topbar-title" id="college-nom"></span>
+</nav>
+
+<div class="container-sm">
+
+  <!-- ÉTAPE 1 : Choix de la classe -->
+  <div class="step active" id="step-classe">
+    <div class="card">
+      <div class="card-header">
+        <h2>📚 Sélectionne ta classe</h2>
+      </div>
+      <div id="liste-classes">
+        <div class="loader-wrap"><div class="spinner"></div><span>Chargement...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 2 : Choix du cycle (APSA) -->
+  <div class="step" id="step-cycle">
+    <button class="back-btn" onclick="retour('step-classe')">← Retour aux classes</button>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 id="titre-cycle">Cycles en cours</h2>
+          <p class="text-muted text-small" id="sous-titre-cycle"></p>
+        </div>
+      </div>
+      <div id="liste-cycles">
+        <div class="loader-wrap"><div class="spinner"></div><span>Chargement...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 3 : Choix de l'élève -->
+  <div class="step" id="step-eleve">
+    <button class="back-btn" onclick="retour('step-cycle')">← Retour aux APSA</button>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 id="titre-eleve">Qui es-tu ?</h2>
+          <p class="text-muted text-small" id="apsa-choisie"></p>
+        </div>
+      </div>
+      <div class="search-input">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="recherche-eleve" placeholder="Rechercher un élève..." oninput="filtrerEleves()">
+      </div>
+      <div id="liste-eleves" class="eleve-grid">
+        <div class="loader-wrap"><div class="spinner"></div><span>Chargement...</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+  document.getElementById('college-nom').textContent = window.COLLEGE_NOM;
+
+  let classeSelectionnee = null;
+  let cycleSelectionne   = null;
+  let tousLesEleves      = [];
+
+  // ── Étape 1 : chargement des classes ──────────────────────
+  async function chargerClasses() {
+    const el = document.getElementById('liste-classes');
+    try {
+      const classes = await getClasses();
+      if (classes.length === 0) {
+        el.innerHTML = '<div class="alert alert-info">ℹ️ Aucune classe configurée. Contactez votre professeur.</div>';
+        return;
+      }
+      // Grouper par niveau
+      const niveaux = {};
+      classes.forEach(c => {
+        const niv = c.niveau || '?';
+        if (!niveaux[niv]) niveaux[niv] = [];
+        niveaux[niv].push(c);
+      });
+      let html = '';
+      const ordreNiveaux = ['6e','5e','4e','3e'];
+      ordreNiveaux.forEach(niv => {
+        if (!niveaux[niv]) return;
+        html += `<h3 style="font-family:var(--font-h);color:var(--gray-3);font-size:.8rem;letter-spacing:.1em;margin:.8rem 0 .4rem;">${niv}</h3>`;
+        niveaux[niv].forEach(c => {
+          html += `
+            <div class="cycle-card" onclick="choisirClasse('${c.id}','${c.nom}','${c.niveau}')">
+              <div>
+                <div class="cycle-apsa">${c.nom}</div>
+                <div class="cycle-meta">${c.niveau} · ${window.ANNEE_SCOLAIRE}</div>
+              </div>
+              <span>→</span>
+            </div>`;
+        });
+      });
+      el.innerHTML = html;
+    } catch(e) {
+      el.innerHTML = `<div class="alert alert-error">❌ Erreur de chargement : ${e.message}</div>`;
+    }
+  }
+
+  async function choisirClasse(id, nom, niveau) {
+    classeSelectionnee = { id, nom, niveau };
+    document.getElementById('titre-cycle').textContent = `APSA en cours — ${nom}`;
+    document.getElementById('sous-titre-cycle').textContent = `Clique sur l'activité que tu es en train de travailler`;
+    afficher('step-cycle');
+    await chargerCycles(id, nom, niveau);
+  }
+
+  // ── Étape 2 : cycles actifs ────────────────────────────────
+  async function chargerCycles(classeId, classeNom, niveau) {
+    const el = document.getElementById('liste-cycles');
+    el.innerHTML = '<div class="loader-wrap"><div class="spinner"></div><span>Chargement...</span></div>';
+    try {
+      const cycles = await getCyclesActifs(classeId);
+      if (cycles.length === 0) {
+        el.innerHTML = '<div class="alert alert-info">ℹ️ Aucun cycle actif pour cette classe. Contactez votre professeur.</div>';
+        return;
+      }
+      // Charger les noms des APSA
+      const apsaMap = {};
+      for (const cy of cycles) {
+        if (!apsaMap[cy.apsaId]) {
+          apsaMap[cy.apsaId] = await getApsa(cy.apsaId);
+        }
+      }
+      let html = '';
+      cycles.forEach(cy => {
+        const apsa = apsaMap[cy.apsaId] || {};
+        const ca   = window.CHAMPS_APPRENTISSAGE[apsa.champAppr] || apsa.champAppr || '';
+        const debut = cy.dateDebut ? new Date(cy.dateDebut.seconds*1000).toLocaleDateString('fr-FR') : '';
+        const fin   = cy.dateFin   ? new Date(cy.dateFin.seconds*1000).toLocaleDateString('fr-FR') : '';
+        html += `
+          <div class="cycle-card" onclick="choisirCycle('${cy.id}','${apsa.nom}','${apsa.id}')">
+            <div>
+              <div class="cycle-apsa">${apsa.nom || cy.apsaId}</div>
+              <div class="cycle-meta">${apsa.champAppr ? apsa.champAppr + ' · ' : ''}${ca.substring(0,40)}${ca.length>40?'…':''}</div>
+              ${debut ? `<div class="cycle-meta">📅 ${debut}${fin ? ' → ' + fin : ''}</div>` : ''}
+            </div>
+            <span class="cycle-badge">EN COURS</span>
+          </div>`;
+      });
+      el.innerHTML = html;
+    } catch(e) {
+      el.innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
+    }
+  }
+
+  async function choisirCycle(cycleId, apsaNom, apsaId) {
+    cycleSelectionne = { cycleId, apsaNom, apsaId };
+    document.getElementById('titre-eleve').textContent = `Qui es-tu ?`;
+    document.getElementById('apsa-choisie').textContent = `APSA : ${apsaNom}`;
+    afficher('step-eleve');
+    await chargerEleves(classeSelectionnee.id);
+  }
+
+  // ── Étape 3 : liste des élèves ─────────────────────────────
+  async function chargerEleves(classeId) {
+    const el = document.getElementById('liste-eleves');
+    el.innerHTML = '<div class="loader-wrap"><div class="spinner"></div><span>Chargement...</span></div>';
+    try {
+      tousLesEleves = await getEleves(classeId);
+      afficherEleves(tousLesEleves);
+    } catch(e) {
+      el.innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
+    }
+  }
+
+  function afficherEleves(eleves) {
+    const el = document.getElementById('liste-eleves');
+    if (eleves.length === 0) {
+      el.innerHTML = '<div class="alert alert-info">ℹ️ Aucun élève trouvé.</div>';
+      return;
+    }
+    el.innerHTML = eleves.map(e => {
+      const initiales = (e.prenom?.[0]||'') + (e.nom?.[0]||'');
+      const url = `fiche.html?eleveId=${e.id}&cycleId=${cycleSelectionne.cycleId}&apsaId=${cycleSelectionne.apsaId}&niveau=${classeSelectionnee.niveau}`;
+      return `
+        <a href="${url}" class="eleve-card">
+          <div class="eleve-initiales">${initiales.toUpperCase()}</div>
+          <div class="eleve-prenom">${e.prenom}</div>
+          <div class="eleve-nom">${e.nom.toUpperCase()}</div>
+        </a>`;
+    }).join('');
+  }
+
+  function filtrerEleves() {
+    const q = document.getElementById('recherche-eleve').value.toLowerCase();
+    const filtres = tousLesEleves.filter(e =>
+      (e.nom+e.prenom).toLowerCase().includes(q)
+    );
+    afficherEleves(filtres);
+  }
+
+  // ── Navigation ─────────────────────────────────────────────
+  function afficher(stepId) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById(stepId).classList.add('active');
+  }
+  function retour(stepId) { afficher(stepId); }
+
+  chargerClasses();
+</script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion Professeur — EPS</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    body {
+      background: var(--navy);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .login-box {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.4);
+    }
+    .login-logo {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .login-logo .icon {
+      width: 72px; height: 72px;
+      background: linear-gradient(135deg, var(--navy), var(--blue));
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    .login-logo h1 {
+      font-size: 1.4rem;
+      color: var(--navy);
+      margin-bottom: .2rem;
+    }
+    .login-logo p { font-size: .85rem; color: var(--gray-3); }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 1.5rem;
+      color: var(--gray-3);
+      font-size: .85rem;
+      text-decoration: none;
+    }
+    .back-link:hover { color: var(--blue-lt); }
+  </style>
+</head>
+<body>
+
+<div class="login-box">
+  <div class="login-logo">
+    <div class="icon">📋</div>
+    <h1>Espace Professeur</h1>
+    <p id="college-nm"></p>
+  </div>
+
+  <div id="message"></div>
+
+  <form onsubmit="connexion(event)">
+    <div class="form-group">
+      <label for="username">Identifiant</label>
+      <input type="text" id="username" placeholder="prenom.nom" autocomplete="username" autofocus>
+    </div>
+    <div class="form-group">
+      <label for="password">Mot de passe</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button type="submit" class="btn btn-primary w-full btn-lg">
+      Se connecter →
+    </button>
+  </form>
+
+  <a href="../index.html" class="back-link">← Retour à l'accueil</a>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+  document.getElementById('college-nm').textContent = window.COLLEGE_NOM + ' · ' + window.COLLEGE_VILLE;
+
+  // Déjà connecté ?
+  if (isProf()) window.location.href = 'dashboard.html';
+
+  async function connexion(e) {
+    e.preventDefault();
+    const user = document.getElementById('username').value.trim().toLowerCase();
+    const pwd  = document.getElementById('password').value;
+    const msg  = document.getElementById('message');
+
+    // Vérification identifiant
+    const usersAutorises = window.ADMIN_USERS || [];
+    if (!usersAutorises.includes(user)) {
+      msg.innerHTML = '<div class="alert alert-error">❌ Identifiant non reconnu</div>';
+      document.getElementById('username').focus();
+      return;
+    }
+
+    try {
+      let mdpValide = false;
+      const configDoc = await db.collection('config').doc('profs').get();
+      if (configDoc.exists && configDoc.data().password) {
+        mdpValide = (pwd === configDoc.data().password);
+      } else {
+        mdpValide = (pwd === window.ADMIN_PASSWORD);
+      }
+
+      if (mdpValide) {
+        localStorage.setItem('eps_prof', 'true');
+        localStorage.setItem('eps_prof_user', user);
+        localStorage.setItem('eps_prof_ts', Date.now());
+        window.location.href = 'dashboard.html';
+      } else {
+        msg.innerHTML = '<div class="alert alert-error">❌ Mot de passe incorrect</div>';
+        document.getElementById('password').focus();
+      }
+    } catch(err) {
+      msg.innerHTML = `<div class="alert alert-error">❌ Erreur : ${err.message}</div>`;
+    }
+  }
+</script>
+</body>
+</html>

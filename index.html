@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projet EPS — Collège</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    body { background: var(--navy); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ─── Hero ─── */
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(27,79,138,.5) 0%, transparent 70%),
+        radial-gradient(circle 400px at 80% 80%, rgba(255,109,0,.12) 0%, transparent 60%);
+    }
+    .hero-content { position: relative; text-align: center; max-width: 700px; }
+
+    /* EPS logo badge */
+    .eps-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      background: rgba(255,109,0,.15);
+      border: 1px solid rgba(255,109,0,.3);
+      padding: .5rem 1.2rem;
+      border-radius: 30px;
+      margin-bottom: 2rem;
+      color: var(--orange);
+      font-family: var(--font-h);
+      font-size: .9rem;
+      letter-spacing: .1em;
+    }
+    .eps-badge svg { width: 18px; height: 18px; }
+
+    .hero h1 {
+      font-family: var(--font-h);
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      color: var(--white);
+      font-weight: 700;
+      letter-spacing: .04em;
+      line-height: 1.1;
+      margin-bottom: .5rem;
+    }
+    .hero h1 span { color: var(--orange); }
+    .hero-subtitle {
+      color: rgba(255,255,255,.55);
+      font-size: 1rem;
+      margin-bottom: 3rem;
+      letter-spacing: .02em;
+    }
+
+    /* Choix cartes */
+    .choix-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 580px;
+      margin: 0 auto;
+    }
+    @media (max-width: 480px) { .choix-grid { grid-template-columns: 1fr; } }
+
+    .choix-card {
+      background: rgba(255,255,255,.06);
+      border: 2px solid rgba(255,255,255,.1);
+      border-radius: 16px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all .25s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .choix-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent, rgba(255,255,255,.04));
+      opacity: 0;
+      transition: opacity .25s;
+    }
+    .choix-card:hover {
+      border-color: rgba(255,255,255,.3);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0,0,0,.4);
+    }
+    .choix-card:hover::after { opacity: 1; }
+    .choix-card.eleve:hover  { border-color: var(--orange); }
+    .choix-card.prof:hover   { border-color: var(--blue-lt); }
+
+    .choix-icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+    }
+    .eleve .choix-icon { background: rgba(255,109,0,.2); }
+    .prof  .choix-icon { background: rgba(37,99,235,.2); }
+
+    .choix-titre {
+      font-family: var(--font-h);
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--white);
+      letter-spacing: .05em;
+    }
+    .choix-desc {
+      font-size: .85rem;
+      color: rgba(255,255,255,.5);
+      line-height: 1.5;
+    }
+    .choix-arrow {
+      color: rgba(255,255,255,.3);
+      font-size: 1.2rem;
+      transition: transform .2s;
+    }
+    .choix-card:hover .choix-arrow { transform: translateX(4px); color: var(--white); }
+
+    /* Footer */
+    .hero-footer {
+      position: relative;
+      color: rgba(255,255,255,.3);
+      font-size: .8rem;
+      text-align: center;
+      padding: 1.5rem;
+    }
+    #college-name {
+      font-weight: 600;
+      color: rgba(255,255,255,.5);
+    }
+
+    /* Année scolaire */
+    .annee-badge {
+      position: relative;
+      display: inline-block;
+      background: rgba(255,255,255,.08);
+      border-radius: 20px;
+      padding: .25rem .8rem;
+      font-size: .8rem;
+      color: rgba(255,255,255,.5);
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<main class="hero">
+  <div class="hero-content">
+
+    <div class="eps-badge">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M13 2.05v2.02c3.95.49 7 3.85 7 7.93 0 3.21-1.81 6-4.72 7.28L13 17v5h5l-1.22-1.22C19.91 19.07 22 15.76 22 12c0-5.18-3.95-9.45-9-9.95M11 2.05C5.95 2.55 2 6.82 2 12c0 3.76 2.09 7.07 5.22 8.78L6 22h5V2.05z"/>
+      </svg>
+      ÉDUCATION PHYSIQUE ET SPORTIVE
+    </div>
+
+    <h1>Projet<br><span>EPS</span> Collège</h1>
+    <p class="hero-subtitle">Suivi des compétences · Auto-évaluation · 4 années de parcours</p>
+
+    <div class="choix-grid">
+
+      <!-- ÉLÈVE -->
+      <a href="eleve/classe.html" class="choix-card eleve">
+        <div class="choix-icon">🎽</div>
+        <div class="choix-titre">ÉLÈVE</div>
+        <div class="choix-desc">Accéder à ma fiche<br>et m'auto-évaluer</div>
+        <div class="choix-arrow">→</div>
+      </a>
+
+      <!-- PROFESSEUR -->
+      <a href="admin/login.html" class="choix-card prof">
+        <div class="choix-icon">📋</div>
+        <div class="choix-titre">PROFESSEUR</div>
+        <div class="choix-desc">Tableau de bord<br>et gestion du projet</div>
+        <div class="choix-arrow">→</div>
+      </a>
+
+    </div>
+  </div>
+</main>
+
+<footer class="hero-footer">
+  <span id="college-name"></span> · Année <span id="annee"></span>
+</footer>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  document.getElementById('college-name').textContent = window.COLLEGE_NOM + ' · ' + window.COLLEGE_VILLE;
+  document.getElementById('annee').textContent = window.ANNEE_SCOLAIRE;
+</script>
+</body>
+</html>

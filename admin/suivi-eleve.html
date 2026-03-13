@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suivi élève — EPS</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .eleve-search-wrap { display: flex; gap: .7rem; margin-bottom: 1.5rem; }
+    .eleve-search-wrap input { flex: 1; }
+    .resultats-recherche {
+      position: absolute;
+      background: var(--white);
+      border: 2px solid var(--blue-lt);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      z-index: 10;
+      width: calc(100% - 2rem);
+      max-height: 280px;
+      overflow-y: auto;
+    }
+    .resultat-item {
+      padding: .7rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--gray-1);
+      font-size: .9rem;
+    }
+    .resultat-item:hover { background: var(--gray-1); }
+    .resultat-item:last-child { border-bottom: none; }
+
+    /* Fiche de suivi */
+    .suivi-header {
+      background: linear-gradient(135deg, var(--navy), var(--blue));
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 1.5rem 2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .suivi-avatar {
+      width: 72px; height: 72px;
+      background: rgba(255,255,255,.15);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-h);
+      font-size: 1.5rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .suivi-info h2 { color: #fff; margin-bottom: .3rem; font-size: 1.5rem; }
+    .suivi-info p  { color: rgba(255,255,255,.65); font-size: .9rem; }
+
+    /* Parcours timeline par niveau */
+    .niveau-section {
+      border-left: 4px solid var(--orange);
+      padding-left: 1.5rem;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+    .niveau-section::before {
+      content: attr(data-niveau);
+      position: absolute;
+      left: -32px;
+      top: 0;
+      background: var(--orange);
+      color: #fff;
+      font-family: var(--font-h);
+      font-size: .8rem;
+      font-weight: 700;
+      padding: .2rem .5rem;
+      border-radius: 4px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+    }
+    .niveau-section.niv-6e { border-left-color: #3B82F6; }
+    .niveau-section.niv-6e::before { background: #3B82F6; }
+    .niveau-section.niv-5e { border-left-color: var(--green); }
+    .niveau-section.niv-5e::before { background: var(--green); }
+    .niveau-section.niv-4e { border-left-color: var(--yellow); }
+    .niveau-section.niv-4e::before { background: var(--yellow); color: var(--navy); }
+    .niveau-section.niv-3e { border-left-color: var(--purple); }
+    .niveau-section.niv-3e::before { background: var(--purple); }
+
+    .apsa-eval-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow);
+    }
+    .apsa-eval-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .8rem;
+    }
+    .apsa-nom { font-family: var(--font-h); font-size: 1.1rem; font-weight: 600; }
+    .apsa-date { font-size: .8rem; color: var(--gray-3); }
+
+    .objectifs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: .5rem;
+    }
+    .obj-result {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .4rem .7rem;
+      background: var(--gray-1);
+      border-radius: 6px;
+      font-size: .82rem;
+    }
+    .obj-result-icon { font-size: 1rem; }
+
+    /* Récapitulatif global */
+    .recap-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .recap-item {
+      text-align: center;
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 1.2rem;
+      box-shadow: var(--shadow);
+    }
+    .recap-niveau-val {
+      font-family: var(--font-h);
+      font-size: 2.5rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: .3rem;
+    }
+    .recap-niveau-label { font-size: .8rem; color: var(--gray-3); }
+    .recap-bar { height: 8px; border-radius: 4px; margin-top: .6rem; }
+  </style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a href="dashboard.html" class="topbar-logo">← Dashboard</a>
+  <span class="topbar-title">Suivi individuel élève</span>
+  <div class="topbar-nav">
+    <a href="gestion-classes.html">Classes</a>
+    <a href="gestion-apsa.html">APSA</a>
+    <a href="bilan-classe.html">Bilans</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- Recherche élève -->
+  <div class="card" style="position:relative;">
+    <h2 style="margin-bottom:1rem;">🔍 Rechercher un élève</h2>
+    <div class="eleve-search-wrap">
+      <input type="text" id="search-input"
+        placeholder="Tapez le nom ou prénom de l'élève..."
+        oninput="rechercherEleve()" autocomplete="off">
+      <button class="btn btn-ghost" onclick="clearSearch()">✕ Effacer</button>
+    </div>
+    <div class="resultats-recherche hidden" id="resultats-recherche"></div>
+  </div>
+
+  <!-- Suivi de l'élève sélectionné -->
+  <div id="suivi-content" class="hidden"></div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+  requireProf();
+
+  let tousEleves = [];
+  let apsaCache  = {};
+  let cycleCache = {};
+
+  // Pré-charger tous les élèves une fois
+  async function init() {
+    const snap = await db.collection('eleves').orderBy('nom').get();
+    tousEleves = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Vérifier si eleveId en paramètre
+    const params = new URLSearchParams(window.location.search);
+    const eleveId = params.get('eleveId');
+    if (eleveId) {
+      const eleve = tousEleves.find(e => e.id === eleveId);
+      if (eleve) afficherSuivi(eleve);
+    }
+  }
+
+  // ── Recherche ──────────────────────────────────────────────
+  function rechercherEleve() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    const res = document.getElementById('resultats-recherche');
+    if (!q || q.length < 2) { res.classList.add('hidden'); return; }
+
+    const filtres = tousEleves.filter(e =>
+      (e.nom + ' ' + e.prenom).toLowerCase().includes(q) ||
+      (e.prenom + ' ' + e.nom).toLowerCase().includes(q)
+    ).slice(0, 10);
+
+    if (filtres.length === 0) {
+      res.innerHTML = '<div class="resultat-item text-muted">Aucun résultat</div>';
+    } else {
+      res.innerHTML = filtres.map(e => `
+        <div class="resultat-item" onclick="selectionnerEleve('${e.id}')">
+          <strong>${e.prenom} ${e.nom.toUpperCase()}</strong>
+          <span class="text-muted"> — ${e.classe||''} ${e.niveau||''}</span>
+        </div>`).join('');
+    }
+    res.classList.remove('hidden');
+  }
+
+  function selectionnerEleve(id) {
+    const eleve = tousEleves.find(e => e.id === id);
+    if (!eleve) return;
+    document.getElementById('search-input').value = `${eleve.prenom} ${eleve.nom}`;
+    document.getElementById('resultats-recherche').classList.add('hidden');
+    afficherSuivi(eleve);
+  }
+
+  function clearSearch() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('resultats-recherche').classList.add('hidden');
+    document.getElementById('suivi-content').classList.add('hidden');
+  }
+
+  // ── Affichage suivi ────────────────────────────────────────
+  async function afficherSuivi(eleve) {
+    const el = document.getElementById('suivi-content');
+    el.classList.remove('hidden');
+    el.innerHTML = `<div class="loader-wrap"><div class="spinner"></div><span>Chargement du parcours...</span></div>`;
+
+    // Charger toutes les évaluations de cet élève
+    const evalsSnap = await db.collection('evaluations')
+      .where('eleveId', '==', eleve.id)
+      .orderBy('dateModif', 'asc').get();
+    const evals = evalsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Charger cycles et APSA associés
+    const cycleIds = [...new Set(evals.map(e => e.cycleId))];
+    const apsaIds  = [...new Set(evals.map(e => e.apsaId))];
+
+    await Promise.all([
+      ...cycleIds.map(async id => {
+        if (!cycleCache[id]) {
+          const d = await db.collection('cycles').doc(id).get();
+          if (d.exists) cycleCache[id] = { id: d.id, ...d.data() };
+        }
+      }),
+      ...apsaIds.map(async id => {
+        if (!apsaCache[id]) {
+          const d = await db.collection('apsa').doc(id).get();
+          if (d.exists) apsaCache[id] = { id: d.id, ...d.data() };
+        }
+      })
+    ]);
+
+    // Grouper par niveau
+    const parNiveau = { '6e': [], '5e': [], '4e': [], '3e': [] };
+    evals.forEach(ev => {
+      const cy = cycleCache[ev.cycleId];
+      // Déterminer le niveau via la classe de l'élève au moment du cycle
+      // On utilise le niveau de la classe ou le niveau courant de l'élève
+      const niv = ev.niveau || cy?.niveau || eleve.niveau || '6e';
+      if (parNiveau[niv]) parNiveau[niv].push(ev);
+    });
+
+    // Calcul stats globales
+    let totalObj = 0, totalA = 0, totalD = 0, totalECA = 0;
+    evals.forEach(ev => {
+      Object.entries(ev.resultats||{}).forEach(([k, v]) => {
+        if (!k.startsWith('obj_')) return;
+        totalObj++;
+        if (v === 'A')   totalA++;
+        if (v === 'D')   totalD++;
+        if (v === 'ECA') totalECA++;
+      });
+    });
+    const pctAcquis = totalObj > 0 ? Math.round((totalA + totalD) / totalObj * 100) : 0;
+
+    const initiales = (eleve.prenom?.[0]||'') + (eleve.nom?.[0]||'');
+
+    let html = `
+      <div class="suivi-header">
+        <div class="suivi-avatar">${initiales.toUpperCase()}</div>
+        <div class="suivi-info">
+          <h2>${eleve.prenom} ${eleve.nom.toUpperCase()}</h2>
+          <p>${eleve.classe||'—'} · ${eleve.niveau||'—'} · ${window.ANNEE_SCOLAIRE}</p>
+          <p style="margin-top:.3rem;">
+            ${evals.length} auto-évaluation${evals.length>1?'s':''} enregistrée${evals.length>1?'s':''}
+          </p>
+        </div>
+      </div>
+
+      <!-- Stats globales -->
+      <div class="recap-grid">
+        <div class="recap-item">
+          <div class="recap-niveau-val" style="color:var(--green);">${pctAcquis}%</div>
+          <div class="recap-niveau-label">Acquis ou Dépassé</div>
+          <div class="recap-bar" style="background:var(--gray-1);">
+            <div style="width:${pctAcquis}%;height:100%;background:var(--green);border-radius:4px;"></div>
+          </div>
+        </div>
+        <div class="recap-item">
+          <div class="recap-niveau-val" style="color:var(--blue-lt);">${totalObj}</div>
+          <div class="recap-niveau-label">Objectifs évalués</div>
+        </div>
+        <div class="recap-item">
+          <div class="recap-niveau-val" style="color:var(--purple);">${totalD}</div>
+          <div class="recap-niveau-label">Dépassé ★</div>
+        </div>
+        <div class="recap-item">
+          <div class="recap-niveau-val" style="color:var(--yellow);">${totalECA}</div>
+          <div class="recap-niveau-label">En cours</div>
+        </div>
+      </div>
+    `;
+
+    // Parcours par niveau
+    const ordreNiv = ['6e','5e','4e','3e'];
+    let hasSomething = false;
+
+    ordreNiv.forEach(niv => {
+      const evalsNiv = parNiveau[niv];
+      if (evalsNiv.length === 0) return;
+      hasSomething = true;
+
+      html += `<div class="niveau-section niv-${niv}" data-niveau="${niv}">`;
+      html += `<h2 style="margin-bottom:1rem;font-size:1.1rem;color:var(--gray-4);">Année de ${niv}</h2>`;
+
+      evalsNiv.forEach(ev => {
+        const apsa = apsaCache[ev.apsaId] || {};
+        const cy   = cycleCache[ev.cycleId] || {};
+        const niveaux = getNiveaux(niv);
+        const dateStr = ev.dateModif ? new Date(ev.dateModif.seconds*1000).toLocaleDateString('fr-FR') : '—';
+
+        const objKeys = Object.entries(ev.resultats||{}).filter(([k]) => k.startsWith('obj_'));
+        const nbA = objKeys.filter(([,v]) => v==='A'||v==='D').length;
+
+        html += `
+          <div class="apsa-eval-card">
+            <div class="apsa-eval-title">
+              <div>
+                <div class="apsa-nom">${apsa.nom||ev.apsaId}</div>
+                <div class="apsa-date">📅 Dernière modif : ${dateStr}</div>
+              </div>
+              <span class="badge-niveau badge-A">${nbA}/${objKeys.length} Acquis</span>
+            </div>
+            <div class="objectifs-grid">
+              ${objKeys.map(([key, code]) => {
+                const niv_ = niveaux.find(n => n.code === code);
+                const objNum = key.replace('obj_','');
+                const objData = (apsa.objectifs||[]).find(o => String(o.id) === String(objNum));
+                return `
+                  <div class="obj-result">
+                    <span style="color:${niv_?.couleur||'gray'};font-size:1rem;">${niv_?.icon||'?'}</span>
+                    <span style="font-weight:700;color:${niv_?.couleur||'gray'};min-width:28px;">${code}</span>
+                    <span>${objData?.texte || 'Objectif '+objNum}</span>
+                  </div>`;
+              }).join('')}
+              ${ev.resultats?.commentaire ? `
+                <div class="obj-result" style="grid-column:1/-1;background:#FEF9C3;">
+                  💬 ${ev.resultats.commentaire}
+                </div>` : ''}
+            </div>
+          </div>`;
+      });
+
+      html += `</div>`;
+    });
+
+    if (!hasSomething) {
+      html += `<div class="alert alert-info">ℹ️ Aucune auto-évaluation enregistrée pour cet élève.</div>`;
+    }
+
+    el.innerHTML = html;
+  }
+
+  // Fermer les résultats en cliquant ailleurs
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.card')) {
+      document.getElementById('resultats-recherche').classList.add('hidden');
+    }
+  });
+
+  init();
+</script>
+</body>
+</html>

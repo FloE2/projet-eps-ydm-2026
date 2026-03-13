@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bilan de classe — EPS</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    /* Sélecteurs en haut */
+    .filtres { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 1.5rem; }
+    .filtres .form-group { margin: 0; flex: 1; min-width: 180px; }
+
+    /* Matrice CA × Domaine */
+    .matrice-wrap { overflow-x: auto; }
+    .matrice {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: .82rem;
+    }
+    .matrice th {
+      background: var(--navy);
+      color: #fff;
+      padding: .6rem .8rem;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .matrice th:first-child { text-align: left; min-width: 180px; }
+    .matrice td {
+      padding: .6rem .8rem;
+      border-bottom: 1px solid var(--gray-1);
+      border-right: 1px solid var(--gray-1);
+      vertical-align: middle;
+    }
+    .matrice td:first-child {
+      background: var(--gray-1);
+      font-weight: 700;
+      font-family: var(--font-h);
+      white-space: nowrap;
+    }
+    .matrice tr:hover td:not(:first-child) { background: #F0F5FF; }
+
+    /* Cellule niveau moyen */
+    .cell-niveau {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .cell-pct {
+      font-family: var(--font-h);
+      font-size: .95rem;
+      font-weight: 700;
+    }
+    .cell-bar {
+      width: 60px;
+      height: 6px;
+      background: var(--gray-2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .cell-bar-fill { height: 100%; border-radius: 3px; }
+    .cell-label { font-size: .68rem; color: var(--gray-3); }
+
+    /* Couleur selon taux acquis */
+    .pct-haut  { color: var(--green); }
+    .pct-moyen { color: var(--yellow); }
+    .pct-bas   { color: var(--red); }
+
+    /* Fiche élève rapide */
+    .eleve-quick {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: .5rem;
+    }
+    .eleve-quick-card {
+      background: var(--white);
+      border: 2px solid var(--gray-1);
+      border-radius: 8px;
+      padding: .7rem;
+      font-size: .82rem;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .eleve-quick-card:hover { border-color: var(--blue-lt); }
+    .eleve-quick-card .eq-nom { font-weight: 700; }
+    .eleve-quick-card .eq-pct { font-family: var(--font-h); font-size: 1.1rem; }
+
+    /* Légende */
+    .legende-matrice { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; font-size: .82rem; }
+    .leg-item { display: flex; align-items: center; gap: .4rem; }
+    .leg-dot  { width: 12px; height: 12px; border-radius: 50%; }
+
+    .export-bar { display: flex; gap:.5rem; justify-content: flex-end; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a href="dashboard.html" class="topbar-logo">← Dashboard</a>
+  <span class="topbar-title">Bilan de classe</span>
+  <div class="topbar-nav">
+    <a href="gestion-classes.html">Classes</a>
+    <a href="gestion-apsa.html">APSA</a>
+    <a href="bilan-classe.html" class="active">Bilans</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- Filtres -->
+  <div class="card">
+    <div class="filtres">
+      <div class="form-group">
+        <label>Classe</label>
+        <select id="sel-classe" onchange="chargerBilan()">
+          <option value="">— Choisir une classe —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cycle / APSA</label>
+        <select id="sel-cycle" onchange="chargerBilan()">
+          <option value="">Tous les cycles</option>
+        </select>
+      </div>
+      <div>
+        <button class="btn btn-ghost" onclick="chargerBilan()" style="margin-top:1.5rem;">🔄 Actualiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bilan-content">
+    <div class="alert alert-info">ℹ️ Sélectionnez une classe pour afficher le bilan.</div>
+  </div>
+
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+  requireProf();
+
+  let toutesClasses = [];
+  let tousEleves    = {};
+  let apsaCache     = {};
+  let cycleCache    = {};
+
+  async function init() {
+    const [classesSnap] = await Promise.all([db.collection('classes').orderBy('nom').get()]);
+    toutesClasses = classesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const opts = toutesClasses.map(c => `<option value="${c.id}">${c.nom} (${c.niveau})</option>`).join('');
+    document.getElementById('sel-classe').innerHTML = '<option value="">— Classe —</option>' + opts;
+
+    // URL param ?
+    const params = new URLSearchParams(window.location.search);
+    const cid = params.get('classeId');
+    if (cid) { document.getElementById('sel-classe').value = cid; await chargerCyclesClasse(cid); chargerBilan(); }
+  }
+
+  // Mettre à jour la liste des cycles quand on change de classe
+  document.getElementById('sel-classe').addEventListener('change', async function() {
+    await chargerCyclesClasse(this.value);
+    chargerBilan();
+  });
+
+  async function chargerCyclesClasse(classeId) {
+    const sel = document.getElementById('sel-cycle');
+    sel.innerHTML = '<option value="">Tous les cycles</option>';
+    if (!classeId) return;
+    const snap = await db.collection('cycles').where('classeId','==',classeId).get();
+    const cycles = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    for (const cy of cycles) {
+      if (!apsaCache[cy.apsaId]) {
+        const a = await getApsa(cy.apsaId);
+        if (a) apsaCache[cy.apsaId] = a;
+      }
+      const apsa = apsaCache[cy.apsaId] || {};
+      const opt = document.createElement('option');
+      opt.value = cy.id;
+      opt.textContent = `${apsa.nom||cy.apsaId}${cy.actif?' ✓':''}`;
+      sel.appendChild(opt);
+      cycleCache[cy.id] = cy;
+    }
+  }
+
+  async function chargerBilan() {
+    const classeId = document.getElementById('sel-classe').value;
+    const cycleId  = document.getElementById('sel-cycle').value;
+    const el = document.getElementById('bilan-content');
+
+    if (!classeId) {
+      el.innerHTML = '<div class="alert alert-info">ℹ️ Sélectionnez une classe.</div>';
+      return;
+    }
+
+    el.innerHTML = '<div class="loader-wrap"><div class="spinner"></div><span>Calcul du bilan...</span></div>';
+
+    const classe = toutesClasses.find(c => c.id === classeId) || {};
+
+    // Charger élèves
+    const elevesSnap = await db.collection('eleves').where('classeId','==',classeId).orderBy('nom').get();
+    const eleves = elevesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Charger évaluations
+    let evalsQuery = db.collection('evaluations').where('eleveId','in',
+      eleves.map(e => e.id).length > 0 ? eleves.map(e => e.id) : ['__none__']);
+    if (cycleId) evalsQuery = evalsQuery.where('cycleId','==',cycleId);
+    const evalsSnap = await evalsQuery.get();
+    const evals = evalsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Charger APSA
+    const apsaIds = [...new Set(evals.map(e => e.apsaId))];
+    for (const aid of apsaIds) {
+      if (!apsaCache[aid]) {
+        const a = await getApsa(aid);
+        if (a) apsaCache[aid] = a;
+      }
+    }
+
+    // ── Matrice CA × Domaine ──────────────────────────────────
+    // Structure : { CA: { Domaine: { total, acquis } } }
+    const matrice = {};
+    const CAS = Object.keys(window.CHAMPS_APPRENTISSAGE);
+    const DOMAINES = Object.keys(window.DOMAINES_SOCLE);
+
+    CAS.forEach(ca => {
+      matrice[ca] = {};
+      DOMAINES.forEach(d => { matrice[ca][d] = { total: 0, acquis: 0 }; });
+    });
+
+    evals.forEach(ev => {
+      const apsa = apsaCache[ev.apsaId];
+      if (!apsa) return;
+      const ca = apsa.champAppr;
+      if (!matrice[ca]) return;
+
+      (apsa.objectifs||[]).forEach(obj => {
+        const dom = obj.domaine;
+        if (!dom || !matrice[ca][dom]) return;
+        const key = `obj_${obj.id}`;
+        const val = ev.resultats?.[key];
+        if (val) {
+          matrice[ca][dom].total++;
+          if (val === 'A' || val === 'D') matrice[ca][dom].acquis++;
+        }
+      });
+    });
+
+    // ── Stats par élève ───────────────────────────────────────
+    const statsEleve = {};
+    eleves.forEach(e => { statsEleve[e.id] = { total: 0, acquis: 0, nom: e.nom, prenom: e.prenom }; });
+    evals.forEach(ev => {
+      if (!statsEleve[ev.eleveId]) return;
+      Object.entries(ev.resultats||{}).forEach(([k, v]) => {
+        if (!k.startsWith('obj_')) return;
+        statsEleve[ev.eleveId].total++;
+        if (v === 'A' || v === 'D') statsEleve[ev.eleveId].acquis++;
+      });
+    });
+
+    const totalElevesEval = eleves.filter(e => statsEleve[e.id]?.total > 0).length;
+
+    function colorPct(p) {
+      if (p >= 70) return 'var(--green)';
+      if (p >= 40) return 'var(--yellow)';
+      return 'var(--red)';
+    }
+
+    let html = `
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-val">${eleves.length}</div>
+          <div class="stat-label">Élèves dans la classe</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-val">${totalElevesEval}</div>
+          <div class="stat-label">Élèves avec évaluations</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-val">${evals.length}</div>
+          <div class="stat-label">Auto-évaluations totales</div>
+        </div>
+      </div>
+
+      <!-- Matrice CA × Domaines -->
+      <div class="card">
+        <div class="card-header">
+          <h2>📊 Matrice CA × Domaines du Socle — ${classe.nom||'Classe'}</h2>
+          <div class="export-bar">
+            <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Imprimer</button>
+          </div>
+        </div>
+
+        <div class="legende-matrice">
+          <strong>Lecture :</strong>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div> ≥70% acquis</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--yellow)"></div> 40–70% acquis</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--red)"></div> <40% acquis</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--gray-2)"></div> Non évalué</div>
+        </div>
+
+        <div class="matrice-wrap">
+          <table class="matrice">
+            <thead>
+              <tr>
+                <th>Champ d'apprentissage</th>
+                ${DOMAINES.map(d => `<th title="${window.DOMAINES_SOCLE[d]}">${d}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${CAS.map(ca => `
+                <tr>
+                  <td title="${window.CHAMPS_APPRENTISSAGE[ca]}">${ca} · ${window.CHAMPS_APPRENTISSAGE[ca].substring(0,30)}…</td>
+                  ${DOMAINES.map(dom => {
+                    const cell = matrice[ca][dom];
+                    if (cell.total === 0) {
+                      return `<td><div class="cell-niveau"><span style="color:var(--gray-3);font-size:.8rem;">—</span></div></td>`;
+                    }
+                    const pct = Math.round(cell.acquis / cell.total * 100);
+                    const col = colorPct(pct);
+                    return `<td>
+                      <div class="cell-niveau">
+                        <span class="cell-pct" style="color:${col}">${pct}%</span>
+                        <div class="cell-bar"><div class="cell-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+                        <span class="cell-label">${cell.acquis}/${cell.total}</span>
+                      </div>
+                    </td>`;
+                  }).join('')}
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Vue par élève -->
+      <div class="card">
+        <div class="card-header">
+          <h2>👥 Résultats par élève</h2>
+          <a href="suivi-eleve.html" class="btn btn-ghost btn-sm">Voir suivi individuel →</a>
+        </div>
+        <div class="eleve-quick">
+          ${eleves.map(e => {
+            const s = statsEleve[e.id];
+            const pct = s.total > 0 ? Math.round(s.acquis / s.total * 100) : null;
+            return `
+              <div class="eleve-quick-card" onclick="window.location='suivi-eleve.html?eleveId=${e.id}'">
+                <div class="eq-nom">${e.prenom} ${e.nom.toUpperCase()}</div>
+                ${pct !== null
+                  ? `<div class="eq-pct" style="color:${colorPct(pct)}">${pct}%</div>
+                     <div style="font-size:.75rem;color:var(--gray-3);">${s.acquis}/${s.total} acquis</div>`
+                  : `<div style="font-size:.78rem;color:var(--gray-3);">Aucune évaluation</div>`}
+              </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- Note export PDF -->
+      <div class="alert alert-info" style="margin-top:1rem;">
+        📄 <strong>Export PDF</strong> : Fonctionnalité en cours de développement.
+        Vous pouvez utiliser <strong>Ctrl+P → Enregistrer en PDF</strong> comme solution temporaire.
+      </div>`;
+
+    el.innerHTML = html;
+  }
+
+  init();
+</script>
+</body>
+</html>

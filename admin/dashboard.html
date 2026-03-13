@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tableau de bord — EPS Professeur</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .nav-link-card {
+      background: var(--white);
+      border: 2px solid var(--gray-1);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      text-decoration: none;
+      color: var(--navy);
+      transition: all .2s;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .nav-link-card:hover {
+      border-color: var(--blue-lt);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+    .nav-link-icon {
+      font-size: 2rem;
+      width: 56px; height: 56px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .nav-link-card h3 { font-size: 1rem; margin-bottom: .2rem; }
+    .nav-link-card p  { font-size: .8rem; color: var(--gray-3); margin: 0; }
+
+    .nav-link-card.orange { border-left: 4px solid var(--orange); }
+    .nav-link-card.orange .nav-link-icon { background: rgba(255,109,0,.1); }
+    .nav-link-card.blue { border-left: 4px solid var(--blue-lt); }
+    .nav-link-card.blue .nav-link-icon { background: rgba(37,99,235,.1); }
+    .nav-link-card.green { border-left: 4px solid var(--green); }
+    .nav-link-card.green .nav-link-icon { background: rgba(45,158,104,.1); }
+    .nav-link-card.purple { border-left: 4px solid var(--purple); }
+    .nav-link-card.purple .nav-link-icon { background: rgba(107,33,168,.1); }
+
+    .classe-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .8rem 1rem;
+      border-radius: 8px;
+      background: var(--gray-1);
+      margin-bottom: .6rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .classe-nom { font-family: var(--font-h); font-weight: 600; font-size: 1rem; }
+    .classe-meta { font-size: .8rem; color: var(--gray-3); }
+    .classe-stats { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+    .mini-badge {
+      font-size: .75rem;
+      padding: .2rem .6rem;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a href="../index.html" class="topbar-logo">⚡ EPS</a>
+  <span class="topbar-title">Tableau de bord Professeur</span>
+  <div class="topbar-nav">
+    <a href="gestion-classes.html">Classes</a>
+    <a href="gestion-apsa.html">APSA</a>
+    <a href="bilan-classe.html">Bilans</a>
+    <span style="font-size:.8rem;opacity:.6;" id="user-label"></span>
+    <a href="#" onclick="deconnexion()">⎋ Déco</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- Stats globales -->
+  <div class="stats-row" id="stats-globales">
+    <div class="stat-card">
+      <div class="stat-val" id="stat-eleves">—</div>
+      <div class="stat-label">Élèves suivis</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-val" id="stat-classes">—</div>
+      <div class="stat-label">Classes</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-val" id="stat-cycles">—</div>
+      <div class="stat-label">Cycles actifs</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-val" id="stat-evals">—</div>
+      <div class="stat-label">Auto-évaluations</div>
+    </div>
+  </div>
+
+  <!-- Navigation rapide -->
+  <div class="nav-grid">
+    <a href="gestion-classes.html" class="nav-link-card blue">
+      <div class="nav-link-icon">👥</div>
+      <div>
+        <h3>Gestion des classes</h3>
+        <p>Élèves, classes, cycles APSA</p>
+      </div>
+    </a>
+    <a href="gestion-apsa.html" class="nav-link-card orange">
+      <div class="nav-link-icon">🏃</div>
+      <div>
+        <h3>Gestion des APSA</h3>
+        <p>Activités, objectifs, compétences</p>
+      </div>
+    </a>
+    <a href="bilan-classe.html" class="nav-link-card green">
+      <div class="nav-link-icon">📊</div>
+      <div>
+        <h3>Bilans de classe</h3>
+        <p>Vue CA × Domaines du socle</p>
+      </div>
+    </a>
+    <a href="suivi-eleve.html" class="nav-link-card purple">
+      <div class="nav-link-icon">📈</div>
+      <div>
+        <h3>Suivi individuel</h3>
+        <p>Parcours 6e → 3e d'un élève</p>
+      </div>
+    </a>
+  </div>
+
+  <!-- Classes et cycles actifs -->
+  <div class="card">
+    <div class="card-header">
+      <h2>📚 Classes et cycles en cours</h2>
+      <a href="gestion-classes.html" class="btn btn-ghost btn-sm">Gérer →</a>
+    </div>
+    <div id="liste-classes-cycles">
+      <div class="loader-wrap"><div class="spinner"></div><span>Chargement...</span></div>
+    </div>
+  </div>
+
+  <!-- Dernières activités -->
+  <div class="card">
+    <div class="card-header">
+      <h2>🕐 Dernières auto-évaluations</h2>
+    </div>
+    <div id="dernieres-evals">
+      <div class="loader-wrap"><div class="spinner"></div><span>Chargement...</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+  requireProf();
+  const userLabel = document.getElementById('user-label');
+  if (userLabel) userLabel.textContent = localStorage.getItem('eps_prof_user') || '';
+
+  async function chargerDashboard() {
+    try {
+      // Stats parallèles
+      const [classesSnap, elevesSnap, cyclesSnap, evalsSnap] = await Promise.all([
+        db.collection('classes').get(),
+        db.collection('eleves').get(),
+        db.collection('cycles').where('actif','==',true).get(),
+        db.collection('evaluations').get()
+      ]);
+
+      document.getElementById('stat-classes').textContent = classesSnap.size;
+      document.getElementById('stat-eleves').textContent  = elevesSnap.size;
+      document.getElementById('stat-cycles').textContent  = cyclesSnap.size;
+      document.getElementById('stat-evals').textContent   = evalsSnap.size;
+
+      // Classes avec cycles
+      const classes = classesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const cycles  = cyclesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Charger APSA
+      const apsaIds = [...new Set(cycles.map(c => c.apsaId))];
+      const apsaMap = {};
+      await Promise.all(apsaIds.map(async id => {
+        const a = await getApsa(id);
+        if (a) apsaMap[id] = a;
+      }));
+
+      const el = document.getElementById('liste-classes-cycles');
+      if (classes.length === 0) {
+        el.innerHTML = `<div class="alert alert-info">ℹ️ Aucune classe créée.
+          <a href="gestion-classes.html" class="btn btn-primary btn-sm" style="margin-left:1rem">Créer une classe</a></div>`;
+      } else {
+        const ordreNiveaux = ['6e','5e','4e','3e'];
+        const classesTri = classes.sort((a,b) => {
+          const ia = ordreNiveaux.indexOf(a.niveau);
+          const ib = ordreNiveaux.indexOf(b.niveau);
+          if (ia !== ib) return ia - ib;
+          return a.nom.localeCompare(b.nom);
+        });
+        el.innerHTML = classesTri.map(c => {
+          const cyclesClasse = cycles.filter(cy => cy.classeId === c.id);
+          const nbEleves = elevesSnap.docs.filter(e => e.data().classeId === c.id).length;
+          return `
+            <div class="classe-row">
+              <div>
+                <div class="classe-nom">${c.nom}</div>
+                <div class="classe-meta">${c.niveau} · ${nbEleves} élève${nbEleves>1?'s':''}</div>
+              </div>
+              <div class="classe-stats">
+                ${cyclesClasse.length === 0
+                  ? '<span style="font-size:.8rem;color:var(--gray-3);">Aucun cycle actif</span>'
+                  : cyclesClasse.map(cy => {
+                      const a = apsaMap[cy.apsaId] || {};
+                      return `<span class="mini-badge badge-A">${a.nom || cy.apsaId}</span>`;
+                    }).join('')}
+                <a href="bilan-classe.html?classeId=${c.id}" class="btn btn-ghost btn-sm">Bilan</a>
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      // Dernières évals
+      const elEvals = document.getElementById('dernieres-evals');
+      const evalsRec = await db.collection('evaluations')
+        .orderBy('dateModif','desc').limit(10).get();
+
+      if (evalsRec.empty) {
+        elEvals.innerHTML = '<p class="text-muted text-small">Aucune auto-évaluation encore enregistrée.</p>';
+      } else {
+        // Charger élèves et APSA correspondants
+        const rows = await Promise.all(evalsRec.docs.map(async d => {
+          const ev = d.data();
+          const [eleveDoc, cycleDoc] = await Promise.all([
+            db.collection('eleves').doc(ev.eleveId).get(),
+            db.collection('cycles').doc(ev.cycleId).get()
+          ]);
+          const elv = eleveDoc.exists ? eleveDoc.data() : {};
+          const cy  = cycleDoc.exists ? cycleDoc.data() : {};
+          const ap  = apsaMap[ev.apsaId] || await getApsa(ev.apsaId) || {};
+          const ts  = ev.dateModif ? new Date(ev.dateModif.seconds*1000).toLocaleString('fr-FR') : '—';
+          const nbObj = Object.keys(ev.resultats||{}).filter(k => k.startsWith('obj_')).length;
+          return `<tr>
+            <td><strong>${elv.prenom||'?'} ${(elv.nom||'?').toUpperCase()}</strong></td>
+            <td>${elv.classe||'—'}</td>
+            <td>${ap.nom||ev.apsaId}</td>
+            <td>${nbObj} objectif${nbObj>1?'s':''}</td>
+            <td class="text-muted text-small">${ts}</td>
+          </tr>`;
+        }));
+        elEvals.innerHTML = `<div class="table-wrapper">
+          <table>
+            <thead><tr><th>Élève</th><th>Classe</th><th>APSA</th><th>Obj. évalués</th><th>Date</th></tr></thead>
+            <tbody>${rows.join('')}</tbody>
+          </table></div>`;
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  function deconnexion() {
+    if (confirm('Se déconnecter ?')) {
+      localStorage.removeItem('eps_prof');
+      window.location.href = '../index.html';
+    }
+  }
+
+  chargerDashboard();
+</script>
+</body>
+</html>

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des classes — EPS</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .tabs { display: flex; gap: .3rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--gray-1); }
+    .tab-btn {
+      padding: .7rem 1.4rem;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-family: var(--font-h);
+      font-size: 1rem;
+      color: var(--gray-3);
+      margin-bottom: -2px;
+      transition: all .2s;
+    }
+    .tab-btn.active { color: var(--blue-lt); border-bottom-color: var(--blue-lt); }
+    .tab-btn:hover  { color: var(--navy); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Modal */
+    .modal-bg { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;
+      display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto; }
+    .modal-bg.hidden { display:none; }
+    .modal { background:var(--white);border-radius:16px;padding:2rem;width:100%;max-width:540px;
+      box-shadow:0 30px 80px rgba(0,0,0,.3);position:relative; }
+    .modal-close { position:absolute;top:1rem;right:1rem;background:var(--gray-1);border:none;
+      width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1.1rem;
+      display:flex;align-items:center;justify-content:center; }
+
+    .cycle-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .8rem 1rem;
+      background: var(--gray-1);
+      border-radius: 8px;
+      margin-bottom: .5rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .cycle-item.actif { background: #D1FAE5; }
+    .cycle-info { flex: 1; }
+    .cycle-apsa-nom { font-weight: 600; font-size: .95rem; }
+    .cycle-classe-meta { font-size: .8rem; color: var(--gray-3); }
+
+    .eleve-import-area {
+      font-family: monospace;
+      font-size: .85rem;
+      min-height: 140px;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a href="dashboard.html" class="topbar-logo">← Dashboard</a>
+  <span class="topbar-title">Gestion des classes & élèves</span>
+  <div class="topbar-nav">
+    <a href="gestion-classes.html" class="active">Classes</a>
+    <a href="gestion-apsa.html">APSA</a>
+    <a href="bilan-classe.html">Bilans</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('classes')">📚 Classes</button>
+    <button class="tab-btn" onclick="showTab('eleves')">👥 Élèves</button>
+    <button class="tab-btn" onclick="showTab('cycles')">🔄 Cycles APSA</button>
+  </div>
+
+  <!-- ── Onglet Classes ── -->
+  <div class="tab-panel active" id="tab-classes">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:1rem;">
+      <button class="btn btn-primary" onclick="ouvrirModalClasse()">+ Nouvelle classe</button>
+    </div>
+    <div class="card">
+      <div id="liste-classes">
+        <div class="loader-wrap"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Onglet Élèves ── -->
+  <div class="tab-panel" id="tab-eleves">
+    <div class="card">
+      <div class="card-header">
+        <h2>👥 Élèves par classe</h2>
+        <div style="display:flex;gap:.5rem;">
+          <select id="select-classe-eleves" onchange="chargerElevesClasse(this.value)" style="width:auto;">
+            <option value="">— Choisir une classe —</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="ouvrirModalEleve()">+ Ajouter</button>
+          <button class="btn btn-ghost btn-sm" onclick="ouvrirModalImport()">📋 Import liste</button>
+        </div>
+      </div>
+      <div id="liste-eleves-classe">
+        <p class="text-muted text-small">Sélectionnez une classe pour afficher les élèves.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Onglet Cycles ── -->
+  <div class="tab-panel" id="tab-cycles">
+    <div class="card">
+      <div class="card-header">
+        <h2>🔄 Cycles APSA</h2>
+        <button class="btn btn-orange" onclick="ouvrirModalCycle()">+ Nouveau cycle</button>
+      </div>
+      <p class="text-muted text-small" style="margin-bottom:1rem;">
+        Un cycle associe une APSA à une classe pour une période donnée. Les élèves voient les cycles actifs.
+      </p>
+      <div id="liste-cycles">
+        <div class="loader-wrap"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Classe -->
+<div class="modal-bg hidden" id="modal-classe-bg">
+  <div class="modal">
+    <button class="modal-close" onclick="fermerModal('modal-classe-bg')">✕</button>
+    <h2 id="modal-classe-titre">Nouvelle classe</h2>
+    <div class="form-group">
+      <label>Nom de la classe *</label>
+      <input type="text" id="cl-nom" placeholder="Ex : 6eA, 5eB, 4e3...">
+    </div>
+    <div class="form-group">
+      <label>Niveau *</label>
+      <select id="cl-niveau">
+        <option value="6e">6e</option>
+        <option value="5e">5e</option>
+        <option value="4e">4e</option>
+        <option value="3e">3e</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
+      <button class="btn btn-ghost" onclick="fermerModal('modal-classe-bg')">Annuler</button>
+      <button class="btn btn-primary" onclick="sauvegarderClasse()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Élève -->
+<div class="modal-bg hidden" id="modal-eleve-bg">
+  <div class="modal">
+    <button class="modal-close" onclick="fermerModal('modal-eleve-bg')">✕</button>
+    <h2 id="modal-eleve-titre">Ajouter un élève</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group">
+        <label>Prénom *</label>
+        <input type="text" id="el-prenom" placeholder="Prénom">
+      </div>
+      <div class="form-group">
+        <label>Nom *</label>
+        <input type="text" id="el-nom" placeholder="NOM">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Classe *</label>
+      <select id="el-classe"></select>
+    </div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
+      <button class="btn btn-ghost" onclick="fermerModal('modal-eleve-bg')">Annuler</button>
+      <button class="btn btn-primary" onclick="sauvegarderEleve()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Import liste élèves -->
+<div class="modal-bg hidden" id="modal-import-bg">
+  <div class="modal" style="max-width:600px;">
+    <button class="modal-close" onclick="fermerModal('modal-import-bg')">✕</button>
+    <h2>📋 Import liste d'élèves</h2>
+    <div class="form-group">
+      <label>Classe cible *</label>
+      <select id="imp-classe"></select>
+    </div>
+    <div class="form-group">
+      <label>Liste (un élève par ligne : Prénom NOM ou NOM Prénom)</label>
+      <textarea class="eleve-import-area" id="imp-texte"
+        placeholder="Exemple :
+Alice MARTIN
+Bob DUPONT
+Clara BERNARD
+..."></textarea>
+    </div>
+    <p class="text-muted text-small">Les doublons seront ignorés automatiquement.</p>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
+      <button class="btn btn-ghost" onclick="fermerModal('modal-import-bg')">Annuler</button>
+      <button class="btn btn-primary" onclick="importerEleves()">⬆️ Importer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Cycle -->
+<div class="modal-bg hidden" id="modal-cycle-bg">
+  <div class="modal">
+    <button class="modal-close" onclick="fermerModal('modal-cycle-bg')">✕</button>
+    <h2 id="modal-cycle-titre">Nouveau cycle APSA</h2>
+    <div class="form-group">
+      <label>Classe *</label>
+      <select id="cy-classe"></select>
+    </div>
+    <div class="form-group">
+      <label>APSA *</label>
+      <select id="cy-apsa"></select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group">
+        <label>Date de début</label>
+        <input type="date" id="cy-debut">
+      </div>
+      <div class="form-group">
+        <label>Date de fin</label>
+        <input type="date" id="cy-fin">
+      </div>
+    </div>
+    <div class="form-group">
+      <label><input type="checkbox" id="cy-actif" checked style="width:auto;margin-right:.5rem;">
+        Cycle actif (visible par les élèves)
+      </label>
+    </div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
+      <button class="btn btn-ghost" onclick="fermerModal('modal-cycle-bg')">Annuler</button>
+      <button class="btn btn-orange" onclick="sauvegarderCycle()">Enregistrer le cycle</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+  requireProf();
+
+  let toutesLesClasses = [];
+  let tousLesApsa      = [];
+  let classeEditId     = null;
+  let eleveEditId      = null;
+  let cycleEditId      = null;
+
+  // ── Tabs ───────────────────────────────────────────────────
+  function showTab(name) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+    if (name === 'cycles') chargerCycles();
+  }
+
+  // ── Chargement initial ─────────────────────────────────────
+  async function init() {
+    const [classesSnap, apsaSnap] = await Promise.all([
+      db.collection('classes').orderBy('nom').get(),
+      db.collection('apsa').orderBy('nom').get()
+    ]);
+    toutesLesClasses = classesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    tousLesApsa      = apsaSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    chargerClasses();
+    remplirSelects();
+  }
+
+  function remplirSelects() {
+    const opts = toutesLesClasses.map(c => `<option value="${c.id}">${c.nom} (${c.niveau})</option>`).join('');
+    ['select-classe-eleves','el-classe','imp-classe','cy-classe'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.innerHTML = (id === 'select-classe-eleves' ? '<option value="">— Classe —</option>' : '') + opts; }
+    });
+    const apsaOpts = tousLesApsa.map(a => `<option value="${a.id}">${a.nom} (${a.champAppr})</option>`).join('');
+    const cyApsa = document.getElementById('cy-apsa');
+    if (cyApsa) cyApsa.innerHTML = '<option value="">— APSA —</option>' + apsaOpts;
+  }
+
+  // ── CLASSES ────────────────────────────────────────────────
+  function chargerClasses() {
+    const el = document.getElementById('liste-classes');
+    if (toutesLesClasses.length === 0) {
+      el.innerHTML = `<div class="alert alert-info">ℹ️ Aucune classe. Créez-en une !</div>`;
+      return;
+    }
+    const ordreNiv = ['6e','5e','4e','3e'];
+    const tri = [...toutesLesClasses].sort((a,b) => {
+      const ia = ordreNiv.indexOf(a.niveau), ib = ordreNiv.indexOf(b.niveau);
+      if (ia!==ib) return ia-ib; return a.nom.localeCompare(b.nom);
+    });
+    el.innerHTML = `<div class="table-wrapper"><table>
+      <thead><tr><th>Classe</th><th>Niveau</th><th>Actions</th></tr></thead>
+      <tbody>${tri.map(c => `<tr>
+        <td><strong>${c.nom}</strong></td>
+        <td>${c.niveau}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="supprimerClasse('${c.id}','${c.nom}')">🗑 Supprimer</button></td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  function ouvrirModalClasse() {
+    classeEditId = null;
+    document.getElementById('cl-nom').value   = '';
+    document.getElementById('cl-niveau').value = '6e';
+    ouvrirModal('modal-classe-bg');
+    document.getElementById('cl-nom').focus();
+  }
+
+  async function sauvegarderClasse() {
+    const nom    = document.getElementById('cl-nom').value.trim();
+    const niveau = document.getElementById('cl-niveau').value;
+    if (!nom) { showToast('⚠️ Entrez un nom de classe', 'error'); return; }
+    try {
+      const data = { nom, niveau, annee: window.ANNEE_SCOLAIRE };
+      await db.collection('classes').add(data);
+      showToast('✓ Classe créée !', 'success');
+      fermerModal('modal-classe-bg');
+      await init();
+    } catch(e) { showToast('❌ ' + e.message, 'error'); }
+  }
+
+  async function supprimerClasse(id, nom) {
+    if (!confirm(`Supprimer la classe "${nom}" ? Les élèves et évaluations associés ne seront pas supprimés.`)) return;
+    await db.collection('classes').doc(id).delete();
+    showToast('🗑 Classe supprimée', 'success');
+    await init();
+  }
+
+  // ── ÉLÈVES ─────────────────────────────────────────────────
+  async function chargerElevesClasse(classeId) {
+    const el = document.getElementById('liste-eleves-classe');
+    if (!classeId) { el.innerHTML = '<p class="text-muted text-small">Sélectionnez une classe.</p>'; return; }
+    el.innerHTML = '<div class="loader-wrap"><div class="spinner"></div></div>';
+    const eleves = await getEleves(classeId);
+    if (eleves.length === 0) {
+      el.innerHTML = '<div class="alert alert-info">ℹ️ Aucun élève dans cette classe.</div>'; return;
+    }
+    el.innerHTML = `<div class="table-wrapper"><table>
+      <thead><tr><th>#</th><th>Prénom</th><th>Nom</th><th>Actions</th></tr></thead>
+      <tbody>${eleves.map((e,i) => `<tr>
+        <td>${i+1}</td>
+        <td>${e.prenom}</td>
+        <td>${e.nom.toUpperCase()}</td>
+        <td>
+          <a href="suivi-eleve.html?eleveId=${e.id}" class="btn btn-ghost btn-sm">📈 Suivi</a>
+          <button class="btn btn-danger btn-sm" onclick="supprimerEleve('${e.id}','${e.prenom} ${e.nom}')">🗑</button>
+        </td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  function ouvrirModalEleve() {
+    eleveEditId = null;
+    document.getElementById('el-prenom').value = '';
+    document.getElementById('el-nom').value    = '';
+    const sel = document.getElementById('select-classe-eleves');
+    document.getElementById('el-classe').value = sel?.value || '';
+    ouvrirModal('modal-eleve-bg');
+    document.getElementById('el-prenom').focus();
+  }
+
+  async function sauvegarderEleve() {
+    const prenom   = document.getElementById('el-prenom').value.trim();
+    const nom      = document.getElementById('el-nom').value.trim().toUpperCase();
+    const classeId = document.getElementById('el-classe').value;
+    const classe   = toutesLesClasses.find(c => c.id === classeId);
+    if (!prenom||!nom||!classeId) { showToast('⚠️ Tous les champs sont requis', 'error'); return; }
+    try {
+      await db.collection('eleves').add({
+        prenom, nom, classeId,
+        classe: classe?.nom || '',
+        niveau: classe?.niveau || '',
+        dateAjout: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      showToast('✓ Élève ajouté !', 'success');
+      fermerModal('modal-eleve-bg');
+      chargerElevesClasse(classeId);
+    } catch(e) { showToast('❌ ' + e.message, 'error'); }
+  }
+
+  async function supprimerEleve(id, nom) {
+    if (!confirm(`Supprimer l'élève "${nom}" ? Ses évaluations seront conservées.`)) return;
+    await db.collection('eleves').doc(id).delete();
+    showToast('🗑 Élève supprimé', 'success');
+    const sel = document.getElementById('select-classe-eleves');
+    if (sel?.value) chargerElevesClasse(sel.value);
+  }
+
+  // ── IMPORT élèves ──────────────────────────────────────────
+  function ouvrirModalImport() {
+    const sel = document.getElementById('select-classe-eleves');
+    document.getElementById('imp-classe').value = sel?.value || '';
+    document.getElementById('imp-texte').value = '';
+    ouvrirModal('modal-import-bg');
+  }
+
+  async function importerEleves() {
+    const classeId = document.getElementById('imp-classe').value;
+    const texte    = document.getElementById('imp-texte').value;
+    const classe   = toutesLesClasses.find(c => c.id === classeId);
+    if (!classeId || !texte.trim()) { showToast('⚠️ Sélectionnez une classe et entrez la liste', 'error'); return; }
+
+    const lignes = texte.split('\n').map(l => l.trim()).filter(l => l);
+    let ok = 0, erreurs = 0;
+
+    for (const ligne of lignes) {
+      const parts = ligne.split(/\s+/);
+      if (parts.length < 2) { erreurs++; continue; }
+      // Détection majuscules = nom de famille
+      let prenom, nom;
+      if (parts[0] === parts[0].toUpperCase() && parts[0].length > 1) {
+        nom = parts[0]; prenom = parts.slice(1).join(' ');
+      } else {
+        prenom = parts[0]; nom = parts.slice(1).join(' ').toUpperCase();
+      }
+      try {
+        await db.collection('eleves').add({
+          prenom, nom, classeId,
+          classe: classe?.nom||'', niveau: classe?.niveau||'',
+          dateAjout: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        ok++;
+      } catch { erreurs++; }
+    }
+    showToast(`✓ ${ok} élève${ok>1?'s':''} importé${ok>1?'s':''}${erreurs?` (${erreurs} erreur${erreurs>1?'s':''})`:''}`,'success');
+    fermerModal('modal-import-bg');
+    document.getElementById('select-classe-eleves').value = classeId;
+    chargerElevesClasse(classeId);
+  }
+
+  // ── CYCLES ─────────────────────────────────────────────────
+  async function chargerCycles() {
+    const el = document.getElementById('liste-cycles');
+    el.innerHTML = '<div class="loader-wrap"><div class="spinner"></div></div>';
+    const snap = await db.collection('cycles').orderBy('dateCreation','desc').get();
+    if (snap.empty) {
+      el.innerHTML = '<div class="alert alert-info">ℹ️ Aucun cycle créé.</div>'; return;
+    }
+    const apsaMap = {};
+    tousLesApsa.forEach(a => apsaMap[a.id] = a);
+    const classeMap = {};
+    toutesLesClasses.forEach(c => classeMap[c.id] = c);
+
+    el.innerHTML = snap.docs.map(d => {
+      const cy = { id: d.id, ...d.data() };
+      const apsa   = apsaMap[cy.apsaId] || {};
+      const classe = classeMap[cy.classeId] || {};
+      const debut  = cy.dateDebut ? new Date(cy.dateDebut.seconds*1000).toLocaleDateString('fr-FR') : '—';
+      const fin    = cy.dateFin   ? new Date(cy.dateFin.seconds*1000).toLocaleDateString('fr-FR')   : '—';
+      return `
+        <div class="cycle-item ${cy.actif?'actif':''}">
+          <div class="cycle-info">
+            <div class="cycle-apsa-nom">${apsa.nom||cy.apsaId} — ${classe.nom||cy.classeId}</div>
+            <div class="cycle-classe-meta">${classe.niveau||'—'} · 📅 ${debut} → ${fin}</div>
+          </div>
+          <div style="display:flex;gap:.5rem;align-items:center;">
+            <span class="${cy.actif?'badge-niveau badge-A':'badge-niveau badge-NA'}">${cy.actif?'✓ ACTIF':'◑ INACTIF'}</span>
+            <button class="btn btn-ghost btn-sm" onclick="toggleCycle('${cy.id}',${cy.actif})">${cy.actif?'Désactiver':'Activer'}</button>
+            <button class="btn btn-danger btn-sm" onclick="supprimerCycle('${cy.id}')">🗑</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function ouvrirModalCycle() {
+    cycleEditId = null;
+    document.getElementById('cy-actif').checked = true;
+    ouvrirModal('modal-cycle-bg');
+  }
+
+  async function sauvegarderCycle() {
+    const classeId = document.getElementById('cy-classe').value;
+    const apsaId   = document.getElementById('cy-apsa').value;
+    const debutVal = document.getElementById('cy-debut').value;
+    const finVal   = document.getElementById('cy-fin').value;
+    const actif    = document.getElementById('cy-actif').checked;
+    if (!classeId||!apsaId) { showToast('⚠️ Choisissez une classe et une APSA', 'error'); return; }
+    try {
+      await db.collection('cycles').add({
+        classeId, apsaId, actif,
+        dateDebut:  debutVal ? firebase.firestore.Timestamp.fromDate(new Date(debutVal)) : null,
+        dateFin:    finVal   ? firebase.firestore.Timestamp.fromDate(new Date(finVal))   : null,
+        dateCreation: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      showToast('✓ Cycle créé !', 'success');
+      fermerModal('modal-cycle-bg');
+      chargerCycles();
+    } catch(e) { showToast('❌ ' + e.message, 'error'); }
+  }
+
+  async function toggleCycle(id, actif) {
+    await db.collection('cycles').doc(id).update({ actif: !actif });
+    showToast(`✓ Cycle ${!actif?'activé':'désactivé'}`, 'success');
+    chargerCycles();
+  }
+
+  async function supprimerCycle(id) {
+    if (!confirm('Supprimer ce cycle ?')) return;
+    await db.collection('cycles').doc(id).delete();
+    showToast('🗑 Cycle supprimé', 'success');
+    chargerCycles();
+  }
+
+  // ── Utilitaires ────────────────────────────────────────────
+  function ouvrirModal(id) { document.getElementById(id).classList.remove('hidden'); }
+  function fermerModal(id) { document.getElementById(id).classList.add('hidden'); }
+  ['modal-classe-bg','modal-eleve-bg','modal-import-bg','modal-cycle-bg'].forEach(id => {
+    document.getElementById(id)?.addEventListener('click', e => { if (e.target.id===id) fermerModal(id); });
+  });
+
+  function showToast(msg, type='success') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`; t.textContent = msg;
+    document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+  }
+
+  init();
+</script>
+</body>
+</html>

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ma fiche auto-évaluation — EPS</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .fiche-header {
+      background: linear-gradient(135deg, var(--navy), var(--blue));
+      color: var(--white);
+      border-radius: var(--radius);
+      padding: 1.5rem 2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .fiche-avatar {
+      width: 64px; height: 64px;
+      background: rgba(255,255,255,.15);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-h);
+      font-size: 1.4rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .fiche-info h1 { font-size: 1.5rem; color: var(--white); margin-bottom: .2rem; }
+    .fiche-info p  { color: rgba(255,255,255,.65); font-size: .9rem; }
+    .fiche-apsa-badge {
+      margin-left: auto;
+      background: var(--orange);
+      color: #fff;
+      padding: .5rem 1.2rem;
+      border-radius: 25px;
+      font-family: var(--font-h);
+      font-size: .9rem;
+      font-weight: 600;
+      letter-spacing: .05em;
+      text-align: center;
+    }
+    .fiche-apsa-badge small {
+      display: block;
+      font-family: var(--font-b);
+      font-size: .7rem;
+      opacity: .8;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    /* Légende niveaux */
+    .legende {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+      align-items: center;
+    }
+    .legende-label { font-size: .82rem; color: var(--gray-3); margin-right: .3rem; }
+
+    /* Objectif row amélioré */
+    .objectif-num {
+      width: 28px; height: 28px;
+      background: var(--navy);
+      color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-h);
+      font-size: .8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .objectif-content { display: flex; align-items: flex-start; gap: .7rem; }
+    .objectif-text-wrap { flex: 1; }
+
+    /* Bouton sauvegarder sticky */
+    .save-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--white);
+      border-top: 2px solid var(--gray-1);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      z-index: 50;
+      box-shadow: 0 -4px 20px rgba(0,0,0,.1);
+    }
+    .save-status { font-size: .85rem; color: var(--gray-3); }
+    .save-status.saved { color: var(--green); font-weight: 600; }
+
+    /* Historique */
+    .historique-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      color: var(--blue-lt);
+      cursor: pointer;
+      font-size: .88rem;
+      font-weight: 600;
+      background: none;
+      border: none;
+      margin-bottom: 1rem;
+    }
+    .historique-panel {
+      background: var(--gray-1);
+      border-radius: var(--radius);
+      padding: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    body { padding-bottom: 90px; }
+
+    /* Domaine badge couleur */
+    .domaine-tag {
+      display: inline-block;
+      background: rgba(27,79,138,.1);
+      color: var(--blue);
+      font-size: .72rem;
+      padding: .1rem .5rem;
+      border-radius: 4px;
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a href="classe.html" class="topbar-logo">← Retour</a>
+  <span class="topbar-title" id="topbar-title">Ma fiche EPS</span>
+</nav>
+
+<div class="container-sm" id="main-content">
+  <div class="loader-wrap" style="min-height:60vh">
+    <div class="spinner"></div>
+    <span>Chargement de ta fiche...</span>
+  </div>
+</div>
+
+<!-- Barre de sauvegarde -->
+<div class="save-bar">
+  <span class="save-status" id="save-status">Clique sur un niveau pour t'évaluer</span>
+  <button class="btn btn-success btn-lg" id="btn-save" onclick="sauvegarder()">
+    💾 Enregistrer
+  </button>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+  // ── Paramètres URL ─────────────────────────────────────────
+  const params  = new URLSearchParams(window.location.search);
+  const eleveId = params.get('eleveId');
+  const cycleId = params.get('cycleId');
+  const apsaId  = params.get('apsaId');
+  const niveau  = params.get('niveau'); // "6e","5e","4e","3e"
+
+  if (!eleveId || !cycleId || !apsaId) {
+    window.location.href = 'classe.html';
+  }
+
+  let evalActuelle = {}; // { objId: "NA"|"ECA"|"A"|"D" }
+  let eleve = null, apsa = null;
+  let modifie = false;
+
+  // ── Initialisation ─────────────────────────────────────────
+  async function init() {
+    try {
+      // Chargement parallèle
+      const [eleveDoc, apsaDoc, evalDoc] = await Promise.all([
+        db.collection('eleves').doc(eleveId).get(),
+        db.collection('apsa').doc(apsaId).get(),
+        getEvaluation(eleveId, cycleId)
+      ]);
+
+      if (!eleveDoc.exists) throw new Error("Élève introuvable");
+      if (!apsaDoc.exists)  throw new Error("APSA introuvable");
+
+      eleve = { id: eleveDoc.id, ...eleveDoc.data() };
+      apsa  = { id: apsaDoc.id,  ...apsaDoc.data() };
+
+      if (evalDoc) evalActuelle = evalDoc.resultats || {};
+
+      document.title = `${apsa.nom} — ${eleve.prenom} — EPS`;
+      document.getElementById('topbar-title').textContent = `${apsa.nom}`;
+
+      renderFiche();
+    } catch(e) {
+      document.getElementById('main-content').innerHTML =
+        `<div class="alert alert-error">❌ ${e.message}<br><br>
+         <a href="classe.html" class="btn btn-ghost">← Retour</a></div>`;
+    }
+  }
+
+  // ── Rendu de la fiche ──────────────────────────────────────
+  function renderFiche() {
+    const niveaux    = getNiveaux(niveau);
+    const initiales  = (eleve.prenom?.[0]||'') + (eleve.nom?.[0]||'');
+    const champLabel = window.CHAMPS_APPRENTISSAGE[apsa.champAppr] || apsa.champAppr || '';
+
+    // Regrouper objectifs par domaine
+    const parDomaine = {};
+    (apsa.objectifs || []).forEach(obj => {
+      const d = obj.domaine || 'Général';
+      if (!parDomaine[d]) parDomaine[d] = [];
+      parDomaine[d].push(obj);
+    });
+
+    let html = `
+      <!-- En-tête élève -->
+      <div class="fiche-header">
+        <div class="fiche-avatar">${initiales.toUpperCase()}</div>
+        <div class="fiche-info">
+          <h1>${eleve.prenom} ${eleve.nom.toUpperCase()}</h1>
+          <p>${eleve.classe || ''} · ${niveau} · ${window.ANNEE_SCOLAIRE}</p>
+        </div>
+        <div class="fiche-apsa-badge">
+          ${apsa.nom}
+          <small>${apsa.champAppr}</small>
+        </div>
+      </div>
+
+      <!-- Légende -->
+      <div class="legende">
+        <span class="legende-label">Niveaux :</span>
+        ${niveaux.map(n => `
+          <span class="badge-niveau badge-${n.code}">
+            ${n.icon} ${n.label}
+          </span>`).join('')}
+      </div>
+    `;
+
+    // Objectifs par domaine
+    if (Object.keys(parDomaine).length === 0) {
+      html += `<div class="alert alert-info">ℹ️ Aucun objectif configuré pour cette APSA. Contactez votre professeur.</div>`;
+    } else {
+      Object.entries(parDomaine).forEach(([domaine, objectifs]) => {
+        const domLabel = window.DOMAINES_SOCLE[domaine] || domaine;
+        html += `
+          <div class="domaine-section">
+            <div class="domaine-header">
+              <span class="domaine-code">${domaine}</span>
+              <span class="domaine-nom">${domLabel}</span>
+            </div>`;
+
+        objectifs.forEach((obj, i) => {
+          const num = obj.id || (i + 1);
+          const valActuelle = evalActuelle[`obj_${num}`] || '';
+          html += `
+            <div class="objectif-row" id="row-${num}">
+              <div class="objectif-content">
+                <div class="objectif-num">${num}</div>
+                <div class="objectif-text-wrap">
+                  <div class="objectif-label">${obj.texte}</div>
+                  <div class="objectif-domaine">
+                    <span class="domaine-tag">${domaine}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="niveau-buttons" id="btns-${num}">
+                ${niveaux.map(n => `
+                  <button
+                    class="niveau-btn ${valActuelle === n.code ? 'actif-'+n.code : ''}"
+                    onclick="setNiveau(${num}, '${n.code}', this)"
+                    title="${n.label}">
+                    ${n.icon} ${n.code}
+                  </button>`).join('')}
+              </div>
+            </div>`;
+        });
+
+        html += `</div>`;
+      });
+    }
+
+    // Champ commentaire
+    html += `
+      <div class="card mt-2">
+        <h3>💬 Commentaire (optionnel)</h3>
+        <textarea id="commentaire" placeholder="Mes ressentis, mes progrès, mes difficultés..."
+          oninput="marquerModifie()">${evalActuelle.commentaire || ''}</textarea>
+      </div>
+    `;
+
+    document.getElementById('main-content').innerHTML = html;
+  }
+
+  // ── Sélection d'un niveau ──────────────────────────────────
+  function setNiveau(objNum, code, btn) {
+    const key = `obj_${objNum}`;
+    evalActuelle[key] = code;
+
+    // Mise à jour visuelle
+    const btns = document.getElementById(`btns-${objNum}`);
+    btns.querySelectorAll('.niveau-btn').forEach(b => {
+      b.className = 'niveau-btn';
+    });
+    btn.classList.add('actif-' + code);
+
+    marquerModifie();
+  }
+
+  function marquerModifie() {
+    modifie = true;
+    const el = document.getElementById('save-status');
+    el.textContent = '● Modifications non enregistrées';
+    el.className = 'save-status';
+    el.style.color = 'var(--orange)';
+  }
+
+  // ── Sauvegarde ─────────────────────────────────────────────
+  async function sauvegarder() {
+    const btn = document.getElementById('btn-save');
+    const status = document.getElementById('save-status');
+    btn.disabled = true;
+    btn.textContent = '⏳ Enregistrement...';
+
+    const commentaire = document.getElementById('commentaire')?.value || '';
+    const resultats = { ...evalActuelle, commentaire };
+
+    try {
+      await sauvegarderEvaluation(eleveId, cycleId, apsaId, resultats);
+      modifie = false;
+      status.textContent = '✓ Enregistré à ' + new Date().toLocaleTimeString('fr-FR');
+      status.className = 'save-status saved';
+      showToast('✓ Évaluation enregistrée !', 'success');
+    } catch(e) {
+      status.textContent = '❌ Erreur : ' + e.message;
+      status.style.color = 'var(--red)';
+      showToast('❌ Erreur : ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '💾 Enregistrer';
+    }
+  }
+
+  // Avertir si on quitte sans sauvegarder
+  window.addEventListener('beforeunload', e => {
+    if (modifie) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  // ── Toast ──────────────────────────────────────────────────
+  function showToast(msg, type = 'success') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+  }
+
+  init();
+</script>
+</body>
+</html>
