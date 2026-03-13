@@ -177,26 +177,84 @@
 
 <!-- Modal Import liste élèves -->
 <div class="modal-bg hidden" id="modal-import-bg">
-  <div class="modal" style="max-width:600px;">
+  <div class="modal" style="max-width:640px;">
     <button class="modal-close" onclick="fermerModal('modal-import-bg')">✕</button>
     <h2>📋 Import liste d'élèves</h2>
+
     <div class="form-group">
       <label>Classe cible *</label>
       <select id="imp-classe"></select>
     </div>
-    <div class="form-group">
-      <label>Liste (un élève par ligne : Prénom NOM ou NOM Prénom)</label>
-      <textarea class="eleve-import-area" id="imp-texte"
-        placeholder="Exemple :
-Alice MARTIN
-Bob DUPONT
-Clara BERNARD
-..."></textarea>
+
+    <!-- Onglets mode -->
+    <div style="display:flex;gap:0;margin-bottom:1rem;border-bottom:2px solid var(--border);">
+      <button id="tab-pronote" onclick="switchImportTab('pronote')"
+        style="padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:4px 4px 0 0;cursor:pointer;font-weight:600;font-size:0.82rem;">
+        📂 Import ProNote (CSV)
+      </button>
+      <button id="tab-manuel" onclick="switchImportTab('manuel')"
+        style="padding:8px 18px;background:transparent;color:var(--text-muted);border:none;border-radius:4px 4px 0 0;cursor:pointer;font-size:0.82rem;">
+        ✏️ Saisie manuelle
+      </button>
     </div>
-    <p class="text-muted text-small">Les doublons seront ignorés automatiquement.</p>
+
+    <!-- Mode ProNote CSV -->
+    <div id="mode-pronote">
+      <div style="background:rgba(99,179,237,0.08);border:1px solid rgba(99,179,237,0.3);border-radius:6px;padding:12px 16px;margin-bottom:14px;font-size:0.8rem;color:rgba(240,240,255,0.75);line-height:1.6;">
+        📌 <strong style="color:#90cdf4">Export ProNote :</strong> Carnet de notes → Élèves → Exporter la liste → CSV (séparateur point-virgule).<br>
+        Les colonnes <strong>Élèves</strong> (NOM Prénom), <strong>Sexe</strong> sont importées automatiquement.
+      </div>
+
+      <!-- Zone drop ou clic -->
+      <div id="drop-zone" onclick="document.getElementById('inp-csv').click()"
+        style="border:2px dashed var(--border);border-radius:8px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px;"
+        ondragover="event.preventDefault();this.style.borderColor='var(--primary)'"
+        ondragleave="this.style.borderColor='var(--border)'"
+        ondrop="handleDrop(event)">
+        <div style="font-size:2rem;margin-bottom:8px;">📂</div>
+        <div style="font-weight:600;color:var(--creme);margin-bottom:4px;">Glisser-déposer le CSV ProNote</div>
+        <div style="font-size:0.75rem;color:var(--text-muted)">ou cliquer pour sélectionner le fichier</div>
+        <input type="file" id="inp-csv" accept=".csv" style="display:none" onchange="lireCSVPronote(this.files[0])">
+      </div>
+
+      <!-- Prévisualisation -->
+      <div id="pronote-preview" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div id="pronote-stats" style="font-size:0.82rem;color:var(--text-muted);"></div>
+          <button onclick="viderPreview()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.75rem;">✕ Annuler</button>
+        </div>
+        <div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.78rem;" id="pronote-table">
+            <thead style="position:sticky;top:0;background:#0d2545;">
+              <tr>
+                <th style="padding:8px 12px;text-align:left;color:var(--or-light);font-weight:600;border-bottom:1px solid var(--border);">Nom</th>
+                <th style="padding:8px 12px;text-align:left;color:var(--or-light);font-weight:600;border-bottom:1px solid var(--border);">Prénom</th>
+                <th style="padding:8px 12px;text-align:left;color:var(--or-light);font-weight:600;border-bottom:1px solid var(--border);">Genre</th>
+              </tr>
+            </thead>
+            <tbody id="pronote-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mode Manuel -->
+    <div id="mode-manuel" style="display:none;">
+      <div class="form-group" style="margin-bottom:0">
+        <label>Un élève par ligne : <code style="font-size:0.8rem;background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:3px;">NOM Prénom</code> ou <code style="font-size:0.8rem;background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:3px;">Prénom NOM</code></label>
+        <textarea class="eleve-import-area" id="imp-texte"
+          placeholder="Exemple :
+MARTIN Alice
+DUPONT Bob
+BERNARD Clara
+..."></textarea>
+      </div>
+    </div>
+
+    <p class="text-muted text-small" style="margin-top:10px;">Les doublons (même nom + prénom dans la même classe) sont ignorés automatiquement.</p>
     <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
       <button class="btn btn-ghost" onclick="fermerModal('modal-import-bg')">Annuler</button>
-      <button class="btn btn-primary" onclick="importerEleves()">⬆️ Importer</button>
+      <button class="btn btn-primary" id="btn-importer" onclick="importerEleves()">⬆️ Importer</button>
     </div>
   </div>
 </div>
@@ -389,43 +447,198 @@ Clara BERNARD
   }
 
   // ── IMPORT élèves ──────────────────────────────────────────
+  // ── Import modal ───────────────────────────────────────────
+  let pronoteEleves = []; // élèves parsés depuis CSV ProNote
+  let importTab = 'pronote';
+
   function ouvrirModalImport() {
     const sel = document.getElementById('select-classe-eleves');
-    document.getElementById('imp-classe').value = sel?.value || '';
+    const impSel = document.getElementById('imp-classe');
+    if (sel?.value) impSel.value = sel.value;
     document.getElementById('imp-texte').value = '';
+    viderPreview();
+    switchImportTab('pronote');
     ouvrirModal('modal-import-bg');
   }
 
+  function switchImportTab(tab) {
+    importTab = tab;
+    document.getElementById('mode-pronote').style.display = tab === 'pronote' ? 'block' : 'none';
+    document.getElementById('mode-manuel').style.display  = tab === 'manuel'  ? 'block' : 'none';
+    const tP = document.getElementById('tab-pronote');
+    const tM = document.getElementById('tab-manuel');
+    tP.style.background = tab === 'pronote' ? 'var(--primary)' : 'transparent';
+    tP.style.color      = tab === 'pronote' ? '#fff' : 'var(--text-muted)';
+    tM.style.background = tab === 'manuel'  ? 'var(--primary)' : 'transparent';
+    tM.style.color      = tab === 'manuel'  ? '#fff' : 'var(--text-muted)';
+  }
+
+  // ── CSV ProNote ─────────────────────────────────────────────
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').style.borderColor = 'var(--border)';
+    const file = e.dataTransfer.files[0];
+    if (file) lireCSVPronote(file);
+  }
+
+  function lireCSVPronote(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        // Supprime le BOM UTF-8 si présent
+        let text = e.target.result.replace(/^\uFEFF/, '');
+        // Détecte séparateur (ProNote = ; )
+        const sep = text.includes(';') ? ';' : ',';
+        const lignes = text.split(/\r?\n/).filter(l => l.trim());
+        if (lignes.length < 2) throw new Error('Fichier vide ou format incorrect');
+
+        // Trouve les indices des colonnes
+        const headers = parseCSVLine(lignes[0], sep).map(h => h.trim().toLowerCase());
+        const iEleve  = headers.findIndex(h => h.includes('élève') || h.includes('eleve') || h === 'nom');
+        const iSexe   = headers.findIndex(h => h.includes('sexe'));
+        if (iEleve === -1) throw new Error('Colonne "Élèves" introuvable');
+
+        pronoteEleves = [];
+        const tbody = document.getElementById('pronote-tbody');
+        tbody.innerHTML = '';
+
+        for (let i = 1; i < lignes.length; i++) {
+          const cols = parseCSVLine(lignes[i], sep);
+          const eleveRaw = (cols[iEleve] || '').trim();
+          if (!eleveRaw) continue;
+
+          // ProNote : "NOM Prénom" → tout en MAJ = nom jusqu'au premier mot minuscule
+          const { nom, prenom } = splitNomPrenom(eleveRaw);
+          const sexeRaw = iSexe !== -1 ? (cols[iSexe] || '').trim() : '';
+          const genre   = sexeRaw.toLowerCase().startsWith('f') ? 'F' : sexeRaw.toLowerCase().startsWith('m') ? 'M' : '';
+
+          pronoteEleves.push({ nom, prenom, genre });
+
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid rgba(240,234,216,0.05)';
+          const badgeGenre = genre === 'F'
+            ? '<span style="background:rgba(236,72,153,0.15);color:#f9a8d4;padding:2px 7px;border-radius:3px;font-size:0.72rem;">♀ F</span>'
+            : genre === 'M'
+            ? '<span style="background:rgba(59,130,246,0.15);color:#93c5fd;padding:2px 7px;border-radius:3px;font-size:0.72rem;">♂ M</span>'
+            : '<span style="color:var(--text-muted);font-size:0.72rem;">—</span>';
+          tr.innerHTML = `
+            <td style="padding:7px 12px;color:rgba(240,234,216,0.85);font-weight:600;">${nom}</td>
+            <td style="padding:7px 12px;color:rgba(240,234,216,0.75);">${prenom}</td>
+            <td style="padding:7px 12px;">${badgeGenre}</td>`;
+          tbody.appendChild(tr);
+        }
+
+        document.getElementById('pronote-stats').textContent =
+          `✅ ${pronoteEleves.length} élève${pronoteEleves.length > 1 ? 's' : ''} détecté${pronoteEleves.length > 1 ? 's' : ''} · Source : ${file.name}`;
+        document.getElementById('pronote-preview').style.display = 'block';
+        document.getElementById('drop-zone').style.display = 'none';
+
+      } catch (err) {
+        showToast('❌ Erreur CSV : ' + err.message, 'error');
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  function parseCSVLine(line, sep) {
+    // Gère les champs entre guillemets
+    const result = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === sep && !inQ) { result.push(cur); cur = ''; }
+      else { cur += c; }
+    }
+    result.push(cur);
+    return result;
+  }
+
+  function splitNomPrenom(raw) {
+    // ProNote exporte "NOM COMPOSE Prénom" ou "NOM Prénom"
+    // Les noms de famille sont en MAJUSCULES, le prénom commence par une majuscule
+    const parts = raw.trim().split(/\s+/);
+    // Cherche le premier mot qui n'est pas tout en majuscules → début du prénom
+    let split = parts.length - 1; // par défaut le dernier mot est le prénom
+    for (let i = 0; i < parts.length; i++) {
+      // Un mot est "prénom" s'il contient au moins une minuscule
+      if (/[a-zàâäéèêëîïôùûü]/.test(parts[i])) { split = i; break; }
+    }
+    const nom    = parts.slice(0, split).join(' ');
+    const prenom = parts.slice(split).join(' ');
+    return { nom: nom || raw, prenom: prenom || '' };
+  }
+
+  function viderPreview() {
+    pronoteEleves = [];
+    document.getElementById('pronote-preview').style.display = 'none';
+    document.getElementById('drop-zone').style.display = 'block';
+    document.getElementById('inp-csv').value = '';
+    document.getElementById('pronote-tbody').innerHTML = '';
+  }
+
+  // ── Import final ────────────────────────────────────────────
   async function importerEleves() {
     const classeId = document.getElementById('imp-classe').value;
-    const texte    = document.getElementById('imp-texte').value;
     const classe   = toutesLesClasses.find(c => c.id === classeId);
-    if (!classeId || !texte.trim()) { showToast('⚠️ Sélectionnez une classe et entrez la liste', 'error'); return; }
+    if (!classeId) { showToast('⚠️ Sélectionnez une classe cible', 'error'); return; }
 
-    const lignes = texte.split('\n').map(l => l.trim()).filter(l => l);
-    let ok = 0, erreurs = 0;
+    let elevesList = [];
 
-    for (const ligne of lignes) {
-      const parts = ligne.split(/\s+/);
-      if (parts.length < 2) { erreurs++; continue; }
-      // Détection majuscules = nom de famille
-      let prenom, nom;
-      if (parts[0] === parts[0].toUpperCase() && parts[0].length > 1) {
-        nom = parts[0]; prenom = parts.slice(1).join(' ');
-      } else {
-        prenom = parts[0]; nom = parts.slice(1).join(' ').toUpperCase();
+    if (importTab === 'pronote') {
+      if (pronoteEleves.length === 0) { showToast('⚠️ Aucun fichier CSV chargé', 'error'); return; }
+      elevesList = pronoteEleves;
+    } else {
+      const texte = document.getElementById('imp-texte').value;
+      if (!texte.trim()) { showToast('⚠️ Entrez au moins un élève', 'error'); return; }
+      const lignes = texte.split('\n').map(l => l.trim()).filter(l => l);
+      for (const ligne of lignes) {
+        const parts = ligne.split(/\s+/);
+        if (parts.length < 2) continue;
+        let nom, prenom;
+        if (/^[A-ZÀÂÄÉÈÊËÎÏÔÙÛÜ\- ]+$/.test(parts[0])) {
+          nom = parts[0]; prenom = parts.slice(1).join(' ');
+        } else {
+          prenom = parts[0]; nom = parts.slice(1).join(' ').toUpperCase();
+        }
+        elevesList.push({ nom, prenom, genre: '' });
       }
+    }
+
+    const btn = document.getElementById('btn-importer');
+    btn.disabled = true; btn.textContent = '⏳ Import…';
+
+    // Récupère les élèves existants pour éviter doublons
+    const existants = await getEleves(classeId);
+    const dejaDans = new Set(existants.map(e => (e.nom + '|' + e.prenom).toLowerCase()));
+
+    let ok = 0, doublons = 0, erreurs = 0;
+    for (const { nom, prenom, genre } of elevesList) {
+      const cle = (nom + '|' + prenom).toLowerCase();
+      if (dejaDans.has(cle)) { doublons++; continue; }
       try {
         await dbPush('eleves', {
-          prenom, nom, classeId,
-          classe: classe?.nom||'', niveau: classe?.niveau||'',
+          prenom, nom,
+          genre: genre || '',
+          classeId,
+          classe: classe?.nom || '',
+          niveau: classe?.niveau || '',
           dateAjout: new Date().toISOString()
         });
         ok++;
       } catch { erreurs++; }
     }
-    showToast(`✓ ${ok} élève${ok>1?'s':''} importé${ok>1?'s':''}${erreurs?` (${erreurs} erreur${erreurs>1?'s':''})`:''}`,'success');
+
+    btn.disabled = false; btn.textContent = '⬆️ Importer';
+
+    let msg = `✓ ${ok} élève${ok > 1 ? 's' : ''} importé${ok > 1 ? 's' : ''}`;
+    if (doublons) msg += ` · ${doublons} doublon${doublons > 1 ? 's' : ''} ignoré${doublons > 1 ? 's' : ''}`;
+    if (erreurs)  msg += ` · ${erreurs} erreur${erreurs > 1 ? 's' : ''}`;
+    showToast(msg, ok > 0 ? 'success' : 'error');
+
     fermerModal('modal-import-bg');
+    viderPreview();
     document.getElementById('select-classe-eleves').value = classeId;
     chargerElevesClasse(classeId);
   }
