@@ -380,7 +380,7 @@ async function init() {
     statsEleves = tousElevesArr.length;
 
     // Charger ou initialiser la programmation
-    const [progFirebase] = await Promise.all([dbGet('programmation')]);
+    let progFirebase = await dbGet('programmation');
     toutesClassesCache = classes;
     tousCyclesCache    = tousCycles;
     if (!progFirebase || Object.keys(progFirebase).length === 0) {
