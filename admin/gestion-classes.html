@@ -275,11 +275,22 @@ BERNARD Clara
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
       <div class="form-group">
         <label>Date de début</label>
-        <input type="date" id="cy-debut">
+        <input type="date" id="cy-debut" oninput="calculerSeances()">
       </div>
       <div class="form-group">
         <label>Date de fin</label>
-        <input type="date" id="cy-fin">
+        <input type="date" id="cy-fin" oninput="calculerSeances()">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group">
+        <label>Nombre de séances
+          <span style="font-size:.72rem;color:var(--gray-3);font-weight:400"> (1/semaine · Zone C · calculé auto)</span>
+        </label>
+        <input type="number" id="cy-seances" min="1" max="40" placeholder="Ex : 12" style="font-size:1.05rem;font-weight:700;">
+      </div>
+      <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:.1rem;">
+        <div id="cy-seances-info" style="font-size:.78rem;color:var(--gray-3);line-height:1.5;"></div>
       </div>
     </div>
     <div class="form-group">
@@ -680,21 +691,85 @@ BERNARD Clara
   function ouvrirModalCycle() {
     cycleEditId = null;
     document.getElementById('cy-actif').checked = true;
+    document.getElementById('cy-seances').value = '';
+    document.getElementById('cy-seances-info').textContent = '';
     ouvrirModal('modal-cycle-bg');
   }
 
+  // ── Vacances scolaires Zone C 2025-2026 ────────────────────
+  const VACANCES_ZONE_C = [
+    { debut: '2025-10-18', fin: '2025-11-02', label: 'Toussaint' },
+    { debut: '2025-12-20', fin: '2026-01-04', label: 'Noël' },
+    { debut: '2026-02-14', fin: '2026-03-01', label: 'Hiver' },
+    { debut: '2026-04-25', fin: '2026-05-10', label: 'Printemps' },
+    { debut: '2026-07-04', fin: '2026-09-01', label: 'Été' }
+  ];
+
+  function calculerSeances() {
+    const debutStr = document.getElementById('cy-debut').value;
+    const finStr   = document.getElementById('cy-fin').value;
+    const info     = document.getElementById('cy-seances-info');
+    const input    = document.getElementById('cy-seances');
+
+    if (!debutStr || !finStr) { info.textContent = ''; return; }
+
+    const debut = new Date(debutStr);
+    const fin   = new Date(finStr);
+    if (fin <= debut) { info.textContent = '⚠️ La date de fin doit être après le début'; return; }
+
+    // Compter les semaines entre les deux dates en excluant les vacances
+    let semaines = 0;
+    let vacancesCoupees = [];
+    let cur = new Date(debut);
+
+    // On avance semaine par semaine (lundi)
+    // Trouver le lundi de la semaine de début
+    const jourSemaine = cur.getDay();
+    const offsetLundi = jourSemaine === 0 ? -6 : 1 - jourSemaine;
+    cur.setDate(cur.getDate() + offsetLundi);
+    if (cur < debut) cur.setDate(cur.getDate() + 7);
+
+    while (cur <= fin) {
+      // Vérifier si cette semaine (lundi) est en vacances
+      const estVac = VACANCES_ZONE_C.find(v => {
+        const vd = new Date(v.debut);
+        const vf = new Date(v.fin);
+        return cur >= vd && cur <= vf;
+      });
+      if (estVac) {
+        if (!vacancesCoupees.includes(estVac.label)) vacancesCoupees.push(estVac.label);
+      } else {
+        semaines++;
+      }
+      cur.setDate(cur.getDate() + 7);
+    }
+
+    // Nombre de semaines total brut
+    const joursTotal = Math.round((fin - debut) / (1000 * 60 * 60 * 24));
+    const semainesTotal = Math.round(joursTotal / 7);
+
+    info.innerHTML = `<strong>${semaines} séance${semaines>1?'s':''}</strong> estimée${semaines>1?'s':''}<br>
+      <span style="color:#64748b">${semainesTotal} semaines · ${joursTotal} jours</span><br>
+      ${vacancesCoupees.length ? `<span style="color:#f59e0b">✂ ${vacancesCoupees.join(', ')}</span>` : '<span style="color:#22c55e">✓ Pas de vacances</span>'}`;
+
+    // Pré-remplir si pas encore saisi manuellement
+    if (!input.value) input.value = semaines;
+  }
+
   async function sauvegarderCycle() {
-    const classeId = document.getElementById('cy-classe').value;
-    const apsaId   = document.getElementById('cy-apsa').value;
-    const debutVal = document.getElementById('cy-debut').value;
-    const finVal   = document.getElementById('cy-fin').value;
-    const actif    = document.getElementById('cy-actif').checked;
+    const classeId  = document.getElementById('cy-classe').value;
+    const apsaId    = document.getElementById('cy-apsa').value;
+    const debutVal  = document.getElementById('cy-debut').value;
+    const finVal    = document.getElementById('cy-fin').value;
+    const actif     = document.getElementById('cy-actif').checked;
+    const nbSeances = parseInt(document.getElementById('cy-seances').value) || null;
     if (!classeId||!apsaId) { showToast('⚠️ Choisissez une classe et une APSA', 'error'); return; }
     try {
       await dbPush('cycles', {
         classeId, apsaId, actif,
-        dateDebut:  debutVal || null,
-        dateFin:    finVal   || null,
+        dateDebut:  debutVal  || null,
+        dateFin:    finVal    || null,
+        nbSeances:  nbSeances || null,
         dateCreation: new Date().toISOString()
       });
       showToast('✓ Cycle créé !', 'success');
