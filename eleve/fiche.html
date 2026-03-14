@@ -6,125 +6,170 @@
   <title>Ma fiche auto-évaluation — EPS</title>
   <link rel="stylesheet" href="../assets/style.css">
   <style>
+    body { padding-bottom: 90px; }
+
     .fiche-header {
       background: linear-gradient(135deg, var(--navy), var(--blue));
       color: var(--white);
       border-radius: var(--radius);
       padding: 1.5rem 2rem;
       margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      flex-wrap: wrap;
+      display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
     }
     .fiche-avatar {
-      width: 64px; height: 64px;
-      background: rgba(255,255,255,.15);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-h);
-      font-size: 1.4rem;
-      font-weight: 700;
-      flex-shrink: 0;
+      width: 64px; height: 64px; background: rgba(255,255,255,.15);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-h); font-size: 1.4rem; font-weight: 700; flex-shrink: 0;
     }
     .fiche-info h1 { font-size: 1.5rem; color: var(--white); margin-bottom: .2rem; }
     .fiche-info p  { color: rgba(255,255,255,.65); font-size: .9rem; }
     .fiche-apsa-badge {
-      margin-left: auto;
-      background: var(--orange);
-      color: #fff;
-      padding: .5rem 1.2rem;
-      border-radius: 25px;
-      font-family: var(--font-h);
-      font-size: .9rem;
-      font-weight: 600;
-      letter-spacing: .05em;
-      text-align: center;
+      margin-left: auto; background: var(--orange); color: #fff;
+      padding: .5rem 1.2rem; border-radius: 25px;
+      font-family: var(--font-h); font-size: .9rem; font-weight: 600;
+      letter-spacing: .05em; text-align: center;
     }
-    .fiche-apsa-badge small {
-      display: block;
-      font-family: var(--font-b);
-      font-size: .7rem;
-      opacity: .8;
-      font-weight: 400;
-      letter-spacing: 0;
+    .fiche-apsa-badge small { display: block; font-family: var(--font-b); font-size: .7rem; opacity: .8; font-weight: 400; }
+
+    /* Domaine header */
+    .domaine-header {
+      display: flex; align-items: center; gap: .8rem;
+      background: var(--navy); color: #fff;
+      border-radius: 8px; padding: .7rem 1.2rem;
+      margin: 1.2rem 0 .5rem;
+    }
+    .domaine-code {
+      background: rgba(255,255,255,.2); padding: .25rem .7rem;
+      border-radius: 6px; font-family: var(--font-h); font-size: .85rem; font-weight: 700;
+    }
+    .domaine-nom { font-size: .9rem; opacity: .85; }
+
+    /* Accordéon objectif */
+    .obj-accordion {
+      border: 2px solid var(--gray-1);
+      border-radius: 10px;
+      margin-bottom: .6rem;
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .obj-accordion.selected-NA  { border-color: #ef4444; }
+    .obj-accordion.selected-ECA { border-color: #f59e0b; }
+    .obj-accordion.selected-A   { border-color: #22c55e; }
+    .obj-accordion.selected-D   { border-color: #8b5cf6; }
+
+    .obj-trigger {
+      width: 100%; background: var(--white); border: none;
+      padding: .9rem 1.1rem; cursor: pointer;
+      display: flex; align-items: center; gap: .8rem;
+      text-align: left; transition: background .15s;
+    }
+    .obj-trigger:hover { background: var(--gray-1); }
+    .obj-trigger.open  { background: var(--gray-1); }
+
+    .obj-num {
+      width: 30px; height: 30px; background: var(--navy); color: #fff;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-h); font-size: .8rem; font-weight: 700; flex-shrink: 0;
+    }
+    .obj-label-text { flex: 1; font-size: .9rem; font-weight: 600; color: var(--navy); }
+    .obj-current-badge {
+      font-size: .75rem; font-weight: 700; padding: .2rem .7rem;
+      border-radius: 20px; flex-shrink: 0;
+    }
+    .badge-NA-pill  { background: rgba(239,68,68,.12);  color: #ef4444; }
+    .badge-ECA-pill { background: rgba(245,158,11,.12); color: #d97706; }
+    .badge-A-pill   { background: rgba(34,197,94,.12);  color: #16a34a; }
+    .badge-D-pill   { background: rgba(139,92,246,.12); color: #7c3aed; }
+    .badge-vide-pill { background: var(--gray-1); color: var(--gray-3); }
+    .obj-arrow { color: var(--gray-3); font-size: .7rem; flex-shrink: 0; transition: transform .2s; }
+    .obj-arrow.open { transform: rotate(90deg); }
+
+    /* Panneau dépliable */
+    .obj-panel { display: none; border-top: 1px solid var(--gray-1); }
+    .obj-panel.open { display: block; }
+
+    /* Tableau descripteurs */
+    .desc-table {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--gray-1);
+    }
+    .desc-col {
+      padding: .9rem .8rem;
+      border-right: 1px solid var(--gray-1);
+      cursor: pointer;
+      transition: background .15s;
+      position: relative;
+    }
+    .desc-col:last-child { border-right: none; }
+    .desc-col:hover { background: var(--gray-1); }
+    .desc-col.actif-NA  { background: rgba(239,68,68,.06);  }
+    .desc-col.actif-ECA { background: rgba(245,158,11,.06); }
+    .desc-col.actif-A   { background: rgba(34,197,94,.06);  }
+    .desc-col.actif-D   { background: rgba(139,92,246,.06); }
+
+    .desc-col-header {
+      display: flex; flex-direction: column; align-items: center;
+      margin-bottom: .6rem; gap: .3rem;
+    }
+    .desc-col-icon { font-size: 1.3rem; }
+    .desc-col-code {
+      font-family: var(--font-h); font-size: .8rem; font-weight: 700;
+      padding: .15rem .5rem; border-radius: 4px;
+    }
+    .code-NA  { background: rgba(239,68,68,.12);  color: #ef4444; }
+    .code-ECA { background: rgba(245,158,11,.12); color: #d97706; }
+    .code-A   { background: rgba(34,197,94,.12);  color: #16a34a; }
+    .code-D   { background: rgba(139,92,246,.12); color: #7c3aed; }
+
+    .desc-col-text {
+      font-size: .78rem; color: var(--gray-4); line-height: 1.45;
+      min-height: 48px;
+    }
+    .desc-col-text.empty { color: var(--gray-2); font-style: italic; }
+
+    .desc-col-select {
+      margin-top: .8rem;
+      width: 100%; padding: .4rem; border-radius: 6px;
+      font-size: .78rem; font-weight: 700; border: 2px solid transparent;
+      cursor: pointer; transition: all .15s;
+    }
+    .desc-col-select.btn-NA  { background: rgba(239,68,68,.08);  color: #ef4444; border-color: #ef4444; }
+    .desc-col-select.btn-ECA { background: rgba(245,158,11,.08); color: #d97706; border-color: #f59e0b; }
+    .desc-col-select.btn-A   { background: rgba(34,197,94,.08);  color: #16a34a; border-color: #22c55e; }
+    .desc-col-select.btn-D   { background: rgba(139,92,246,.08); color: #7c3aed; border-color: #8b5cf6; }
+    .desc-col-select.actif   { filter: brightness(.85); transform: scale(.97); }
+
+    /* Checkmark sélection */
+    .desc-col::after {
+      content: ''; position: absolute; top: .5rem; right: .5rem;
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid var(--gray-2); background: white;
+      transition: all .15s;
+    }
+    .desc-col.actif-NA::after  { background: #ef4444; border-color: #ef4444; content: '✓'; color: white; display: flex; align-items: center; justify-content: center; font-size: .65rem; font-weight: 700; }
+    .desc-col.actif-ECA::after { background: #f59e0b; border-color: #f59e0b; content: '✓'; color: white; display: flex; align-items: center; justify-content: center; font-size: .65rem; font-weight: 700; }
+    .desc-col.actif-A::after   { background: #22c55e; border-color: #22c55e; content: '✓'; color: white; display: flex; align-items: center; justify-content: center; font-size: .65rem; font-weight: 700; }
+    .desc-col.actif-D::after   { background: #8b5cf6; border-color: #8b5cf6; content: '✓'; color: white; display: flex; align-items: center; justify-content: center; font-size: .65rem; font-weight: 700; }
+
+    /* Instruction sous le tableau */
+    .obj-hint { padding: .5rem 1rem; font-size: .75rem; color: var(--gray-3); background: var(--gray-1); }
+
+    @media (max-width: 600px) {
+      .desc-table { grid-template-columns: repeat(2, 1fr); }
+      .desc-col:nth-child(2) { border-right: none; }
+      .desc-col:nth-child(3) { border-top: 1px solid var(--gray-1); }
     }
 
-    /* Légende niveaux */
-    .legende {
-      display: flex;
-      gap: .5rem;
-      flex-wrap: wrap;
-      margin-bottom: 1.5rem;
-      align-items: center;
-    }
-    .legende-label { font-size: .82rem; color: var(--gray-3); margin-right: .3rem; }
-
-    /* Objectif row amélioré */
-    .objectif-num {
-      width: 28px; height: 28px;
-      background: var(--navy);
-      color: #fff;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-h);
-      font-size: .8rem;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-    .objectif-content { display: flex; align-items: flex-start; gap: .7rem; }
-    .objectif-text-wrap { flex: 1; }
-
-    /* Bouton sauvegarder sticky */
+    /* Save bar */
     .save-bar {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      background: var(--white);
-      border-top: 2px solid var(--gray-1);
-      padding: 1rem 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      z-index: 50;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--white); border-top: 2px solid var(--gray-1);
+      padding: 1rem 1.5rem; display: flex; align-items: center;
+      justify-content: space-between; gap: 1rem; z-index: 50;
       box-shadow: 0 -4px 20px rgba(0,0,0,.1);
     }
     .save-status { font-size: .85rem; color: var(--gray-3); }
     .save-status.saved { color: var(--green); font-weight: 600; }
-
-    /* Historique */
-    .historique-toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: .5rem;
-      color: var(--blue-lt);
-      cursor: pointer;
-      font-size: .88rem;
-      font-weight: 600;
-      background: none;
-      border: none;
-      margin-bottom: 1rem;
-    }
-    .historique-panel {
-      background: var(--gray-1);
-      border-radius: var(--radius);
-      padding: 1.2rem;
-      margin-bottom: 1.5rem;
-    }
-
-    body { padding-bottom: 90px; }
-
-    /* Domaine badge couleur */
-    .domaine-tag {
-      display: inline-block;
-      background: rgba(27,79,138,.1);
-      color: var(--blue);
-      font-size: .72rem;
-      padding: .1rem .5rem;
-      border-radius: 4px;
-      font-weight: 700;
-      letter-spacing: .04em;
-    }
   </style>
 </head>
 <body>
@@ -141,55 +186,48 @@
   </div>
 </div>
 
-<!-- Barre de sauvegarde -->
 <div class="save-bar">
   <span class="save-status" id="save-status">Clique sur un niveau pour t'évaluer</span>
-  <button class="btn btn-success btn-lg" id="btn-save" onclick="sauvegarder()">
-    💾 Enregistrer
-  </button>
+  <button class="btn btn-success btn-lg" id="btn-save" onclick="sauvegarder()">💾 Enregistrer</button>
 </div>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
-  // ── Paramètres URL ─────────────────────────────────────────
   const params  = new URLSearchParams(window.location.search);
   const eleveId = params.get('eleveId');
   const cycleId = params.get('cycleId');
   const apsaId  = params.get('apsaId');
-  const niveau  = params.get('niveau'); // "6e","5e","4e","3e"
+  const niveau  = params.get('niveau');
 
-  if (!eleveId || !cycleId || !apsaId) {
-    window.location.href = 'classe.html';
-  }
+  if (!eleveId || !cycleId || !apsaId) window.location.href = 'classe.html';
 
-  let evalActuelle = {}; // { objId: "NA"|"ECA"|"A"|"D" }
+  let evalActuelle = {};
   let eleve = null, apsa = null;
   let modifie = false;
 
-  // ── Initialisation ─────────────────────────────────────────
+  const NIVEAUX_CONF = {
+    NA:  { icon: '✕', label: 'Non Acquis',          couleur: '#ef4444' },
+    ECA: { icon: '⊙', label: "En cours d'acquisition", couleur: '#f59e0b' },
+    A:   { icon: '✓', label: 'Acquis',               couleur: '#22c55e' },
+    D:   { icon: '★', label: 'Dépassé',              couleur: '#8b5cf6' }
+  };
+
   async function init() {
     try {
-      // Chargement parallèle
       const [eleveData, apsaData, evalDoc] = await Promise.all([
         dbGet('eleves/' + eleveId),
         dbGet('apsa/' + apsaId),
         getEvaluation(eleveId, cycleId)
       ]);
-
       if (!eleveData) throw new Error("Élève introuvable");
       if (!apsaData)  throw new Error("APSA introuvable");
-
       eleve = { id: eleveId, ...eleveData };
       apsa  = { id: apsaId,  ...apsaData };
-
       if (evalDoc) evalActuelle = evalDoc.resultats || {};
-
       document.title = `${apsa.nom} — ${eleve.prenom} — EPS`;
-      document.getElementById('topbar-title').textContent = `${apsa.nom}`;
-
+      document.getElementById('topbar-title').textContent = apsa.nom;
       renderFiche();
     } catch(e) {
       document.getElementById('main-content').innerHTML =
@@ -198,9 +236,8 @@
     }
   }
 
-  // ── Rendu de la fiche ──────────────────────────────────────
   function renderFiche() {
-    const niveaux    = getNiveaux(niveau);
+    const niveauKeys = niveau === '6e' ? ['NA','ECA','A'] : ['NA','ECA','A','D'];
     const initiales  = (eleve.prenom?.[0]||'') + (eleve.nom?.[0]||'');
     const champLabel = window.CHAMPS_APPRENTISSAGE[apsa.champAppr] || apsa.champAppr || '';
 
@@ -213,30 +250,15 @@
     });
 
     let html = `
-      <!-- En-tête élève -->
       <div class="fiche-header">
         <div class="fiche-avatar">${initiales.toUpperCase()}</div>
         <div class="fiche-info">
           <h1>${eleve.prenom} ${eleve.nom.toUpperCase()}</h1>
           <p>${eleve.classe || ''} · ${niveau} · ${window.ANNEE_SCOLAIRE}</p>
         </div>
-        <div class="fiche-apsa-badge">
-          ${apsa.nom}
-          <small>${apsa.champAppr}</small>
-        </div>
-      </div>
+        <div class="fiche-apsa-badge">${apsa.nom}<small>${apsa.champAppr}</small></div>
+      </div>`;
 
-      <!-- Légende -->
-      <div class="legende">
-        <span class="legende-label">Niveaux :</span>
-        ${niveaux.map(n => `
-          <span class="badge-niveau badge-${n.code}">
-            ${n.icon} ${n.label}
-          </span>`).join('')}
-      </div>
-    `;
-
-    // Objectifs par domaine
     if (Object.keys(parDomaine).length === 0) {
       html += `<div class="alert alert-info">ℹ️ Aucun objectif configuré pour cette APSA. Contactez votre professeur.</div>`;
     } else {
@@ -251,26 +273,39 @@
 
         objectifs.forEach((obj, i) => {
           const num = obj.id || (i + 1);
-          const valActuelle = evalActuelle[`obj_${num}`] || '';
+          const codeActuel = evalActuelle[`obj_${num}`] || '';
+          const badgeClass = codeActuel ? `badge-${codeActuel}-pill` : 'badge-vide-pill';
+          const badgeText  = codeActuel ? `${NIVEAUX_CONF[codeActuel]?.icon} ${codeActuel}` : '— Non évalué';
+          const d = obj.descripteurs || {};
+
           html += `
-            <div class="objectif-row" id="row-${num}">
-              <div class="objectif-content">
-                <div class="objectif-num">${num}</div>
-                <div class="objectif-text-wrap">
-                  <div class="objectif-label">${obj.texte}</div>
-                  <div class="objectif-domaine">
-                    <span class="domaine-tag">${domaine}</span>
-                  </div>
+            <div class="obj-accordion ${codeActuel ? 'selected-'+codeActuel : ''}" id="acc-${num}">
+              <button class="obj-trigger" id="trigger-${num}" onclick="toggleAccordion('${num}')">
+                <div class="obj-num">${num}</div>
+                <div class="obj-label-text">${obj.texte}</div>
+                <span class="obj-current-badge ${badgeClass}" id="badge-${num}">${badgeText}</span>
+                <span class="obj-arrow" id="arrow-${num}">▶</span>
+              </button>
+              <div class="obj-panel" id="panel-${num}">
+                <div class="desc-table">
+                  ${niveauKeys.map(code => {
+                    const conf = NIVEAUX_CONF[code];
+                    const texteDesc = d[code] || '';
+                    const isActif = codeActuel === code;
+                    return `
+                      <div class="desc-col ${isActif ? 'actif-'+code : ''}" id="col-${num}-${code}"
+                           onclick="setNiveau('${num}', '${code}')">
+                        <div class="desc-col-header">
+                          <span class="desc-col-icon">${conf.icon}</span>
+                          <span class="desc-col-code code-${code}">${code === 'D' ? 'Dépassé' : code}</span>
+                        </div>
+                        <div class="desc-col-text${texteDesc ? '' : ' empty'}">
+                          ${texteDesc || 'Pas de descripteur'}
+                        </div>
+                      </div>`;
+                  }).join('')}
                 </div>
-              </div>
-              <div class="niveau-buttons" id="btns-${num}">
-                ${niveaux.map(n => `
-                  <button
-                    class="niveau-btn ${valActuelle === n.code ? 'actif-'+n.code : ''}"
-                    onclick="setNiveau('${num}', '${n.code}', this)"
-                    title="${n.label}">
-                    ${n.icon} ${n.code}
-                  </button>`).join('')}
+                <div class="obj-hint">👆 Clique sur la colonne qui te correspond le mieux</div>
               </div>
             </div>`;
         });
@@ -279,31 +314,73 @@
       });
     }
 
-    // Champ commentaire
     html += `
       <div class="card mt-2">
         <h3>💬 Commentaire (optionnel)</h3>
         <textarea id="commentaire" placeholder="Mes ressentis, mes progrès, mes difficultés..."
           oninput="marquerModifie()">${evalActuelle.commentaire || ''}</textarea>
-      </div>
-    `;
+      </div>`;
 
     document.getElementById('main-content').innerHTML = html;
+
+    // Ouvrir le premier objectif par défaut si pas encore évalué
+    const premiers = (apsa.objectifs || []);
+    if (premiers.length > 0) {
+      const firstNum = premiers[0].id || 1;
+      if (!evalActuelle[`obj_${firstNum}`]) toggleAccordion(String(firstNum));
+    }
   }
 
-  // ── Sélection d'un niveau ──────────────────────────────────
-  function setNiveau(objNum, code, btn) {
+  function toggleAccordion(num) {
+    const panel   = document.getElementById(`panel-${num}`);
+    const arrow   = document.getElementById(`arrow-${num}`);
+    const trigger = document.getElementById(`trigger-${num}`);
+    const isOpen  = panel.classList.contains('open');
+    panel.classList.toggle('open', !isOpen);
+    arrow.classList.toggle('open', !isOpen);
+    trigger.classList.toggle('open', !isOpen);
+  }
+
+  function setNiveau(objNum, code) {
     const key = `obj_${objNum}`;
-    evalActuelle[key] = code;
+    const ancien = evalActuelle[key] || '';
 
-    // Mise à jour visuelle
-    const btns = document.getElementById(`btns-${objNum}`);
-    btns.querySelectorAll('.niveau-btn').forEach(b => {
-      b.className = 'niveau-btn';
-    });
-    btn.classList.add('actif-' + code);
-
+    // Toggle : si même code, désélectionne
+    if (ancien === code) {
+      delete evalActuelle[key];
+      actualiserUI(objNum, '');
+    } else {
+      evalActuelle[key] = code;
+      actualiserUI(objNum, code);
+      // Auto-fermer après sélection avec un léger délai
+      setTimeout(() => {
+        const panel = document.getElementById(`panel-${objNum}`);
+        if (panel?.classList.contains('open')) toggleAccordion(String(objNum));
+      }, 400);
+    }
     marquerModifie();
+  }
+
+  function actualiserUI(num, code) {
+    // Mettre à jour les colonnes
+    ['NA','ECA','A','D'].forEach(c => {
+      const col = document.getElementById(`col-${num}-${c}`);
+      if (col) col.className = `desc-col${code === c ? ' actif-'+c : ''}`;
+    });
+    // Badge sur le trigger
+    const badge = document.getElementById(`badge-${num}`);
+    if (badge) {
+      if (code) {
+        badge.className = `obj-current-badge badge-${code}-pill`;
+        badge.textContent = `${NIVEAUX_CONF[code]?.icon} ${code}`;
+      } else {
+        badge.className = 'obj-current-badge badge-vide-pill';
+        badge.textContent = '— Non évalué';
+      }
+    }
+    // Bordure de l'accordéon
+    const acc = document.getElementById(`acc-${num}`);
+    if (acc) acc.className = `obj-accordion${code ? ' selected-'+code : ''}`;
   }
 
   function marquerModifie() {
@@ -314,16 +391,12 @@
     el.style.color = 'var(--orange)';
   }
 
-  // ── Sauvegarde ─────────────────────────────────────────────
   async function sauvegarder() {
     const btn = document.getElementById('btn-save');
     const status = document.getElementById('save-status');
-    btn.disabled = true;
-    btn.textContent = '⏳ Enregistrement...';
-
+    btn.disabled = true; btn.textContent = '⏳ Enregistrement...';
     const commentaire = document.getElementById('commentaire')?.value || '';
     const resultats = { ...evalActuelle, commentaire };
-
     try {
       await sauvegarderEvaluation(eleveId, cycleId, apsaId, resultats);
       modifie = false;
@@ -333,25 +406,16 @@
     } catch(e) {
       status.textContent = '❌ Erreur : ' + e.message;
       status.style.color = 'var(--red)';
-      showToast('❌ Erreur : ' + e.message, 'error');
     } finally {
-      btn.disabled = false;
-      btn.textContent = '💾 Enregistrer';
+      btn.disabled = false; btn.textContent = '💾 Enregistrer';
     }
   }
 
-  // Avertir si on quitte sans sauvegarder
-  window.addEventListener('beforeunload', e => {
-    if (modifie) { e.preventDefault(); e.returnValue = ''; }
-  });
+  window.addEventListener('beforeunload', e => { if (modifie) { e.preventDefault(); e.returnValue = ''; } });
 
-  // ── Toast ──────────────────────────────────────────────────
   function showToast(msg, type = 'success') {
-    const t = document.createElement('div');
-    t.className = `toast ${type}`;
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
+    const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg;
+    document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
   }
 
   init();
