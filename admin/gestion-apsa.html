@@ -16,110 +16,53 @@
     }
     .apsa-card:hover { border-color: var(--blue-lt); }
     .apsa-card-header {
-      display: flex;
-      align-items: center;
+      display: flex; align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
-      gap: .5rem;
+      flex-wrap: wrap; gap: .5rem;
     }
-    .apsa-titre {
-      font-family: var(--font-h);
-      font-size: 1.15rem;
-      font-weight: 600;
-    }
+    .apsa-titre { font-family: var(--font-h); font-size: 1.15rem; font-weight: 600; }
     .apsa-tags { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
-    .apsa-tag {
-      background: var(--gray-1);
-      color: var(--gray-4);
-      font-size: .75rem;
-      padding: .15rem .6rem;
-      border-radius: 12px;
-      font-weight: 600;
-    }
+    .apsa-tag { background: var(--gray-1); color: var(--gray-4); font-size: .75rem; padding: .15rem .6rem; border-radius: 12px; font-weight: 600; }
     .apsa-tag.ca { background: rgba(37,99,235,.1); color: var(--blue-lt); }
     .apsa-tag.niv { background: rgba(45,158,104,.1); color: var(--green); }
-    .apsa-objectifs {
-      margin-top: .8rem;
-      padding-top: .8rem;
-      border-top: 1px solid var(--gray-1);
-      display: none;
-    }
+    .apsa-objectifs { margin-top: .8rem; padding-top: .8rem; border-top: 1px solid var(--gray-1); display: none; }
     .apsa-objectifs.open { display: block; }
-    .obj-item {
-      display: flex;
-      align-items: flex-start;
-      gap: .8rem;
-      padding: .5rem;
-      border-radius: 6px;
-      margin-bottom: .4rem;
-      background: var(--gray-1);
-      font-size: .88rem;
-    }
-    .obj-num {
-      width: 22px; height: 22px;
-      background: var(--navy);
-      color: #fff;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: .7rem;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
+    .obj-item { display: flex; align-items: flex-start; gap: .8rem; padding: .5rem; border-radius: 6px; margin-bottom: .4rem; background: var(--gray-1); font-size: .88rem; }
+    .obj-num { width: 22px; height: 22px; background: var(--navy); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; flex-shrink: 0; }
+    .obj-descripteurs { display: grid; grid-template-columns: repeat(4,1fr); gap: .3rem; margin-top: .5rem; font-size: .75rem; }
+    .obj-desc-cell { background: rgba(0,0,0,.04); border-radius: 4px; padding: .3rem .5rem; }
+    .obj-desc-label { font-weight: 700; font-size: .65rem; text-transform: uppercase; margin-bottom: .2rem; }
 
     /* Modal */
-    .modal-bg {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,.5);
-      z-index: 200;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 2rem 1rem;
-      overflow-y: auto;
-    }
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
     .modal-bg.hidden { display: none; }
-    .modal {
-      background: var(--white);
-      border-radius: 16px;
-      padding: 2rem;
-      width: 100%;
-      max-width: 680px;
-      box-shadow: 0 30px 80px rgba(0,0,0,.3);
-      position: relative;
-    }
+    .modal { background: var(--white); border-radius: 16px; padding: 2rem; width: 100%; max-width: 760px; box-shadow: 0 30px 80px rgba(0,0,0,.3); position: relative; }
     .modal h2 { margin-bottom: 1.5rem; }
-    .modal-close {
-      position: absolute;
-      top: 1rem; right: 1rem;
-      background: var(--gray-1);
-      border: none;
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 1.1rem;
-      display: flex; align-items: center; justify-content: center;
-    }
+    .modal-close { position: absolute; top: 1rem; right: 1rem; background: var(--gray-1); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
     .modal-close:hover { background: var(--gray-2); }
 
-    /* Objectifs dynamiques */
-    .objectif-line {
-      display: grid;
-      grid-template-columns: 1fr auto 36px;
-      gap: .5rem;
-      align-items: center;
-      margin-bottom: .5rem;
+    /* Objectif card dans le modal */
+    .obj-card {
+      background: var(--gray-1);
+      border-radius: 10px;
+      padding: .8rem 1rem;
+      margin-bottom: .8rem;
+      border-left: 4px solid var(--blue-lt);
     }
-    .objectif-line select { width: 100%; }
-    .btn-del-obj {
-      width: 32px; height: 32px;
-      background: var(--red);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1rem;
-      display: flex; align-items: center; justify-content: center;
-    }
+    .obj-card-header { display: grid; grid-template-columns: 1fr auto 36px; gap: .5rem; align-items: center; margin-bottom: .5rem; }
+    .obj-card-header select { width: 100%; min-width: 140px; }
+    .btn-del-obj { width: 32px; height: 32px; background: var(--red); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
+
+    .desc-toggle { background: none; border: 1px solid var(--gray-2); border-radius: 4px; font-size: .75rem; color: var(--gray-3); cursor: pointer; padding: .2rem .6rem; margin-bottom: .5rem; width: 100%; text-align: left; }
+    .desc-toggle:hover { background: var(--gray-2); color: var(--navy); }
+    .desc-panel { display: none; }
+    .desc-panel.open { display: grid; grid-template-columns: repeat(2,1fr); gap: .5rem; }
+    .desc-field label { display: block; font-size: .72rem; font-weight: 700; text-transform: uppercase; margin-bottom: .25rem; }
+    .desc-field label.lbl-NA  { color: #ef4444; }
+    .desc-field label.lbl-ECA { color: #f59e0b; }
+    .desc-field label.lbl-A   { color: #22c55e; }
+    .desc-field label.lbl-D   { color: #8b5cf6; }
+    .desc-field textarea { width: 100%; min-height: 70px; font-size: .78rem; resize: vertical; box-sizing: border-box; }
 
     .niveaux-check { display: flex; gap: 1rem; flex-wrap: wrap; }
     .niveaux-check label { display: flex; align-items: center; gap: .4rem; font-weight: 400; cursor: pointer; }
@@ -139,12 +82,10 @@
 </nav>
 
 <div class="container">
-
   <div class="card-header" style="margin-bottom:1.5rem;">
     <h1>🏃 Activités Physiques, Sportives et Artistiques</h1>
     <button class="btn btn-orange" onclick="ouvrirModal()">+ Nouvelle APSA</button>
   </div>
-
   <div id="message"></div>
   <div id="liste-apsa">
     <div class="loader-wrap"><div class="spinner"></div><span>Chargement...</span></div>
@@ -191,12 +132,12 @@
 
     <hr style="border:none;border-top:2px solid var(--gray-1);margin:1.5rem 0;">
 
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
       <h3>Objectifs à évaluer</h3>
       <button class="btn btn-ghost btn-sm" onclick="ajouterObjectif()">+ Ajouter un objectif</button>
     </div>
     <p class="text-muted text-small" style="margin-bottom:1rem;">
-      Pour chaque objectif, précisez le Domaine du Socle auquel il se rattache.
+      Pour chaque objectif : saisissez le texte, le domaine du socle, et optionnellement les descripteurs de chaque niveau (affichés aux élèves).
     </p>
     <div id="objectifs-list"></div>
 
@@ -207,25 +148,21 @@
   </div>
 </div>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
   requireProf();
 
-  let apsaEnEdition = null; // null = création, sinon { id, ...data }
+  let apsaEnEdition = null;
 
-  // ── Chargement liste APSA ──────────────────────────────────
   async function chargerApsa() {
     const el = document.getElementById('liste-apsa');
     try {
       const apsa = await getToutesApsa();
       if (apsa.length === 0) {
-        el.innerHTML = `<div class="alert alert-info">
-          ℹ️ Aucune APSA créée. Commencez par en créer une !
-          <button class="btn btn-orange btn-sm" onclick="ouvrirModal()" style="margin-left:1rem">+ Créer</button>
-        </div>`;
+        el.innerHTML = `<div class="alert alert-info">ℹ️ Aucune APSA créée. Commencez par en créer une !
+          <button class="btn btn-orange btn-sm" onclick="ouvrirModal()" style="margin-left:1rem">+ Créer</button></div>`;
         return;
       }
       el.innerHTML = apsa.map(a => {
@@ -250,13 +187,25 @@
               </div>
             </div>
             <div class="apsa-objectifs" id="obj-${a.id}">
-              ${(a.objectifs||[]).map((obj,i) => `
-                <div class="obj-item">
-                  <div class="obj-num">${obj.id||i+1}</div>
-                  <div>
-                    <strong>[${obj.domaine||'—'}]</strong> ${obj.texte}
+              ${(a.objectifs||[]).map((obj,i) => {
+                const d = obj.descripteurs || {};
+                const hasDesc = d.NA || d.ECA || d.A || d.D;
+                return `
+                <div class="obj-item" style="flex-direction:column;">
+                  <div style="display:flex;align-items:center;gap:.8rem;width:100%;">
+                    <div class="obj-num">${obj.id||i+1}</div>
+                    <div><strong>[${obj.domaine||'—'}]</strong> ${obj.texte}</div>
                   </div>
-                </div>`).join('') || '<p class="text-muted text-small">Aucun objectif défini.</p>'}
+                  ${hasDesc ? `
+                  <div class="obj-descripteurs" style="margin-top:.6rem;margin-left:36px;">
+                    ${['NA','ECA','A','D'].map(code => d[code] ? `
+                      <div class="obj-desc-cell">
+                        <div class="obj-desc-label" style="color:${code==='NA'?'#ef4444':code==='ECA'?'#f59e0b':code==='A'?'#22c55e':'#8b5cf6'}">${code==='D'?'Dépassé':code}</div>
+                        <div>${d[code]}</div>
+                      </div>` : `<div class="obj-desc-cell" style="opacity:.3;font-style:italic;font-size:.72rem;">${code==='D'?'Dépassé':code} —</div>`).join('')}
+                  </div>` : ''}
+                </div>`;
+              }).join('') || '<p class="text-muted text-small">Aucun objectif défini.</p>'}
             </div>
           </div>`;
       }).join('');
@@ -266,36 +215,28 @@
   }
 
   function toggleObjectifs(id) {
-    const el = document.getElementById('obj-' + id);
-    el.classList.toggle('open');
+    document.getElementById('obj-' + id)?.classList.toggle('open');
   }
 
-  // ── Modal ──────────────────────────────────────────────────
+  // ── Modal ───────────────────────────────────────────────────
   let objCounter = 0;
 
   function ouvrirModal(data = null) {
     apsaEnEdition = data;
     objCounter = 0;
-    document.getElementById('modal-titre').textContent = data ? 'Modifier l\'APSA' : 'Nouvelle APSA';
-
-    // Réinitialiser les champs
+    document.getElementById('modal-titre').textContent = data ? "Modifier l'APSA" : 'Nouvelle APSA';
     document.getElementById('f-nom').value  = data?.nom  || '';
     document.getElementById('f-ca').value   = data?.champAppr || '';
     document.getElementById('f-desc').value = data?.description || '';
-
-    // Niveaux
     document.querySelectorAll('.chk-niv').forEach(cb => {
       cb.checked = data ? (data.niveaux||[]).includes(cb.value) : true;
     });
-
-    // Objectifs
     document.getElementById('objectifs-list').innerHTML = '';
     if (data?.objectifs?.length) {
       data.objectifs.forEach(obj => ajouterObjectif(obj));
     } else {
       ajouterObjectif();
     }
-
     document.getElementById('modal-bg').classList.remove('hidden');
     document.getElementById('f-nom').focus();
   }
@@ -309,21 +250,50 @@
     objCounter++;
     const n = objCounter;
     const domainesOptions = Object.entries(window.DOMAINES_SOCLE).map(([code, label]) =>
-      `<option value="${code}" ${data?.domaine===code?'selected':''}>${code} · ${label.substring(0,35)}</option>`
+      `<option value="${code}" ${data?.domaine===code?'selected':''}>${code} · ${label.substring(0,30)}</option>`
     ).join('');
+    const d = data?.descripteurs || {};
 
     const div = document.createElement('div');
-    div.className = 'objectif-line';
+    div.className = 'obj-card';
     div.id = `obj-line-${n}`;
     div.innerHTML = `
-      <input type="text" placeholder="Objectif ${n} : Décrire la compétence attendue..."
-        value="${data?.texte||''}" id="obj-texte-${n}">
-      <select id="obj-domaine-${n}" style="min-width:160px;">
-        <option value="">Domaine</option>
-        ${domainesOptions}
-      </select>
-      <button class="btn-del-obj" onclick="supprimerLigneObj(${n})">×</button>`;
+      <div class="obj-card-header">
+        <input type="text" placeholder="Objectif ${n} : Décrire la compétence attendue..."
+          value="${data?.texte||''}" id="obj-texte-${n}" style="font-weight:600;">
+        <select id="obj-domaine-${n}">
+          <option value="">Domaine</option>
+          ${domainesOptions}
+        </select>
+        <button class="btn-del-obj" onclick="supprimerLigneObj(${n})">×</button>
+      </div>
+      <button class="desc-toggle" id="desc-btn-${n}" onclick="toggleDesc(${n})">
+        📋 Descripteurs de niveaux (${(d.NA||d.ECA||d.A||d.D) ? 'saisis' : 'optionnels — cliquer pour saisir'})
+      </button>
+      <div class="desc-panel ${(d.NA||d.ECA||d.A||d.D)?'open':''}" id="desc-panel-${n}">
+        <div class="desc-field">
+          <label class="lbl-NA">✕ Non Acquis (NA)</label>
+          <textarea id="obj-desc-NA-${n}" placeholder="Ce que fait l'élève quand l'objectif n'est pas atteint...">${d.NA||''}</textarea>
+        </div>
+        <div class="desc-field">
+          <label class="lbl-ECA">⊙ En cours d'acquisition (ECA)</label>
+          <textarea id="obj-desc-ECA-${n}" placeholder="Ce que fait l'élève quand l'objectif est partiellement atteint...">${d.ECA||''}</textarea>
+        </div>
+        <div class="desc-field">
+          <label class="lbl-A">✓ Acquis (A)</label>
+          <textarea id="obj-desc-A-${n}" placeholder="Ce que fait l'élève quand l'objectif est atteint...">${d.A||''}</textarea>
+        </div>
+        <div class="desc-field">
+          <label class="lbl-D">★ Dépassé (D)</label>
+          <textarea id="obj-desc-D-${n}" placeholder="Ce que fait l'élève quand l'objectif est dépassé...">${d.D||''}</textarea>
+        </div>
+      </div>`;
     document.getElementById('objectifs-list').appendChild(div);
+  }
+
+  function toggleDesc(n) {
+    const panel = document.getElementById(`desc-panel-${n}`);
+    panel.classList.toggle('open');
   }
 
   function supprimerLigneObj(n) {
@@ -334,30 +304,27 @@
     const nom  = document.getElementById('f-nom').value.trim();
     const ca   = document.getElementById('f-ca').value;
     const desc = document.getElementById('f-desc').value.trim();
-    const msg  = document.getElementById('message');
+    if (!nom || !ca) { showToast('⚠️ Remplissez le nom et le champ d\'apprentissage', 'error'); return; }
 
-    if (!nom || !ca) {
-      showToast('⚠️ Remplissez le nom et le champ d\'apprentissage', 'error');
-      return;
-    }
-
-    // Niveaux cochés
     const niveaux = [...document.querySelectorAll('.chk-niv:checked')].map(cb => cb.value);
 
-    // Objectifs
     const objectifs = [];
     let idx = 1;
     document.querySelectorAll('[id^="obj-texte-"]').forEach(inp => {
       const num = inp.id.replace('obj-texte-', '');
       const texte = inp.value.trim();
+      if (!texte) return;
       const domaine = document.getElementById(`obj-domaine-${num}`)?.value || '';
-      if (texte) {
-        objectifs.push({ id: idx++, texte, domaine });
-      }
+      const descripteurs = {
+        NA:  document.getElementById(`obj-desc-NA-${num}`)?.value.trim()  || '',
+        ECA: document.getElementById(`obj-desc-ECA-${num}`)?.value.trim() || '',
+        A:   document.getElementById(`obj-desc-A-${num}`)?.value.trim()   || '',
+        D:   document.getElementById(`obj-desc-D-${num}`)?.value.trim()   || ''
+      };
+      objectifs.push({ id: idx++, texte, domaine, descripteurs });
     });
 
-    const data = { nom, champAppr: ca, description: desc, niveaux, objectifs,
-                   dateModif: new Date().toISOString() };
+    const data = { nom, champAppr: ca, description: desc, niveaux, objectifs, dateModif: new Date().toISOString() };
     try {
       if (apsaEnEdition) {
         await dbUpdate('apsa/' + apsaEnEdition.id, data);
@@ -379,14 +346,12 @@
   }
 
   async function supprimerApsa(id, nom) {
-    if (!confirm(`Supprimer l'APSA "${nom}" ?\nToutes les évaluations associées resteront dans la base.`)) return;
+    if (!confirm(`Supprimer l'APSA "${nom}" ?`)) return;
     try {
       await dbRemove('apsa/' + id);
       showToast('🗑 APSA supprimée', 'success');
       chargerApsa();
-    } catch(e) {
-      showToast('❌ ' + e.message, 'error');
-    }
+    } catch(e) { showToast('❌ ' + e.message, 'error'); }
   }
 
   function showToast(msg, type = 'success') {
@@ -397,7 +362,6 @@
     setTimeout(() => t.remove(), 3000);
   }
 
-  // Fermer modal en cliquant dehors
   document.getElementById('modal-bg').addEventListener('click', e => {
     if (e.target.id === 'modal-bg') fermerModal();
   });
