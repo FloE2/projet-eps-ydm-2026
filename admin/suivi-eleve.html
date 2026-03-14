@@ -46,30 +46,30 @@
     /* Cellule niveau — partie élève + partie prof */
     .td-niveau{padding:0;vertical-align:top;border-right:1px solid #e5e7eb;position:relative;}
     .td-niveau:last-child{border-right:none;}
-    .cell-eleve{padding:.55rem .65rem;font-size:.72rem;line-height:1.45;color:#374151;border-bottom:2px dashed #e5e7eb;}
-    .cell-prof{padding:.45rem .65rem;background:#f0f4ff;cursor:pointer;font-size:.72rem;transition:all .12s;}
-    .cell-prof:hover{filter:brightness(.95);}
-    /* Couleurs fond colonnes */
+    .cell-eleve{padding:.55rem .65rem;font-size:.72rem;line-height:1.45;color:#374151;border-bottom:2px dashed #e5e7eb;transition:all .15s;border-top:4px solid transparent;}
+    .cell-prof{padding:.45rem .65rem;cursor:pointer;font-size:.72rem;transition:all .12s;border-bottom:4px solid transparent;}
+    .cell-prof:hover{filter:brightness(.93);}
+    /* Fonds au repos */
     .td-NA  .cell-eleve{background:#fef9f9;} .td-NA  .cell-prof{background:#fff1f1;}
     .td-ECA .cell-eleve{background:#fffdf0;} .td-ECA .cell-prof{background:#fffaea;}
     .td-A   .cell-eleve{background:#f7fef9;} .td-A   .cell-prof{background:#edfff3;}
     .td-D   .cell-eleve{background:#faf7ff;} .td-D   .cell-prof{background:#f5f0ff;}
-    /* Sélection élève */
-    .eleve-sel .cell-eleve{font-weight:700;}
-    .td-NA.eleve-sel  .cell-eleve{background:#fee2e2;color:#991b1b;}
-    .td-ECA.eleve-sel .cell-eleve{background:#fef3c7;color:#78350f;}
-    .td-A.eleve-sel   .cell-eleve{background:#dcfce7;color:#14532d;}
-    .td-D.eleve-sel   .cell-eleve{background:#ede9fe;color:#4c1d95;}
-    /* Sélection prof */
-    .prof-sel .cell-prof{font-weight:700;}
-    .td-NA.prof-sel  .cell-prof{background:#fca5a5;color:#7f1d1d;}
-    .td-ECA.prof-sel .cell-prof{background:#fcd34d;color:#78350f;}
-    .td-A.prof-sel   .cell-prof{background:#86efac;color:#14532d;}
-    .td-D.prof-sel   .cell-prof{background:#c4b5fd;color:#3b0764;}
-    .cell-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;opacity:.55;margin-bottom:.2rem;}
+    /* Sélection ÉLÈVE — fort */
+    .eleve-sel .cell-eleve { font-weight:700; }
+    .td-NA.eleve-sel  .cell-eleve { background:#fecaca; color:#7f1d1d; border-top-color:#ef4444; }
+    .td-ECA.eleve-sel .cell-eleve { background:#fde68a; color:#78350f; border-top-color:#f59e0b; }
+    .td-A.eleve-sel   .cell-eleve { background:#bbf7d0; color:#14532d; border-top-color:#22c55e; }
+    .td-D.eleve-sel   .cell-eleve { background:#ddd6fe; color:#3b0764; border-top-color:#8b5cf6; }
+    /* Sélection PROF — très fort (couleur pleine) */
+    .prof-sel .cell-prof { font-weight:700; color:#fff; }
+    .td-NA.prof-sel  .cell-prof { background:#ef4444; border-bottom-color:#b91c1c; }
+    .td-ECA.prof-sel .cell-prof { background:#f59e0b; border-bottom-color:#d97706; }
+    .td-A.prof-sel   .cell-prof { background:#22c55e; border-bottom-color:#15803d; }
+    .td-D.prof-sel   .cell-prof { background:#8b5cf6; border-bottom-color:#6d28d9; }
+    .cell-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;opacity:.6;margin-bottom:.2rem;}
     .cell-desc-empty{color:#c0c8d4;font-style:italic;}
     /* Badge check */
-    .check-mark{float:right;font-weight:900;font-size:.7rem;}
+    .check-mark{float:right;font-weight:900;font-size:.85rem;}
     /* Bordure gauche colorée selon sélection élève */
     .row-sel-NA  .td-objectif{border-left-color:#ef4444;}
     .row-sel-ECA .td-objectif{border-left-color:#f59e0b;}
@@ -247,14 +247,19 @@
                         ${niveauKeys.map(c=>`
                           <td class="td-niveau td-${c}${codeEleve===c?' eleve-sel':''}${codeProf===c?' prof-sel':''}" id="tdp-${ev.id}-${num}-${c}">
                             <div class="cell-eleve">
-                              <div class="cell-label">👤 Élève</div>
-                              ${codeEleve===c?`<span class="check-mark" style="color:${NIVEAUX[c].couleur}">✓</span>`:''}
+                              <div class="cell-label">👤 Auto-évaluation élève</div>
+                              ${codeEleve===c?`<div style="display:flex;align-items:center;gap:.4rem;margin:.3rem 0 .4rem">
+                                <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:${NIVEAUX[c].couleur};color:#fff;font-weight:900;font-size:.9rem;flex-shrink:0">✓</span>
+                                <strong>${NIVEAUX[c].label}</strong>
+                              </div>`:''}
                               <div class="${d[c]?'':'cell-desc-empty'}">${d[c]||'—'}</div>
                             </div>
                             <div class="cell-prof" onclick="setCorrection('${ev.id}','${num}','${c}')">
-                              <div class="cell-label">✏️ Prof</div>
-                              ${codeProf===c?`<span class="check-mark" style="color:${NIVEAUX[c].couleur}">✓</span>`:''}
-                              <div style="font-size:.7rem;${codeProf===c?'font-weight:700':'color:#94a3b8;font-style:italic'}">${codeProf===c?NIVEAUX[c].label:'Cliquer pour corriger'}</div>
+                              <div class="cell-label">✏️ Correction professeur</div>
+                              ${codeProf===c?`<div style="display:flex;align-items:center;gap:.4rem;margin:.3rem 0 .25rem">
+                                <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.35);font-weight:900;font-size:.9rem;flex-shrink:0">✓</span>
+                                <strong>${NIVEAUX[c].label}</strong>
+                              </div>`:`<div style="color:rgba(100,116,139,.6);font-style:italic;font-size:.7rem;padding:.2rem 0">Cliquer pour corriger</div>`}
                             </div>
                           </td>`).join('')}
                       </tr>`;
@@ -306,9 +311,11 @@
       const cellProf=td.querySelector('.cell-prof');
       if(cellProf){
         cellProf.innerHTML=`
-          <div class="cell-label">✏️ Prof</div>
-          ${newCode===c?`<span class="check-mark" style="color:${NIVEAUX[c].couleur}">✓</span>`:''}
-          <div style="font-size:.7rem;${newCode===c?'font-weight:700':'color:#94a3b8;font-style:italic'}">${newCode===c?NIVEAUX[c].label:'Cliquer pour corriger'}</div>`;
+          <div class="cell-label">✏️ Correction professeur</div>
+          ${newCode===c?`<div style="display:flex;align-items:center;gap:.4rem;margin:.3rem 0 .25rem">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.35);font-weight:900;font-size:.9rem;flex-shrink:0">✓</span>
+            <strong>${NIVEAUX[c].label}</strong>
+          </div>`:`<div style="color:rgba(100,116,139,.6);font-style:italic;font-size:.7rem;padding:.2rem 0">Cliquer pour corriger</div>`}`;
       }
     });
     marquerCorrectionModifiee(evalId);
