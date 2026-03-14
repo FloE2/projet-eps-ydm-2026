@@ -9,71 +9,35 @@
     .eleve-search-wrap { display: flex; gap: .7rem; margin-bottom: 1.5rem; }
     .eleve-search-wrap input { flex: 1; }
     .resultats-recherche {
-      position: absolute;
-      background: var(--white);
-      border: 2px solid var(--blue-lt);
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-      z-index: 10;
-      width: calc(100% - 2rem);
-      max-height: 280px;
-      overflow-y: auto;
+      position: absolute; background: var(--white);
+      border: 2px solid var(--blue-lt); border-radius: 8px;
+      box-shadow: var(--shadow); z-index: 10;
+      width: calc(100% - 2rem); max-height: 280px; overflow-y: auto;
     }
-    .resultat-item {
-      padding: .7rem 1rem;
-      cursor: pointer;
-      border-bottom: 1px solid var(--gray-1);
-      font-size: .9rem;
-    }
+    .resultat-item { padding: .7rem 1rem; cursor: pointer; border-bottom: 1px solid var(--gray-1); font-size: .9rem; }
     .resultat-item:hover { background: var(--gray-1); }
-    .resultat-item:last-child { border-bottom: none; }
 
-    /* Fiche de suivi */
     .suivi-header {
       background: linear-gradient(135deg, var(--navy), var(--blue));
-      color: #fff;
-      border-radius: var(--radius);
-      padding: 1.5rem 2rem;
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
+      color: #fff; border-radius: var(--radius);
+      padding: 1.5rem 2rem; margin-bottom: 1.5rem;
+      display: flex; align-items: center; gap: 1.5rem;
     }
     .suivi-avatar {
-      width: 72px; height: 72px;
-      background: rgba(255,255,255,.15);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-h);
-      font-size: 1.5rem;
-      font-weight: 700;
-      flex-shrink: 0;
+      width: 72px; height: 72px; background: rgba(255,255,255,.15);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-h); font-size: 1.5rem; font-weight: 700; flex-shrink: 0;
     }
     .suivi-info h2 { color: #fff; margin-bottom: .3rem; font-size: 1.5rem; }
     .suivi-info p  { color: rgba(255,255,255,.65); font-size: .9rem; }
 
-    /* Parcours timeline par niveau */
-    .niveau-section {
-      border-left: 4px solid var(--orange);
-      padding-left: 1.5rem;
-      margin-bottom: 2rem;
-      position: relative;
-    }
+    /* Timeline niveaux */
+    .niveau-section { border-left: 4px solid var(--orange); padding-left: 1.5rem; margin-bottom: 2rem; position: relative; }
     .niveau-section::before {
-      content: attr(data-niveau);
-      position: absolute;
-      left: -32px;
-      top: 0;
-      background: var(--orange);
-      color: #fff;
-      font-family: var(--font-h);
-      font-size: .8rem;
-      font-weight: 700;
-      padding: .2rem .5rem;
-      border-radius: 4px;
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      transform: rotate(180deg);
+      content: attr(data-niveau); position: absolute; left: -32px; top: 0;
+      background: var(--orange); color: #fff; font-family: var(--font-h);
+      font-size: .8rem; font-weight: 700; padding: .2rem .5rem; border-radius: 4px;
+      writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg);
     }
     .niveau-section.niv-6e { border-left-color: #3B82F6; }
     .niveau-section.niv-6e::before { background: #3B82F6; }
@@ -84,61 +48,91 @@
     .niveau-section.niv-3e { border-left-color: var(--purple); }
     .niveau-section.niv-3e::before { background: var(--purple); }
 
+    /* Card APSA */
     .apsa-eval-card {
-      background: var(--white);
-      border-radius: var(--radius);
-      padding: 1.2rem;
-      margin-bottom: 1rem;
-      box-shadow: var(--shadow);
+      background: var(--white); border-radius: var(--radius);
+      padding: 1.2rem; margin-bottom: 1rem; box-shadow: var(--shadow);
     }
     .apsa-eval-title {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: .8rem;
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: .5rem;
     }
     .apsa-nom { font-family: var(--font-h); font-size: 1.1rem; font-weight: 600; }
     .apsa-date { font-size: .8rem; color: var(--gray-3); }
 
-    .objectifs-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: .5rem;
+    /* Comparaison côte à côte */
+    .obj-compare {
+      border: 1px solid var(--gray-1); border-radius: 8px;
+      overflow: hidden; margin-bottom: .7rem;
     }
-    .obj-result {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      padding: .4rem .7rem;
-      background: var(--gray-1);
-      border-radius: 6px;
-      font-size: .82rem;
+    .obj-compare-header {
+      background: var(--gray-1); padding: .55rem 1rem;
+      display: flex; align-items: center; gap: .7rem;
+      font-size: .85rem; font-weight: 600; color: var(--navy);
     }
-    .obj-result-icon { font-size: 1rem; }
+    .obj-num-sm {
+      width: 24px; height: 24px; background: var(--navy); color: #fff;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: .7rem; font-weight: 700; flex-shrink: 0;
+    }
+    .obj-compare-body {
+      display: grid; grid-template-columns: 1fr 1fr;
+    }
+    .compare-col { padding: .8rem 1rem; }
+    .compare-col:first-child { border-right: 1px solid var(--gray-1); }
+    .compare-col-label {
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--gray-3); margin-bottom: .5rem;
+    }
+    .compare-col-label.prof { color: var(--blue); }
 
-    /* Récapitulatif global */
-    .recap-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
+    /* Badge niveau affiché */
+    .niv-display {
+      display: inline-flex; align-items: center; gap: .35rem;
+      padding: .3rem .8rem; border-radius: 20px;
+      font-size: .82rem; font-weight: 700;
     }
-    .recap-item {
-      text-align: center;
-      background: var(--white);
-      border-radius: var(--radius);
-      padding: 1.2rem;
-      box-shadow: var(--shadow);
+    .niv-NA  { background: rgba(239,68,68,.1);  color: #ef4444; }
+    .niv-ECA { background: rgba(245,158,11,.1); color: #d97706; }
+    .niv-A   { background: rgba(34,197,94,.1);  color: #16a34a; }
+    .niv-D   { background: rgba(139,92,246,.1); color: #7c3aed; }
+    .niv-vide { background: var(--gray-1); color: var(--gray-3); font-style: italic; }
+
+    /* Boutons correction prof */
+    .prof-btns { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .4rem; }
+    .prof-btn {
+      padding: .25rem .65rem; border-radius: 15px; font-size: .75rem;
+      font-weight: 700; border: 2px solid transparent; cursor: pointer;
+      transition: all .15s;
     }
-    .recap-niveau-val {
-      font-family: var(--font-h);
-      font-size: 2.5rem;
-      font-weight: 700;
-      line-height: 1;
-      margin-bottom: .3rem;
+    .prof-btn:hover { filter: brightness(.88); transform: scale(.97); }
+    .prof-btn.actif { transform: scale(.95); }
+    .prof-btn-NA  { background: rgba(239,68,68,.1);  color: #ef4444; border-color: #ef4444; }
+    .prof-btn-ECA { background: rgba(245,158,11,.1); color: #d97706; border-color: #f59e0b; }
+    .prof-btn-A   { background: rgba(34,197,94,.1);  color: #16a34a; border-color: #22c55e; }
+    .prof-btn-D   { background: rgba(139,92,246,.1); color: #7c3aed; border-color: #8b5cf6; }
+    .prof-btn.actif-NA  { background: #ef4444; color: #fff; }
+    .prof-btn.actif-ECA { background: #f59e0b; color: #fff; }
+    .prof-btn.actif-A   { background: #22c55e; color: #fff; }
+    .prof-btn.actif-D   { background: #8b5cf6; color: #fff; }
+
+    .save-correction-btn {
+      margin-top: .8rem; width: 100%;
     }
+
+    /* Récapitulatif */
+    .recap-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .recap-item { text-align: center; background: var(--white); border-radius: var(--radius); padding: 1.2rem; box-shadow: var(--shadow); }
+    .recap-niveau-val { font-family: var(--font-h); font-size: 2.5rem; font-weight: 700; line-height: 1; margin-bottom: .3rem; }
     .recap-niveau-label { font-size: .8rem; color: var(--gray-3); }
     .recap-bar { height: 8px; border-radius: 4px; margin-top: .6rem; }
+
+    .commentaire-box {
+      background: #FEF9C3; border-radius: 6px; padding: .6rem .9rem;
+      font-size: .82rem; margin-top: .5rem; color: #92400e;
+    }
+
+    @media (max-width: 600px) { .obj-compare-body { grid-template-columns: 1fr; } .compare-col:first-child { border-right: none; border-bottom: 1px solid var(--gray-1); } }
   </style>
 </head>
 <body>
@@ -154,8 +148,6 @@
 </nav>
 
 <div class="container">
-
-  <!-- Recherche élève -->
   <div class="card" style="position:relative;">
     <h2 style="margin-bottom:1rem;">🔍 Rechercher un élève</h2>
     <div class="eleve-search-wrap">
@@ -166,12 +158,9 @@
     </div>
     <div class="resultats-recherche hidden" id="resultats-recherche"></div>
   </div>
-
-  <!-- Suivi de l'élève sélectionné -->
   <div id="suivi-content" class="hidden"></div>
 </div>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
@@ -182,11 +171,11 @@
   let apsaCache  = {};
   let cycleCache = {};
 
-  // Pré-charger tous les élèves une fois
+  // corrections en cours (par evalId → { obj_1: code, ... })
+  let correctionsEnCours = {};
+
   async function init() {
     tousEleves = await getTousEleves();
-
-    // Vérifier si eleveId en paramètre
     const params = new URLSearchParams(window.location.search);
     const eleveId = params.get('eleveId');
     if (eleveId) {
@@ -195,17 +184,14 @@
     }
   }
 
-  // ── Recherche ──────────────────────────────────────────────
   function rechercherEleve() {
     const q = document.getElementById('search-input').value.toLowerCase();
     const res = document.getElementById('resultats-recherche');
     if (!q || q.length < 2) { res.classList.add('hidden'); return; }
-
     const filtres = tousEleves.filter(e =>
       (e.nom + ' ' + e.prenom).toLowerCase().includes(q) ||
       (e.prenom + ' ' + e.nom).toLowerCase().includes(q)
     ).slice(0, 10);
-
     if (filtres.length === 0) {
       res.innerHTML = '<div class="resultat-item text-muted">Aucun résultat</div>';
     } else {
@@ -232,45 +218,31 @@
     document.getElementById('suivi-content').classList.add('hidden');
   }
 
-  // ── Affichage suivi ────────────────────────────────────────
   async function afficherSuivi(eleve) {
     const el = document.getElementById('suivi-content');
     el.classList.remove('hidden');
-    el.innerHTML = `<div class="loader-wrap"><div class="spinner"></div><span>Chargement du parcours...</span></div>`;
+    el.innerHTML = `<div class="loader-wrap"><div class="spinner"></div><span>Chargement...</span></div>`;
 
-    // Charger toutes les évaluations de cet élève
     const evals = (await getHistoriqueEleve(eleve.id)).reverse();
+    correctionsEnCours = {};
 
-    // Charger cycles et APSA associés
     const cycleIds = [...new Set(evals.map(e => e.cycleId))];
     const apsaIds  = [...new Set(evals.map(e => e.apsaId))];
 
     await Promise.all([
-      ...cycleIds.map(async id => {
-        if (!cycleCache[id]) {
-          const data = await dbGet('cycles/' + id);
-          if (data) cycleCache[id] = { id, ...data };
-        }
-      }),
-      ...apsaIds.map(async id => {
-        if (!apsaCache[id]) {
-          const data = await dbGet('apsa/' + id);
-          if (data) apsaCache[id] = { id, ...data };
-        }
-      })
+      ...cycleIds.map(async id => { if (!cycleCache[id]) { const d = await dbGet('cycles/' + id); if (d) cycleCache[id] = { id, ...d }; } }),
+      ...apsaIds.map(async id  => { if (!apsaCache[id])  { const d = await dbGet('apsa/' + id);   if (d) apsaCache[id]  = { id, ...d }; } })
     ]);
 
     // Grouper par niveau
     const parNiveau = { '6e': [], '5e': [], '4e': [], '3e': [] };
     evals.forEach(ev => {
-      const cy = cycleCache[ev.cycleId];
-      // Déterminer le niveau via la classe de l'élève au moment du cycle
-      // On utilise le niveau de la classe ou le niveau courant de l'élève
+      const cy  = cycleCache[ev.cycleId];
       const niv = ev.niveau || cy?.niveau || eleve.niveau || '6e';
       if (parNiveau[niv]) parNiveau[niv].push(ev);
     });
 
-    // Calcul stats globales
+    // Stats globales
     let totalObj = 0, totalA = 0, totalD = 0, totalECA = 0;
     evals.forEach(ev => {
       Object.entries(ev.resultats||{}).forEach(([k, v]) => {
@@ -282,7 +254,6 @@
       });
     });
     const pctAcquis = totalObj > 0 ? Math.round((totalA + totalD) / totalObj * 100) : 0;
-
     const initiales = (eleve.prenom?.[0]||'') + (eleve.nom?.[0]||'');
 
     let html = `
@@ -291,13 +262,10 @@
         <div class="suivi-info">
           <h2>${eleve.prenom} ${eleve.nom.toUpperCase()}</h2>
           <p>${eleve.classe||'—'} · ${eleve.niveau||'—'} · ${window.ANNEE_SCOLAIRE}</p>
-          <p style="margin-top:.3rem;">
-            ${evals.length} auto-évaluation${evals.length>1?'s':''} enregistrée${evals.length>1?'s':''}
-          </p>
+          <p style="margin-top:.3rem;">${evals.length} auto-évaluation${evals.length>1?'s':''} enregistrée${evals.length>1?'s':''}</p>
         </div>
       </div>
 
-      <!-- Stats globales -->
       <div class="recap-grid">
         <div class="recap-item">
           <div class="recap-niveau-val" style="color:var(--green);">${pctAcquis}%</div>
@@ -318,10 +286,8 @@
           <div class="recap-niveau-val" style="color:var(--yellow);">${totalECA}</div>
           <div class="recap-niveau-label">En cours</div>
         </div>
-      </div>
-    `;
+      </div>`;
 
-    // Parcours par niveau
     const ordreNiv = ['6e','5e','4e','3e'];
     let hasSomething = false;
 
@@ -329,45 +295,78 @@
       const evalsNiv = parNiveau[niv];
       if (evalsNiv.length === 0) return;
       hasSomething = true;
+      const niveauKeys = niv === '6e' ? ['NA','ECA','A'] : ['NA','ECA','A','D'];
 
       html += `<div class="niveau-section niv-${niv}" data-niveau="${niv}">`;
       html += `<h2 style="margin-bottom:1rem;font-size:1.1rem;color:var(--gray-4);">Année de ${niv}</h2>`;
 
       evalsNiv.forEach(ev => {
-        const apsa = apsaCache[ev.apsaId] || {};
-        const cy   = cycleCache[ev.cycleId] || {};
-        const niveaux = getNiveaux(niv);
-        const dateStr = ev.dateModif ? new Date(ev.dateModif.seconds*1000).toLocaleDateString('fr-FR') : '—';
+        const apsaData = apsaCache[ev.apsaId] || {};
+        const dateStr  = ev.dateModif ? new Date(ev.dateModif).toLocaleDateString('fr-FR') : '—';
+        const objKeys  = Object.entries(ev.resultats||{}).filter(([k]) => k.startsWith('obj_'));
+        const nbA      = objKeys.filter(([,v]) => v==='A'||v==='D').length;
+        const corr     = ev.resultats_prof || {};
 
-        const objKeys = Object.entries(ev.resultats||{}).filter(([k]) => k.startsWith('obj_'));
-        const nbA = objKeys.filter(([,v]) => v==='A'||v==='D').length;
+        // Initialiser corrections en cours
+        correctionsEnCours[ev.id] = { ...corr };
 
         html += `
-          <div class="apsa-eval-card">
+          <div class="apsa-eval-card" id="card-${ev.id}">
             <div class="apsa-eval-title">
               <div>
-                <div class="apsa-nom">${apsa.nom||ev.apsaId}</div>
+                <div class="apsa-nom">${apsaData.nom || ev.apsaId}</div>
                 <div class="apsa-date">📅 Dernière modif : ${dateStr}</div>
               </div>
-              <span class="badge-niveau badge-A">${nbA}/${objKeys.length} Acquis</span>
+              <span class="badge-niveau badge-A">${nbA}/${objKeys.length} Acquis (élève)</span>
             </div>
-            <div class="objectifs-grid">
-              ${objKeys.map(([key, code]) => {
-                const niv_ = niveaux.find(n => n.code === code);
-                const objNum = key.replace('obj_','');
-                const objData = (apsa.objectifs||[]).find(o => String(o.id) === String(objNum));
-                return `
-                  <div class="obj-result">
-                    <span style="color:${niv_?.couleur||'gray'};font-size:1rem;">${niv_?.icon||'?'}</span>
-                    <span style="font-weight:700;color:${niv_?.couleur||'gray'};min-width:28px;">${code}</span>
-                    <span>${objData?.texte || 'Objectif '+objNum}</span>
-                  </div>`;
-              }).join('')}
-              ${ev.resultats?.commentaire ? `
-                <div class="obj-result" style="grid-column:1/-1;background:#FEF9C3;">
-                  💬 ${ev.resultats.commentaire}
-                </div>` : ''}
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.5rem;padding:.4rem .8rem;background:var(--gray-1);border-radius:6px;">
+              <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--gray-3);text-align:center;">👤 Auto-évaluation élève</div>
+              <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--blue);text-align:center;">✏️ Correction professeur</div>
             </div>
+
+            ${objKeys.map(([key, codeEleve]) => {
+              const objNum  = key.replace('obj_','');
+              const objData = (apsaData.objectifs||[]).find(o => String(o.id) === String(objNum));
+              const texteObj = objData?.texte || 'Objectif ' + objNum;
+              const codeProf = corr[key] || '';
+
+              return `
+                <div class="obj-compare" id="cmp-${ev.id}-${objNum}">
+                  <div class="obj-compare-header">
+                    <div class="obj-num-sm">${objNum}</div>
+                    <span>${texteObj}</span>
+                  </div>
+                  <div class="obj-compare-body">
+                    <div class="compare-col">
+                      <div class="compare-col-label">Auto-évaluation</div>
+                      ${badgeNiveau(codeEleve)}
+                    </div>
+                    <div class="compare-col">
+                      <div class="compare-col-label prof">Correction prof</div>
+                      <div id="prof-display-${ev.id}-${objNum}">
+                        ${codeProf ? badgeNiveau(codeProf) : '<span class="niv-display niv-vide">— Non corrigé</span>'}
+                      </div>
+                      <div class="prof-btns">
+                        ${niveauKeys.map(code => `
+                          <button class="prof-btn prof-btn-${code}${codeProf===code?' actif actif-'+code:''}"
+                            id="profbtn-${ev.id}-${objNum}-${code}"
+                            onclick="setCorrection('${ev.id}','${objNum}','${code}','${ev.eleveId}','${ev.cycleId}','${ev.apsaId}')">
+                            ${code}
+                          </button>`).join('')}
+                      </div>
+                    </div>
+                  </div>
+                </div>`;
+            }).join('')}
+
+            ${ev.resultats?.commentaire ? `
+              <div class="commentaire-box">💬 <strong>Commentaire élève :</strong> ${ev.resultats.commentaire}</div>` : ''}
+
+            <button class="btn btn-primary save-correction-btn" id="save-btn-${ev.id}"
+              onclick="sauvegarderCorrection('${ev.id}','${ev.eleveId}','${ev.cycleId}','${ev.apsaId}')">
+              💾 Enregistrer la correction
+            </button>
           </div>`;
       });
 
@@ -381,11 +380,69 @@
     el.innerHTML = html;
   }
 
-  // Fermer les résultats en cliquant ailleurs
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.card')) {
-      document.getElementById('resultats-recherche').classList.add('hidden');
+  function badgeNiveau(code) {
+    const conf = { NA: ['✕','Non Acquis'], ECA: ['⊙',"En cours d'acquisition"], A: ['✓','Acquis'], D: ['★','Dépassé'] };
+    if (!conf[code]) return '<span class="niv-display niv-vide">— Non évalué</span>';
+    return `<span class="niv-display niv-${code}">${conf[code][0]} ${code}</span>`;
+  }
+
+  function setCorrection(evalId, objNum, code, eleveId, cycleId, apsaId) {
+    const key = `obj_${objNum}`;
+    const current = correctionsEnCours[evalId]?.[key] || '';
+
+    if (!correctionsEnCours[evalId]) correctionsEnCours[evalId] = {};
+
+    // Toggle
+    if (current === code) {
+      delete correctionsEnCours[evalId][key];
+      document.getElementById(`prof-display-${evalId}-${objNum}`).innerHTML =
+        '<span class="niv-display niv-vide">— Non corrigé</span>';
+    } else {
+      correctionsEnCours[evalId][key] = code;
+      document.getElementById(`prof-display-${evalId}-${objNum}`).innerHTML = badgeNiveau(code);
     }
+
+    // Mettre à jour les boutons
+    ['NA','ECA','A','D'].forEach(c => {
+      const btn = document.getElementById(`profbtn-${evalId}-${objNum}-${c}`);
+      if (!btn) return;
+      const newCode = correctionsEnCours[evalId][key] || '';
+      btn.className = `prof-btn prof-btn-${c}${newCode===c?' actif actif-'+c:''}`;
+    });
+
+    // Indiquer changement non sauvegardé
+    const saveBtn = document.getElementById(`save-btn-${evalId}`);
+    if (saveBtn) { saveBtn.style.background = 'var(--orange)'; saveBtn.textContent = '💾 Enregistrer la correction ●'; }
+  }
+
+  async function sauvegarderCorrection(evalId, eleveId, cycleId, apsaId) {
+    const saveBtn = document.getElementById(`save-btn-${evalId}`);
+    saveBtn.disabled = true; saveBtn.textContent = '⏳ Enregistrement...';
+    try {
+      const resultats_prof = correctionsEnCours[evalId] || {};
+      await dbUpdate('evaluations/' + evalId, { resultats_prof, dateCorr: new Date().toISOString() });
+      showToast('✓ Correction enregistrée !', 'success');
+      saveBtn.style.background = 'var(--green)';
+      saveBtn.textContent = '✓ Correction enregistrée';
+      setTimeout(() => {
+        saveBtn.disabled = false;
+        saveBtn.style.background = '';
+        saveBtn.textContent = '💾 Enregistrer la correction';
+      }, 2000);
+    } catch(e) {
+      showToast('❌ ' + e.message, 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Enregistrer la correction';
+    }
+  }
+
+  function showToast(msg, type = 'success') {
+    const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg;
+    document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+  }
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.card')) document.getElementById('resultats-recherche').classList.add('hidden');
   });
 
   init();
