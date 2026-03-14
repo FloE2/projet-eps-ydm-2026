@@ -48,26 +48,77 @@
     .nav-link-card.purple { border-left: 4px solid var(--purple); }
     .nav-link-card.purple .nav-link-icon { background: rgba(107,33,168,.1); }
 
-    .classe-row {
-      display: flex;
-      align-items: center;
+    .classe-card {
+      border: 1px solid var(--gray-1);
+      border-radius: 10px;
+      margin-bottom: .8rem;
+      overflow: hidden;
+      transition: box-shadow .2s;
+    }
+    .classe-card:hover { box-shadow: var(--shadow); }
+    .classe-card-header {
+      display: flex; align-items: center;
       justify-content: space-between;
-      padding: .8rem 1rem;
-      border-radius: 8px;
+      padding: .75rem 1.1rem;
       background: var(--gray-1);
-      margin-bottom: .6rem;
-      gap: 1rem;
-      flex-wrap: wrap;
+      flex-wrap: wrap; gap: .5rem;
     }
-    .classe-nom { font-family: var(--font-h); font-weight: 600; font-size: 1rem; }
-    .classe-meta { font-size: .8rem; color: var(--gray-3); }
-    .classe-stats { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
-    .mini-badge {
-      font-size: .75rem;
-      padding: .2rem .6rem;
-      border-radius: 12px;
-      font-weight: 700;
+    .classe-nom { font-family: var(--font-h); font-weight: 700; font-size: 1.05rem; }
+    .classe-meta { font-size: .78rem; color: var(--gray-3); margin-top: .1rem; }
+    .classe-actions { display: flex; gap: .4rem; align-items: center; flex-shrink: 0; }
+
+    /* Timeline */
+    .timeline-wrap { padding: .8rem 1.1rem .9rem; background: #fff; overflow-x: auto; }
+    .timeline-empty { font-size: .8rem; color: var(--gray-3); padding: .4rem 0; font-style: italic; }
+    .timeline-bar-container {
+      display: flex; align-items: stretch;
+      gap: 3px; min-width: 0;
+      margin-bottom: .35rem;
     }
+    .timeline-segment {
+      border-radius: 6px;
+      padding: .45rem .7rem;
+      display: flex; flex-direction: column; justify-content: center;
+      min-width: 80px; flex-shrink: 0;
+      cursor: default;
+      position: relative;
+      transition: filter .15s;
+    }
+    .timeline-segment:hover { filter: brightness(.93); }
+    .timeline-segment-name {
+      font-family: var(--font-h); font-size: .75rem; font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      color: #fff;
+    }
+    .timeline-segment-dates {
+      font-size: .62rem; color: rgba(255,255,255,.75); margin-top: 2px; white-space: nowrap;
+    }
+    .timeline-segment-seances {
+      font-size: .68rem; font-weight: 700; color: rgba(255,255,255,.9); margin-top: 3px;
+      background: rgba(0,0,0,.15); border-radius: 10px;
+      padding: .1rem .4rem; display: inline-block; width: fit-content;
+    }
+    .timeline-segment.inactif { opacity: .45; }
+
+    /* Légende dates */
+    .timeline-axis {
+      display: flex; align-items: center;
+      font-size: .62rem; color: var(--gray-3);
+      margin-top: .2rem; gap: 4px;
+    }
+    .timeline-axis-start { flex-shrink: 0; }
+    .timeline-axis-line  { flex: 1; border-top: 1px dashed var(--gray-2); }
+    .timeline-axis-end   { flex-shrink: 0; }
+
+    /* Tooltip vacances */
+    .vacances-indicator {
+      display: inline-flex; align-items: center; gap: .3rem;
+      font-size: .65rem; color: #d97706;
+      background: #fef3c7; border-radius: 4px;
+      padding: .1rem .5rem; margin-left: .4rem;
+    }
+
+    .mini-badge { font-size: .75rem; padding: .2rem .6rem; border-radius: 12px; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -170,6 +221,125 @@
   const userLabel = document.getElementById('user-label');
   if (userLabel) userLabel.textContent = localStorage.getItem('eps_prof_user') || '';
 
+  // ── Vacances Zone C 2025-2026 ─────────────────────────────
+  const VACANCES = [
+    { debut: new Date('2025-10-18'), fin: new Date('2025-11-02'), label: 'Toussaint' },
+    { debut: new Date('2025-12-20'), fin: new Date('2026-01-04'), label: 'Noël' },
+    { debut: new Date('2026-02-14'), fin: new Date('2026-03-01'), label: 'Hiver' },
+    { debut: new Date('2026-04-25'), fin: new Date('2026-05-10'), label: 'Printemps' },
+    { debut: new Date('2026-07-04'), fin: new Date('2027-01-01'), label: 'Été' }
+  ];
+
+  // Couleurs pour les différentes APSA
+  const COLORS = [
+    '#3B82F6','#10b981','#f59e0b','#ef4444','#8b5cf6',
+    '#06b6d4','#f97316','#ec4899','#6366f1','#84cc16'
+  ];
+
+  function calculerSeancesCycle(dateDebutStr, dateFinStr) {
+    if (!dateDebutStr || !dateFinStr) return null;
+    const debut = new Date(dateDebutStr);
+    const fin   = new Date(dateFinStr);
+    if (fin <= debut) return 0;
+    let semaines = 0;
+    let cur = new Date(debut);
+    // Trouver le premier lundi >= début
+    const j = cur.getDay();
+    const offset = j === 0 ? 1 : j === 1 ? 0 : 8 - j;
+    cur.setDate(cur.getDate() + offset);
+    while (cur <= fin) {
+      const enVac = VACANCES.some(v => cur >= v.debut && cur <= v.fin);
+      if (!enVac) semaines++;
+      cur.setDate(cur.getDate() + 7);
+    }
+    return semaines;
+  }
+
+  function vacancesDansPeriode(dateDebutStr, dateFinStr) {
+    if (!dateDebutStr || !dateFinStr) return [];
+    const debut = new Date(dateDebutStr);
+    const fin   = new Date(dateFinStr);
+    return VACANCES.filter(v => v.debut < fin && v.fin > debut).map(v => v.label);
+  }
+
+  function formatDate(str) {
+    if (!str) return '—';
+    return new Date(str).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  }
+
+  function buildTimeline(cycles, apsaMap) {
+    if (cycles.length === 0) {
+      return '<div class="timeline-empty">Aucun cycle configuré — <a href="gestion-classes.html">Ajouter un cycle →</a></div>';
+    }
+
+    // Calculer la plage temporelle totale
+    const avecDates = cycles.filter(cy => cy.dateDebut && cy.dateFin);
+    const sansDates = cycles.filter(cy => !cy.dateDebut || !cy.dateFin);
+
+    // Durée totale pour calculer les largeurs relatives
+    let dureeTotal = 0;
+    avecDates.forEach(cy => {
+      const d = new Date(cy.dateFin) - new Date(cy.dateDebut);
+      dureeTotal += d;
+    });
+
+    const dateMin = avecDates.length ? avecDates[0].dateDebut : null;
+    const dateMax = avecDates.length ? avecDates[avecDates.length-1].dateFin : null;
+
+    let html = '<div class="timeline-bar-container">';
+
+    // Segments avec dates
+    avecDates.forEach((cy, i) => {
+      const apsa = apsaMap[cy.apsaId] || {};
+      const color = COLORS[i % COLORS.length];
+      const duree = new Date(cy.dateFin) - new Date(cy.dateDebut);
+      const pct   = dureeTotal > 0 ? Math.max(10, Math.round(duree / dureeTotal * 85)) : 20;
+      const seancesCalc = calculerSeancesCycle(cy.dateDebut, cy.dateFin);
+      const seances = cy.nbSeances || seancesCalc;
+      const vacs = vacancesDansPeriode(cy.dateDebut, cy.dateFin);
+
+      html += `
+        <div class="timeline-segment${cy.actif?'':' inactif'}"
+             style="background:${color};flex:${pct}"
+             title="${apsa.nom||cy.apsaId} · ${formatDate(cy.dateDebut)} → ${formatDate(cy.dateFin)}${seances?' · '+seances+' séances':''}">
+          <div class="timeline-segment-name">${apsa.nom || cy.apsaId}</div>
+          <div class="timeline-segment-dates">${formatDate(cy.dateDebut)} → ${formatDate(cy.dateFin)}</div>
+          <div class="timeline-segment-seances">
+            📅 ${seances ? seances + ' séance' + (seances>1?'s':'') : '?'}
+            ${cy.nbSeances && cy.nbSeances !== seancesCalc ? ' ✎' : ''}
+          </div>
+          ${vacs.length ? `<div style="font-size:.58rem;color:rgba(255,255,255,.65);margin-top:2px">✂ ${vacs.join(', ')}</div>` : ''}
+        </div>`;
+    });
+
+    html += '</div>';
+
+    // Axe de dates
+    if (dateMin && dateMax) {
+      html += `
+        <div class="timeline-axis">
+          <span class="timeline-axis-start">${formatDate(dateMin)}</span>
+          <div class="timeline-axis-line"></div>
+          <span class="timeline-axis-end">${formatDate(dateMax)}</span>
+        </div>`;
+    }
+
+    // Cycles sans dates
+    if (sansDates.length > 0) {
+      html += `<div style="margin-top:.5rem;display:flex;gap:.4rem;flex-wrap:wrap;">`;
+      sansDates.forEach((cy, i) => {
+        const apsa = apsaMap[cy.apsaId] || {};
+        const color = COLORS[(avecDates.length + i) % COLORS.length];
+        html += `<span style="background:${color};color:#fff;font-size:.72rem;font-weight:700;padding:.25rem .7rem;border-radius:20px;opacity:${cy.actif?1:.5}">
+          ${apsa.nom || cy.apsaId} ${cy.nbSeances ? '· '+cy.nbSeances+' séances' : '(sans dates)'}
+        </span>`;
+      });
+      html += '</div>';
+    }
+
+    return html;
+  }
+
   async function chargerDashboard() {
     try {
       // Stats parallèles
@@ -207,23 +377,27 @@
           return a.nom.localeCompare(b.nom);
         });
         el.innerHTML = classesTri.map(c => {
-          const cyclesClasse = cycles.filter(cy => cy.classeId === c.id);
+          const cyclesClasse = tousCycles.filter(cy => cy.classeId === c.id)
+            .sort((a,b) => (a.dateDebut||'').localeCompare(b.dateDebut||''));
+          const cyclesActifs = cyclesClasse.filter(cy => cy.actif);
           const nbEleves = tousElevesArr.filter(e => e.classeId === c.id).length;
+
+          // Construire la timeline
+          const timelineHTML = buildTimeline(cyclesClasse, apsaMap);
+
           return `
-            <div class="classe-row">
-              <div>
-                <div class="classe-nom">${c.nom}</div>
-                <div class="classe-meta">${c.niveau} · ${nbEleves} élève${nbEleves>1?'s':''}</div>
+            <div class="classe-card">
+              <div class="classe-card-header">
+                <div>
+                  <div class="classe-nom">${c.nom}</div>
+                  <div class="classe-meta">${c.niveau} · ${nbEleves} élève${nbEleves>1?'s':''} · ${cyclesActifs.length} cycle${cyclesActifs.length>1?'s':''} actif${cyclesActifs.length>1?'s':''}</div>
+                </div>
+                <div class="classe-actions">
+                  <a href="bilan-classe.html?classeId=${c.id}" class="btn btn-ghost btn-sm">📊 Bilan</a>
+                  <a href="gestion-classes.html?classeId=${c.id}" class="btn btn-ghost btn-sm">⚙️ Gérer</a>
+                </div>
               </div>
-              <div class="classe-stats">
-                ${cyclesClasse.length === 0
-                  ? '<span style="font-size:.8rem;color:var(--gray-3);">Aucun cycle actif</span>'
-                  : cyclesClasse.map(cy => {
-                      const a = apsaMap[cy.apsaId] || {};
-                      return `<span class="mini-badge badge-A">${a.nom || cy.apsaId}</span>`;
-                    }).join('')}
-                <a href="bilan-classe.html?classeId=${c.id}" class="btn btn-ghost btn-sm">Bilan</a>
-              </div>
+              <div class="timeline-wrap">${timelineHTML}</div>
             </div>`;
         }).join('');
       }
