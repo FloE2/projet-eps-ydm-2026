@@ -6,191 +6,94 @@
   <title>Ma fiche auto-évaluation — EPS</title>
   <link rel="stylesheet" href="../assets/style.css">
   <style>
-    body { padding-bottom: 90px; }
-
+    body { padding-bottom: 90px; background: #f4f6fa; }
     .fiche-header {
-      background: linear-gradient(135deg, var(--navy), var(--blue));
-      color: var(--white);
-      border-radius: var(--radius);
-      padding: 1.5rem 2rem;
-      margin-bottom: 1.5rem;
-      display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+      background: linear-gradient(135deg, var(--navy) 0%, #1e4d8c 100%);
+      color:#fff; border-radius:var(--radius); padding:1.4rem 2rem;
+      margin-bottom:1.5rem; display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap;
     }
-    .fiche-avatar {
-      width: 64px; height: 64px; background: rgba(255,255,255,.15);
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-h); font-size: 1.4rem; font-weight: 700; flex-shrink: 0;
-    }
-    .fiche-info h1 { font-size: 1.5rem; color: var(--white); margin-bottom: .2rem; }
-    .fiche-info p  { color: rgba(255,255,255,.65); font-size: .9rem; }
-    .fiche-apsa-badge {
-      margin-left: auto; background: var(--orange); color: #fff;
-      padding: .5rem 1.2rem; border-radius: 25px;
-      font-family: var(--font-h); font-size: .9rem; font-weight: 600;
-      letter-spacing: .05em; text-align: center;
-    }
-    .fiche-apsa-badge small { display: block; font-family: var(--font-b); font-size: .7rem; opacity: .8; font-weight: 400; }
-
-    /* Domaine header */
-    .domaine-header {
-      display: flex; align-items: center; gap: .8rem;
-      background: var(--navy); color: #fff;
-      border-radius: 8px; padding: .7rem 1.2rem;
-      margin: 1.2rem 0 .5rem;
-    }
-    .domaine-code {
-      background: rgba(255,255,255,.2); padding: .25rem .7rem;
-      border-radius: 6px; font-family: var(--font-h); font-size: .85rem; font-weight: 700;
-    }
-    .domaine-nom { font-size: .9rem; opacity: .85; }
-
-    /* Accordéon objectif */
-    .obj-accordion {
-      border: 2px solid var(--gray-1);
-      border-radius: 10px;
-      margin-bottom: .6rem;
-      overflow: hidden;
-      transition: border-color .2s;
-    }
-    .obj-accordion.selected-NA  { border-color: #ef4444; }
-    .obj-accordion.selected-ECA { border-color: #f59e0b; }
-    .obj-accordion.selected-A   { border-color: #22c55e; }
-    .obj-accordion.selected-D   { border-color: #8b5cf6; }
-
-    .obj-trigger {
-      width: 100%; background: var(--white); border: none;
-      padding: .9rem 1.1rem; cursor: pointer;
-      display: flex; align-items: center; gap: .8rem;
-      text-align: left; transition: background .15s;
-    }
-    .obj-trigger:hover { background: var(--gray-1); }
-    .obj-trigger.open  { background: var(--gray-1); }
-
-    .obj-num {
-      width: 30px; height: 30px; background: var(--navy); color: #fff;
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-h); font-size: .8rem; font-weight: 700; flex-shrink: 0;
-    }
-    .obj-label-text { flex: 1; font-size: .9rem; font-weight: 600; color: var(--navy); }
-    .obj-current-badge {
-      font-size: .75rem; font-weight: 700; padding: .2rem .7rem;
-      border-radius: 20px; flex-shrink: 0;
-    }
-    .badge-NA-pill  { background: rgba(239,68,68,.12);  color: #ef4444; }
-    .badge-ECA-pill { background: rgba(245,158,11,.12); color: #d97706; }
-    .badge-A-pill   { background: rgba(34,197,94,.12);  color: #16a34a; }
-    .badge-D-pill   { background: rgba(139,92,246,.12); color: #7c3aed; }
-    .badge-vide-pill { background: var(--gray-1); color: var(--gray-3); }
-    .obj-arrow { color: var(--gray-3); font-size: .7rem; flex-shrink: 0; transition: transform .2s; }
-    .obj-arrow.open { transform: rotate(90deg); }
-
-    /* Panneau dépliable */
-    .obj-panel { display: none; border-top: 1px solid var(--gray-1); }
-    .obj-panel.open { display: block; }
-
-    /* Tableau descripteurs */
-    .desc-table {
-      display: grid; grid-template-columns: repeat(4, 1fr);
-      border-bottom: 1px solid var(--gray-1);
-    }
-    .desc-col {
-      padding: .9rem .8rem;
-      border-right: 1px solid var(--gray-1);
-      cursor: pointer;
-      transition: background .15s;
-      position: relative;
-    }
-    .desc-col:last-child { border-right: none; }
-    .desc-col:hover { background: var(--gray-1); }
-    .desc-col.actif-NA  { background: rgba(239,68,68,.06);  }
-    .desc-col.actif-ECA { background: rgba(245,158,11,.06); }
-    .desc-col.actif-A   { background: rgba(34,197,94,.06);  }
-    .desc-col.actif-D   { background: rgba(139,92,246,.06); }
-
-    .desc-col-header {
-      display: flex; flex-direction: column; align-items: center;
-      margin-bottom: .6rem; gap: .3rem;
-    }
-    .desc-col-icon { font-size: 1.3rem; }
-    .desc-col-code {
-      font-family: var(--font-h); font-size: .8rem; font-weight: 700;
-      padding: .15rem .5rem; border-radius: 4px;
-    }
-    .code-NA  { background: rgba(239,68,68,.12);  color: #ef4444; }
-    .code-ECA { background: rgba(245,158,11,.12); color: #d97706; }
-    .code-A   { background: rgba(34,197,94,.12);  color: #16a34a; }
-    .code-D   { background: rgba(139,92,246,.12); color: #7c3aed; }
-
-    .desc-col-text {
-      font-size: .78rem; color: var(--gray-4); line-height: 1.45;
-      min-height: 48px;
-    }
-    .desc-col-text.empty { color: var(--gray-2); font-style: italic; }
-
-    .desc-col-select {
-      margin-top: .8rem;
-      width: 100%; padding: .4rem; border-radius: 6px;
-      font-size: .78rem; font-weight: 700; border: 2px solid transparent;
-      cursor: pointer; transition: all .15s;
-    }
-    .desc-col-select.btn-NA  { background: rgba(239,68,68,.08);  color: #ef4444; border-color: #ef4444; }
-    .desc-col-select.btn-ECA { background: rgba(245,158,11,.08); color: #d97706; border-color: #f59e0b; }
-    .desc-col-select.btn-A   { background: rgba(34,197,94,.08);  color: #16a34a; border-color: #22c55e; }
-    .desc-col-select.btn-D   { background: rgba(139,92,246,.08); color: #7c3aed; border-color: #8b5cf6; }
-    .desc-col-select.actif   { filter: brightness(.85); transform: scale(.97); }
-
-    /* Checkmark sélection */
-    .desc-col::after {
-      content: ''; position: absolute; top: .5rem; right: .5rem;
-      width: 18px; height: 18px; border-radius: 50%;
-      border: 2px solid var(--gray-2); background: white;
-      transition: all .15s;
-    }
-    .desc-col.actif-NA::after  { background: #ef4444; border-color: #ef4444; content: '✓'; color: white; display: flex; align-items: center; justify-content: center; font-size: .65rem; font-weight: 700; }
-    .desc-col.actif-ECA::after { background: #f59e0b; border-color: #f59e0b; content: '✓'; color: white; display: flex; align-items: center; justify-content: center; font-size: .65rem; font-weight: 700; }
-    .desc-col.actif-A::after   { background: #22c55e; border-color: #22c55e; content: '✓'; color: white; display: flex; align-items: center; justify-content: center; font-size: .65rem; font-weight: 700; }
-    .desc-col.actif-D::after   { background: #8b5cf6; border-color: #8b5cf6; content: '✓'; color: white; display: flex; align-items: center; justify-content: center; font-size: .65rem; font-weight: 700; }
-
-    /* Instruction sous le tableau */
-    .obj-hint { padding: .5rem 1rem; font-size: .75rem; color: var(--gray-3); background: var(--gray-1); }
-
-    @media (max-width: 600px) {
-      .desc-table { grid-template-columns: repeat(2, 1fr); }
-      .desc-col:nth-child(2) { border-right: none; }
-      .desc-col:nth-child(3) { border-top: 1px solid var(--gray-1); }
-    }
-
-    /* Save bar */
-    .save-bar {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--white); border-top: 2px solid var(--gray-1);
-      padding: 1rem 1.5rem; display: flex; align-items: center;
-      justify-content: space-between; gap: 1rem; z-index: 50;
-      box-shadow: 0 -4px 20px rgba(0,0,0,.1);
-    }
-    .save-status { font-size: .85rem; color: var(--gray-3); }
-    .save-status.saved { color: var(--green); font-weight: 600; }
+    .fiche-avatar { width:60px;height:60px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-h);font-size:1.3rem;font-weight:700;flex-shrink:0; }
+    .fiche-info h1 { font-size:1.4rem;color:#fff;margin-bottom:.15rem; }
+    .fiche-info p  { color:rgba(255,255,255,.65);font-size:.85rem; }
+    .fiche-apsa-badge { margin-left:auto;background:var(--orange);color:#fff;padding:.5rem 1.2rem;border-radius:20px;text-align:center;font-family:var(--font-h);font-size:.95rem;font-weight:700; }
+    .fiche-apsa-badge small { display:block;font-family:var(--font-b);font-size:.7rem;opacity:.8;font-weight:400;margin-top:2px; }
+    .apsa-section { background:#fff;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:2rem;overflow:hidden; }
+    .apsa-section-header { background:var(--navy);color:#fff;padding:.9rem 1.4rem;display:flex;align-items:center;gap:1rem; }
+    .domaine-pill { background:rgba(255,255,255,.2);color:#fff;font-family:var(--font-h);font-size:.82rem;font-weight:700;padding:.25rem .8rem;border-radius:20px; }
+    .domaine-label { font-size:.9rem;opacity:.82; }
+    .eval-table-wrap { overflow-x:auto; }
+    .eval-table { width:100%;border-collapse:collapse;min-width:600px; }
+    .th-objectif { background:#2c3e6b;color:#fff;font-family:var(--font-h);font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:.7rem 1rem;width:26%;text-align:left;border-right:1px solid rgba(255,255,255,.15); }
+    .th-niveau { padding:0;vertical-align:top;border-right:1px solid #e5e7eb; }
+    .th-niveau:last-child { border-right:none; }
+    .th-niveau-inner { padding:.6rem .5rem .35rem;font-family:var(--font-h);font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:center; }
+    .th-NA  { background:#fee2e2;color:#b91c1c; }
+    .th-ECA { background:#fef3c7;color:#92400e; }
+    .th-A   { background:#dcfce7;color:#15803d; }
+    .th-D   { background:#ede9fe;color:#6d28d9; }
+    .th-scale { display:flex;align-items:center;justify-content:space-between;padding:.2rem .6rem .5rem;font-size:.65rem;font-weight:700;border-top:1px solid rgba(0,0,0,.06); }
+    .scale-NA  { background:#fee2e2;color:#ef4444; }
+    .scale-ECA { background:#fef3c7;color:#d97706; }
+    .scale-A   { background:#dcfce7;color:#22c55e; }
+    .scale-D   { background:#ede9fe;color:#8b5cf6; }
+    .eval-table tbody tr { border-bottom:1px solid #e5e7eb; }
+    .eval-table tbody tr:last-child { border-bottom:none; }
+    .td-objectif { padding:.85rem 1rem;vertical-align:middle;font-size:.82rem;font-weight:600;color:#1e293b;border-right:1px solid #e5e7eb;background:#f8fafc;line-height:1.45;border-left:4px solid transparent;transition:border-left-color .2s; }
+    .td-obj-num { display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;background:var(--navy);color:#fff;border-radius:50%;font-size:.65rem;font-weight:700;margin-right:.4rem;vertical-align:middle;flex-shrink:0; }
+    .td-niveau { padding:.7rem .65rem;vertical-align:top;text-align:center;font-size:.74rem;line-height:1.5;color:#374151;cursor:pointer;transition:all .12s;border-right:1px solid #e5e7eb;position:relative; }
+    .td-niveau:last-child { border-right:none; }
+    .td-niveau:hover { filter:brightness(.93); }
+    .td-NA  { background:#fef9f9; }
+    .td-ECA { background:#fffdf0; }
+    .td-A   { background:#f7fef9; }
+    .td-D   { background:#faf7ff; }
+    .td-niveau.selected { font-weight:700; }
+    .td-NA.selected  { background:#fee2e2;color:#991b1b; }
+    .td-ECA.selected { background:#fef3c7;color:#78350f; }
+    .td-A.selected   { background:#dcfce7;color:#14532d; }
+    .td-D.selected   { background:#ede9fe;color:#4c1d95; }
+    .td-check { position:absolute;top:.3rem;right:.4rem;font-size:.7rem;font-weight:900;display:none; }
+    .td-NA.selected  .td-check { display:block;color:#ef4444; }
+    .td-ECA.selected .td-check { display:block;color:#f59e0b; }
+    .td-A.selected   .td-check { display:block;color:#22c55e; }
+    .td-D.selected   .td-check { display:block;color:#8b5cf6; }
+    .sel-NA  .td-objectif { border-left-color:#ef4444; }
+    .sel-ECA .td-objectif { border-left-color:#f59e0b; }
+    .sel-A   .td-objectif { border-left-color:#22c55e; }
+    .sel-D   .td-objectif { border-left-color:#8b5cf6; }
+    .obj-badge { display:inline-block;font-size:.63rem;font-weight:700;padding:.1rem .4rem;border-radius:8px;margin-left:.4rem;vertical-align:middle; }
+    .obj-badge-NA  { background:#fee2e2;color:#b91c1c; }
+    .obj-badge-ECA { background:#fef3c7;color:#92400e; }
+    .obj-badge-A   { background:#dcfce7;color:#15803d; }
+    .obj-badge-D   { background:#ede9fe;color:#6d28d9; }
+    .obj-badge-vide { background:#f1f5f9;color:#94a3b8; }
+    .td-desc-empty { color:#c5cdd8;font-style:italic; }
+    .commentaire-section { padding:.9rem 1.2rem;border-top:2px solid #f1f5f9; }
+    .commentaire-section label { font-size:.79rem;font-weight:700;color:var(--navy);display:block;margin-bottom:.4rem; }
+    .commentaire-section textarea { width:100%;box-sizing:border-box;min-height:60px;font-size:.83rem;resize:vertical;border:1px solid #d1d5db;border-radius:6px;padding:.55rem .75rem; }
+    .legende-bar { display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem;padding:.6rem 1rem;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.05); }
+    .legende-item { display:flex;align-items:center;gap:.35rem;font-size:.77rem;font-weight:600; }
+    .legende-dot { width:11px;height:11px;border-radius:50%; }
+    .scroll-hint { display:none;font-size:.7rem;color:#94a3b8;text-align:center;padding:.35rem;background:#f8fafc; }
+    @media(max-width:700px){ .scroll-hint{display:block;} }
+    .save-bar { position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #e5e7eb;padding:.9rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;z-index:50;box-shadow:0 -4px 20px rgba(0,0,0,.08); }
+    .save-status { font-size:.85rem;color:#94a3b8; }
+    .save-status.modified { color:#f59e0b;font-weight:600; }
+    .save-status.saved { color:#22c55e;font-weight:600; }
   </style>
 </head>
 <body>
-
 <nav class="topbar">
   <a href="classe.html" class="topbar-logo">← Retour</a>
   <span class="topbar-title" id="topbar-title">Ma fiche EPS</span>
 </nav>
-
 <div class="container-sm" id="main-content">
-  <div class="loader-wrap" style="min-height:60vh">
-    <div class="spinner"></div>
-    <span>Chargement de ta fiche...</span>
-  </div>
+  <div class="loader-wrap" style="min-height:60vh"><div class="spinner"></div><span>Chargement de ta fiche...</span></div>
 </div>
-
 <div class="save-bar">
-  <span class="save-status" id="save-status">Clique sur un niveau pour t'évaluer</span>
+  <span class="save-status" id="save-status">Clique sur une case pour t'évaluer</span>
   <button class="btn btn-success btn-lg" id="btn-save" onclick="sauvegarder()">💾 Enregistrer</button>
 </div>
-
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
@@ -200,224 +103,150 @@
   const cycleId = params.get('cycleId');
   const apsaId  = params.get('apsaId');
   const niveau  = params.get('niveau');
-
   if (!eleveId || !cycleId || !apsaId) window.location.href = 'classe.html';
-
-  let evalActuelle = {};
-  let eleve = null, apsa = null;
-  let modifie = false;
-
-  const NIVEAUX_CONF = {
-    NA:  { icon: '✕', label: 'Non Acquis',          couleur: '#ef4444' },
-    ECA: { icon: '⊙', label: "En cours d'acquisition", couleur: '#f59e0b' },
-    A:   { icon: '✓', label: 'Acquis',               couleur: '#22c55e' },
-    D:   { icon: '★', label: 'Dépassé',              couleur: '#8b5cf6' }
+  let evalActuelle = {}, eleve = null, apsa = null, modifie = false;
+  const NIVEAUX = {
+    NA:  { label:'Non Atteint',           scale:'0 — 2',  icon:'✕', couleur:'#ef4444' },
+    ECA: { label:'Partiellement Atteint', scale:'3 — 5',  icon:'⊙', couleur:'#f59e0b' },
+    A:   { label:'Atteint',               scale:'6 — 8',  icon:'✓', couleur:'#22c55e' },
+    D:   { label:'Dépassé',               scale:'9 — 10', icon:'★', couleur:'#8b5cf6' }
   };
-
   async function init() {
     try {
       const [eleveData, apsaData, evalDoc] = await Promise.all([
-        dbGet('eleves/' + eleveId),
-        dbGet('apsa/' + apsaId),
-        getEvaluation(eleveId, cycleId)
+        dbGet('eleves/' + eleveId), dbGet('apsa/' + apsaId), getEvaluation(eleveId, cycleId)
       ]);
       if (!eleveData) throw new Error("Élève introuvable");
       if (!apsaData)  throw new Error("APSA introuvable");
-      eleve = { id: eleveId, ...eleveData };
-      apsa  = { id: apsaId,  ...apsaData };
+      eleve = { id:eleveId, ...eleveData };
+      apsa  = { id:apsaId,  ...apsaData };
       if (evalDoc) evalActuelle = evalDoc.resultats || {};
       document.title = `${apsa.nom} — ${eleve.prenom} — EPS`;
       document.getElementById('topbar-title').textContent = apsa.nom;
       renderFiche();
     } catch(e) {
       document.getElementById('main-content').innerHTML =
-        `<div class="alert alert-error">❌ ${e.message}<br><br>
-         <a href="classe.html" class="btn btn-ghost">← Retour</a></div>`;
+        `<div class="alert alert-error">❌ ${e.message}<br><br><a href="classe.html" class="btn btn-ghost">← Retour</a></div>`;
     }
   }
-
   function renderFiche() {
     const niveauKeys = niveau === '6e' ? ['NA','ECA','A'] : ['NA','ECA','A','D'];
     const initiales  = (eleve.prenom?.[0]||'') + (eleve.nom?.[0]||'');
-    const champLabel = window.CHAMPS_APPRENTISSAGE[apsa.champAppr] || apsa.champAppr || '';
-
-    // Regrouper objectifs par domaine
     const parDomaine = {};
     (apsa.objectifs || []).forEach(obj => {
       const d = obj.domaine || 'Général';
       if (!parDomaine[d]) parDomaine[d] = [];
       parDomaine[d].push(obj);
     });
-
     let html = `
       <div class="fiche-header">
         <div class="fiche-avatar">${initiales.toUpperCase()}</div>
         <div class="fiche-info">
-          <h1>${eleve.prenom} ${eleve.nom.toUpperCase()}</h1>
-          <p>${eleve.classe || ''} · ${niveau} · ${window.ANNEE_SCOLAIRE}</p>
+          <h1>${eleve.prenom} ${(eleve.nom||'').toUpperCase()}</h1>
+          <p>${eleve.classe||''} · ${niveau} · ${window.ANNEE_SCOLAIRE}</p>
         </div>
-        <div class="fiche-apsa-badge">${apsa.nom}<small>${apsa.champAppr}</small></div>
+        <div class="fiche-apsa-badge">${apsa.nom}<small>${apsa.champAppr||''}</small></div>
+      </div>
+      <div class="legende-bar">
+        <span style="font-size:.77rem;font-weight:700;color:#64748b;margin-right:.2rem;">Niveaux :</span>
+        ${niveauKeys.map(code => `<div class="legende-item"><div class="legende-dot" style="background:${NIVEAUX[code].couleur}"></div><span style="color:${NIVEAUX[code].couleur}">${code==='D'?'Dépassé':NIVEAUX[code].label}</span></div>`).join('<span style="color:#d1d5db;margin:0 .1rem">·</span>')}
       </div>`;
-
     if (Object.keys(parDomaine).length === 0) {
       html += `<div class="alert alert-info">ℹ️ Aucun objectif configuré pour cette APSA. Contactez votre professeur.</div>`;
     } else {
       Object.entries(parDomaine).forEach(([domaine, objectifs]) => {
         const domLabel = window.DOMAINES_SOCLE[domaine] || domaine;
         html += `
-          <div class="domaine-section">
-            <div class="domaine-header">
-              <span class="domaine-code">${domaine}</span>
-              <span class="domaine-nom">${domLabel}</span>
-            </div>`;
-
-        objectifs.forEach((obj, i) => {
-          const num = obj.id || (i + 1);
-          const codeActuel = evalActuelle[`obj_${num}`] || '';
-          const badgeClass = codeActuel ? `badge-${codeActuel}-pill` : 'badge-vide-pill';
-          const badgeText  = codeActuel ? `${NIVEAUX_CONF[codeActuel]?.icon} ${codeActuel}` : '— Non évalué';
-          const d = obj.descripteurs || {};
-
-          html += `
-            <div class="obj-accordion ${codeActuel ? 'selected-'+codeActuel : ''}" id="acc-${num}">
-              <button class="obj-trigger" id="trigger-${num}" onclick="toggleAccordion('${num}')">
-                <div class="obj-num">${num}</div>
-                <div class="obj-label-text">${obj.texte}</div>
-                <span class="obj-current-badge ${badgeClass}" id="badge-${num}">${badgeText}</span>
-                <span class="obj-arrow" id="arrow-${num}">▶</span>
-              </button>
-              <div class="obj-panel" id="panel-${num}">
-                <div class="desc-table">
-                  ${niveauKeys.map(code => {
-                    const conf = NIVEAUX_CONF[code];
-                    const texteDesc = d[code] || '';
-                    const isActif = codeActuel === code;
+          <div class="apsa-section">
+            <div class="apsa-section-header">
+              <span class="domaine-pill">${domaine}</span>
+              <span class="domaine-label">${domLabel}</span>
+            </div>
+            <div class="scroll-hint">← Faire défiler →</div>
+            <div class="eval-table-wrap">
+              <table class="eval-table">
+                <thead><tr>
+                  <th class="th-objectif">Objectif</th>
+                  ${niveauKeys.map(code => `
+                    <th class="th-niveau">
+                      <div class="th-niveau-inner th-${code}">${NIVEAUX[code].icon} ${code==='NA'?'Non Atteint':code==='ECA'?'Partiellement Atteint':code==='A'?'Atteint':'Dépassé'}</div>
+                      <div class="th-scale scale-${code}"><span>${NIVEAUX[code].scale.split('—')[0].trim()}</span><span style="opacity:.35">—</span><span>${NIVEAUX[code].scale.split('—')[1].trim()}</span></div>
+                    </th>`).join('')}
+                </tr></thead>
+                <tbody>
+                  ${objectifs.map((obj,i) => {
+                    const num = obj.id || (i+1);
+                    const code = evalActuelle[`obj_${num}`] || '';
+                    const d = obj.descripteurs || {};
                     return `
-                      <div class="desc-col ${isActif ? 'actif-'+code : ''}" id="col-${num}-${code}"
-                           onclick="setNiveau('${num}', '${code}')">
-                        <div class="desc-col-header">
-                          <span class="desc-col-icon">${conf.icon}</span>
-                          <span class="desc-col-code code-${code}">${code === 'D' ? 'Dépassé' : code}</span>
-                        </div>
-                        <div class="desc-col-text${texteDesc ? '' : ' empty'}">
-                          ${texteDesc || 'Pas de descripteur'}
-                        </div>
-                      </div>`;
+                      <tr id="row-${num}" class="${code?'sel-'+code:''}">
+                        <td class="td-objectif">
+                          <span class="td-obj-num">${num}</span>${obj.texte}
+                          <span class="obj-badge ${code?'obj-badge-'+code:'obj-badge-vide'}" id="badge-${num}">${code||'—'}</span>
+                        </td>
+                        ${niveauKeys.map(c => `
+                          <td class="td-niveau td-${c}${code===c?' selected':''}" id="td-${num}-${c}" onclick="setNiveau('${num}','${c}')">
+                            <span class="td-check">✓</span>
+                            <div class="${d[c]?'':'td-desc-empty'}">${d[c]||'—'}</div>
+                          </td>`).join('')}
+                      </tr>`;
                   }).join('')}
-                </div>
-                <div class="obj-hint">👆 Clique sur la colonne qui te correspond le mieux</div>
-              </div>
-            </div>`;
-        });
-
-        html += `</div>`;
+                </tbody>
+              </table>
+            </div>
+            <div class="commentaire-section">
+              <label>💬 Commentaire (optionnel)</label>
+              <textarea id="commentaire-${domaine.replace(/\./g,'_')}" placeholder="Mes ressentis, mes progrès..." oninput="marquerModifie()">${evalActuelle['commentaire_'+domaine]||''}</textarea>
+            </div>
+          </div>`;
       });
     }
-
-    html += `
-      <div class="card mt-2">
-        <h3>💬 Commentaire (optionnel)</h3>
-        <textarea id="commentaire" placeholder="Mes ressentis, mes progrès, mes difficultés..."
-          oninput="marquerModifie()">${evalActuelle.commentaire || ''}</textarea>
-      </div>`;
-
     document.getElementById('main-content').innerHTML = html;
-
-    // Ouvrir le premier objectif par défaut si pas encore évalué
-    const premiers = (apsa.objectifs || []);
-    if (premiers.length > 0) {
-      const firstNum = premiers[0].id || 1;
-      if (!evalActuelle[`obj_${firstNum}`]) toggleAccordion(String(firstNum));
-    }
   }
-
-  function toggleAccordion(num) {
-    const panel   = document.getElementById(`panel-${num}`);
-    const arrow   = document.getElementById(`arrow-${num}`);
-    const trigger = document.getElementById(`trigger-${num}`);
-    const isOpen  = panel.classList.contains('open');
-    panel.classList.toggle('open', !isOpen);
-    arrow.classList.toggle('open', !isOpen);
-    trigger.classList.toggle('open', !isOpen);
-  }
-
-  function setNiveau(objNum, code) {
-    const key = `obj_${objNum}`;
+  function setNiveau(num, code) {
+    const key = `obj_${num}`;
     const ancien = evalActuelle[key] || '';
-
-    // Toggle : si même code, désélectionne
-    if (ancien === code) {
-      delete evalActuelle[key];
-      actualiserUI(objNum, '');
-    } else {
-      evalActuelle[key] = code;
-      actualiserUI(objNum, code);
-      // Auto-fermer après sélection avec un léger délai
-      setTimeout(() => {
-        const panel = document.getElementById(`panel-${objNum}`);
-        if (panel?.classList.contains('open')) toggleAccordion(String(objNum));
-      }, 400);
-    }
+    if (ancien === code) { delete evalActuelle[key]; actualiserLigne(num,''); }
+    else { evalActuelle[key] = code; actualiserLigne(num, code); }
     marquerModifie();
   }
-
-  function actualiserUI(num, code) {
-    // Mettre à jour les colonnes
+  function actualiserLigne(num, code) {
     ['NA','ECA','A','D'].forEach(c => {
-      const col = document.getElementById(`col-${num}-${c}`);
-      if (col) col.className = `desc-col${code === c ? ' actif-'+c : ''}`;
+      const td = document.getElementById(`td-${num}-${c}`);
+      if (!td) return;
+      td.className = `td-niveau td-${c}${code===c?' selected':''}`;
     });
-    // Badge sur le trigger
     const badge = document.getElementById(`badge-${num}`);
-    if (badge) {
-      if (code) {
-        badge.className = `obj-current-badge badge-${code}-pill`;
-        badge.textContent = `${NIVEAUX_CONF[code]?.icon} ${code}`;
-      } else {
-        badge.className = 'obj-current-badge badge-vide-pill';
-        badge.textContent = '— Non évalué';
-      }
-    }
-    // Bordure de l'accordéon
-    const acc = document.getElementById(`acc-${num}`);
-    if (acc) acc.className = `obj-accordion${code ? ' selected-'+code : ''}`;
+    if (badge) { badge.className=`obj-badge ${code?'obj-badge-'+code:'obj-badge-vide'}`; badge.textContent=code||'—'; }
+    const row = document.getElementById(`row-${num}`);
+    if (row) row.className = code?'sel-'+code:'';
   }
-
   function marquerModifie() {
     modifie = true;
     const el = document.getElementById('save-status');
     el.textContent = '● Modifications non enregistrées';
-    el.className = 'save-status';
-    el.style.color = 'var(--orange)';
+    el.className = 'save-status modified';
   }
-
   async function sauvegarder() {
     const btn = document.getElementById('btn-save');
     const status = document.getElementById('save-status');
-    btn.disabled = true; btn.textContent = '⏳ Enregistrement...';
-    const commentaire = document.getElementById('commentaire')?.value || '';
-    const resultats = { ...evalActuelle, commentaire };
+    btn.disabled=true; btn.textContent='⏳ Enregistrement...';
+    const resultats = { ...evalActuelle };
+    document.querySelectorAll('[id^="commentaire-"]').forEach(ta => {
+      const dom = ta.id.replace('commentaire-','').replace(/_/g,'.');
+      if (ta.value.trim()) resultats['commentaire_'+dom] = ta.value.trim();
+    });
     try {
       await sauvegarderEvaluation(eleveId, cycleId, apsaId, resultats);
-      modifie = false;
-      status.textContent = '✓ Enregistré à ' + new Date().toLocaleTimeString('fr-FR');
-      status.className = 'save-status saved';
-      showToast('✓ Évaluation enregistrée !', 'success');
-    } catch(e) {
-      status.textContent = '❌ Erreur : ' + e.message;
-      status.style.color = 'var(--red)';
-    } finally {
-      btn.disabled = false; btn.textContent = '💾 Enregistrer';
-    }
+      modifie=false;
+      status.textContent='✓ Enregistré à '+new Date().toLocaleTimeString('fr-FR');
+      status.className='save-status saved';
+      showToast('✓ Évaluation enregistrée !','success');
+    } catch(e) { status.textContent='❌ '+e.message; status.className='save-status'; }
+    finally { btn.disabled=false; btn.textContent='💾 Enregistrer'; }
   }
-
-  window.addEventListener('beforeunload', e => { if (modifie) { e.preventDefault(); e.returnValue = ''; } });
-
-  function showToast(msg, type = 'success') {
-    const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg;
-    document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
-  }
-
+  window.addEventListener('beforeunload', e=>{ if(modifie){e.preventDefault();e.returnValue='';} });
+  function showToast(msg,type='success'){const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
   init();
 </script>
 </body>
