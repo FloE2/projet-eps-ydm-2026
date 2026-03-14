@@ -47,16 +47,37 @@
     .td-ECA { background:#fffdf0; }
     .td-A   { background:#f7fef9; }
     .td-D   { background:#faf7ff; }
-    .td-niveau.selected { font-weight:700; }
-    .td-NA.selected  { background:#fee2e2;color:#991b1b; }
-    .td-ECA.selected { background:#fef3c7;color:#78350f; }
-    .td-A.selected   { background:#dcfce7;color:#14532d; }
-    .td-D.selected   { background:#ede9fe;color:#4c1d95; }
-    .td-check { position:absolute;top:.3rem;right:.4rem;font-size:.7rem;font-weight:900;display:none; }
-    .td-NA.selected  .td-check { display:block;color:#ef4444; }
-    .td-ECA.selected .td-check { display:block;color:#f59e0b; }
-    .td-A.selected   .td-check { display:block;color:#22c55e; }
-    .td-D.selected   .td-check { display:block;color:#8b5cf6; }
+    .td-niveau.selected { font-weight:700; outline:3px solid transparent; outline-offset:-3px; }
+    .td-NA.selected  { background:#fecaca;color:#7f1d1d;outline-color:#ef4444; }
+    .td-ECA.selected { background:#fde68a;color:#78350f;outline-color:#f59e0b; }
+    .td-A.selected   { background:#bbf7d0;color:#14532d;outline-color:#22c55e; }
+    .td-D.selected   { background:#ddd6fe;color:#3b0764;outline-color:#8b5cf6; }
+    /* Bandeau coloré en haut de la cellule sélectionnée */
+    .td-niveau.selected::before {
+      content: '';
+      display: block;
+      height: 5px;
+      margin: -.7rem -.65rem .5rem;
+      border-radius: 0;
+    }
+    .td-NA.selected::before  { background:#ef4444; }
+    .td-ECA.selected::before { background:#f59e0b; }
+    .td-A.selected::before   { background:#22c55e; }
+    .td-D.selected::before   { background:#8b5cf6; }
+    /* Grande coche visible */
+    .td-check {
+      display:none;
+      width:28px; height:28px;
+      border-radius:50%;
+      align-items:center; justify-content:center;
+      font-size:1rem; font-weight:900;
+      margin:0 auto .5rem;
+      color:#fff;
+    }
+    .td-NA.selected  .td-check { display:flex; background:#ef4444; }
+    .td-ECA.selected .td-check { display:flex; background:#f59e0b; }
+    .td-A.selected   .td-check { display:flex; background:#22c55e; }
+    .td-D.selected   .td-check { display:flex; background:#8b5cf6; }
     .sel-NA  .td-objectif { border-left-color:#ef4444; }
     .sel-ECA .td-objectif { border-left-color:#f59e0b; }
     .sel-A   .td-objectif { border-left-color:#22c55e; }
@@ -186,7 +207,7 @@
                         </td>
                         ${niveauKeys.map(c => `
                           <td class="td-niveau td-${c}${code===c?' selected':''}" id="td-${num}-${c}" onclick="setNiveau('${num}','${c}')">
-                            <span class="td-check">✓</span>
+                            <div class="td-check">✓</div>
                             <div class="${d[c]?'':'td-desc-empty'}">${d[c]||'—'}</div>
                           </td>`).join('')}
                       </tr>`;
