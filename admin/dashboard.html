@@ -146,6 +146,77 @@
     .eval-date { font-size:.7rem; color:#94a3b8; flex-shrink:0; }
 
     @media(max-width:640px) { .periodes-grid { grid-template-columns:repeat(2,1fr); } }
+
+    /* ── Timeline globale ── */
+    .timeline-globale {
+      position: relative; margin-bottom: 1.4rem;
+      background: #f1f5f9; border-radius: 10px;
+      overflow: visible; padding: .5rem .7rem 1.8rem;
+    }
+    .timeline-globale-bar {
+      display: flex; height: 36px; border-radius: 7px;
+      overflow: hidden; position: relative;
+    }
+    .tl-segment {
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-h); font-size: .75rem; font-weight: 700;
+      color: #fff; transition: filter .15s; position: relative;
+      overflow: hidden;
+    }
+    .tl-segment:hover { filter: brightness(.9); }
+    .tl-segment-label { white-space: nowrap; padding: 0 .5rem; }
+
+    /* Curseur aujourd'hui */
+    .tl-cursor {
+      position: absolute; top: -4px; bottom: 0;
+      width: 3px; background: #fff;
+      box-shadow: 0 0 0 2px #1e293b, 0 2px 8px rgba(0,0,0,.3);
+      border-radius: 2px; z-index: 10;
+      transition: left .3s;
+    }
+    .tl-cursor::before {
+      content: '▼';
+      position: absolute; top: -14px; left: 50%;
+      transform: translateX(-50%);
+      font-size: .65rem; color: #1e293b;
+    }
+    .tl-cursor-label {
+      position: absolute; bottom: -1.4rem; left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap; font-size: .65rem; font-weight: 700;
+      color: #1e293b; background: #fff;
+      border: 1px solid #e2e8f0; border-radius: 4px;
+      padding: .1rem .4rem;
+    }
+
+    /* Axe dates */
+    .tl-axis {
+      display: flex; justify-content: space-between;
+      margin-top: .35rem; padding: 0 .1rem;
+      font-size: .62rem; color: #94a3b8;
+    }
+
+    /* Badge séances dans cellule */
+    .seances-bar {
+      margin-top: .5rem;
+      background: #e2e8f0; border-radius: 4px;
+      height: 5px; overflow: hidden;
+    }
+    .seances-bar-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+    .seances-info {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: .3rem; font-size: .64rem;
+    }
+    .seances-done  { color: #15803d; font-weight: 700; }
+    .seances-left  { color: #64748b; }
+    .seances-total { color: #94a3b8; }
+    .periode-status {
+      display: inline-block; font-size: .6rem; font-weight: 700;
+      padding: .1rem .4rem; border-radius: 8px; margin-bottom: .3rem;
+    }
+    .status-done    { background: #dcfce7; color: #15803d; }
+    .status-current { background: #fef3c7; color: #d97706; }
+    .status-future  { background: #f1f5f9; color: #64748b; }
   </style>
 </head>
 <body>
@@ -186,29 +257,8 @@
       <button class="btn btn-ghost btn-sm" onclick="resetProg()" title="Recharger la programmation par défaut">↺ Réinitialiser</button>
     </div>
 
-    <!-- Légende périodes -->
-    <div class="periodes-legend">
-      <div class="periode-pill p1-color">
-        <div class="periode-pill-title">P1</div>
-        <div class="periode-pill-dates">1 sept → 14 nov</div>
-        <div class="periode-pill-seances">📅 9 séances</div>
-      </div>
-      <div class="periode-pill p2-color">
-        <div class="periode-pill-title">P2</div>
-        <div class="periode-pill-dates">17 nov → 23 jan</div>
-        <div class="periode-pill-seances">📅 8 séances</div>
-      </div>
-      <div class="periode-pill p3-color">
-        <div class="periode-pill-title">P3</div>
-        <div class="periode-pill-dates">26 jan → 3 avr</div>
-        <div class="periode-pill-seances">📅 8 séances</div>
-      </div>
-      <div class="periode-pill p4-color">
-        <div class="periode-pill-title">P4</div>
-        <div class="periode-pill-dates">7 avr → 13 juin</div>
-        <div class="periode-pill-seances">📅 8 séances</div>
-      </div>
-    </div>
+    <!-- Timeline globale -->
+    <div id="timeline-globale-wrap"></div>
 
     <p style="font-size:.75rem;color:#64748b;margin-bottom:1rem;">
       💡 <strong>Cliquer sur une case</strong> pour modifier les APSA · 
@@ -400,9 +450,115 @@ let toutesClassesCache = [];
 let tousCyclesCache    = [];
 
 // ── Rendu programmation ────────────────────────────────────
+// ── Calcul séances passées jusqu'à aujourd'hui ─────────────
+function seancesPasseesPourPeriode(p) {
+  const pd = PERIODES_DATES[p];
+  if (!pd) return { passees: 0, total: 0, restantes: 0, pct: 0, statut: 'future' };
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const debut = new Date(pd.debut);
+  const fin   = new Date(pd.fin);
+  const total = pd.nbSeances;
+
+  if (today < debut) {
+    return { passees: 0, total, restantes: total, pct: 0, statut: 'future' };
+  }
+  if (today > fin) {
+    return { passees: total, total, restantes: 0, pct: 100, statut: 'done' };
+  }
+  // En cours : compter les semaines écoulées sans vacances
+  let passees = 0;
+  let cur = new Date(debut);
+  const jourSemaine = cur.getDay();
+  const offsetLundi = jourSemaine === 0 ? 1 : jourSemaine === 1 ? 0 : 8 - jourSemaine;
+  cur.setDate(cur.getDate() + offsetLundi);
+  while (cur <= today && cur <= fin) {
+    const enVac = VACANCES.some(v => cur >= v.debut && cur <= v.fin);
+    if (!enVac) passees++;
+    cur.setDate(cur.getDate() + 7);
+  }
+  passees = Math.min(passees, total);
+  const restantes = total - passees;
+  const pct = total > 0 ? Math.round(passees / total * 100) : 0;
+  return { passees, total, restantes, pct, statut: 'current' };
+}
+
+// ── Timeline globale avec curseur ──────────────────────────
+function renderTimelineGlobale() {
+  const wrap = document.getElementById('timeline-globale-wrap');
+  if (!wrap) return;
+
+  const P_COLORS = { P1:'#3B82F6', P2:'#10b981', P3:'#f59e0b', P4:'#ef4444' };
+  const P_LABELS = {
+    P1: '1 sept → 14 nov',
+    P2: '17 nov → 23 jan',
+    P3: '26 jan → 3 avr',
+    P4: '7 avr → 13 juin'
+  };
+
+  // Calculer position du curseur
+  const anneeDebut = new Date('2025-09-01');
+  const anneeFin   = new Date('2026-06-13');
+  const today      = new Date();
+  today.setHours(0,0,0,0);
+
+  const totalMs  = anneeFin - anneeDebut;
+  const ecoulMs  = Math.max(0, Math.min(today - anneeDebut, totalMs));
+  const cursorPct = Math.round(ecoulMs / totalMs * 100);
+
+  const todayStr = today.toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+  const isInYear = today >= anneeDebut && today <= anneeFin;
+
+  // Largeurs relatives : chaque période = ses séances / total séances
+  const totalSeances = 9 + 8 + 8 + 8; // 33
+  const poids = { P1: 9/totalSeances, P2: 8/totalSeances, P3: 8/totalSeances, P4: 8/totalSeances };
+
+  let segmentsHTML = '';
+  ['P1','P2','P3','P4'].forEach(p => {
+    const { passees, total, restantes, statut } = seancesPasseesPourPeriode(p);
+    const w = Math.round(poids[p] * 100);
+    const pd = PERIODES_DATES[p];
+    const labelExtra = statut === 'done' ? '✓ Terminée' :
+                       statut === 'current' ? `${passees}/${total} séances` :
+                       `${total} séances`;
+    segmentsHTML += `
+      <div class="tl-segment" style="flex:${w};background:${P_COLORS[p]};opacity:${statut==='future'?.55:1}" 
+           title="${p} · ${P_LABELS[p]} · ${labelExtra}">
+        <div class="tl-segment-label">${p} · ${labelExtra}</div>
+      </div>`;
+  });
+
+  const cursorHTML = isInYear ? `
+    <div class="tl-cursor" style="left:${cursorPct}%">
+      <div class="tl-cursor-label">📍 ${todayStr}</div>
+    </div>` : '';
+
+  wrap.innerHTML = `
+    <div class="timeline-globale">
+      <div style="font-size:.72rem;font-weight:700;color:#64748b;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.07em">
+        📅 Année scolaire 2025–2026
+      </div>
+      <div class="timeline-globale-bar" style="position:relative;">
+        ${segmentsHTML}
+        ${cursorHTML}
+      </div>
+      <div class="tl-axis">
+        <span>1 sept. 2025</span>
+        <span>14 nov.</span>
+        <span>23 jan. 2026</span>
+        <span>3 avr.</span>
+        <span>13 juin 2026</span>
+      </div>
+    </div>`;
+}
+
 function renderProg() {
+  renderTimelineGlobale();
+
   const el = document.getElementById('prog-content');
   let html = '';
+
+  const P_COLORS = ['#3B82F6','#10b981','#f59e0b','#ef4444'];
 
   NIVEAUX_ORDER.forEach(({ niveau, classes, color }) => {
     html += `<div class="niveau-groupe niveau-${niveau}" style="margin-bottom:1.5rem;">
@@ -411,12 +567,14 @@ function renderProg() {
     classes.forEach(classeNom => {
       const data = progData[classeNom] || { rythme:'', prof:'', P1:{slots:[],notes:''}, P2:{slots:[],notes:''}, P3:{slots:[],notes:''}, P4:{slots:[],notes:''} };
       const nbEleves = statsClasses[classeNom] || '?';
-      const is6e = niveau === '6e';
+
+      // Mini-timeline par classe
+      const miniTL = buildMiniTimeline(classeNom, data, color);
 
       html += `
         <div class="classe-card">
           <div class="classe-card-header">
-            <div style="display:flex;align-items:center;gap:.6rem;">
+            <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
               <div class="classe-nom">${classeNom}</div>
               <span class="classe-rythme" style="background:${color}18;color:${color}">${data.rythme||''}</span>
               ${data.prof ? `<span style="font-size:.7rem;color:#64748b">👤 ${data.prof}</span>` : ''}
@@ -427,12 +585,33 @@ function renderProg() {
               <a href="gestion-classes.html" class="btn btn-ghost btn-sm" style="font-size:.7rem">⚙️</a>
             </div>
           </div>
+          ${miniTL}
           <div class="periodes-grid">
-            ${['P1','P2','P3','P4'].map(p => {
-              const cell = data[p] || { slots:[], notes:'' };
-              const slots = cell.slots || [];
-              const pIdx = parseInt(p[1]);
-              const pColor = ['#3B82F6','#10b981','#f59e0b','#ef4444'][pIdx-1];
+            ${['P1','P2','P3','P4'].map((p, pIdx) => {
+              const cell   = data[p] || { slots:[], notes:'' };
+              const slots  = cell.slots || [];
+              const pColor = P_COLORS[pIdx];
+              const { passees, total, restantes, pct, statut } = seancesPasseesPourPeriode(p);
+
+              const statusLabel = statut === 'done'
+                ? `<span class="periode-status status-done">✓ Terminée</span>`
+                : statut === 'current'
+                ? `<span class="periode-status status-current">▶ En cours</span>`
+                : `<span class="periode-status status-future">○ À venir</span>`;
+
+              const barColor = statut === 'done' ? '#22c55e' : statut === 'current' ? pColor : '#cbd5e1';
+
+              const seancesBlock = `
+                ${statusLabel}
+                <div class="seances-bar">
+                  <div class="seances-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+                </div>
+                <div class="seances-info">
+                  <span class="seances-done">${passees > 0 ? passees + ' faite' + (passees>1?'s':'') : ''}</span>
+                  <span class="seances-left">${restantes > 0 ? restantes + ' restante' + (restantes>1?'s':'') : ''}</span>
+                  <span class="seances-total">${total} séances</span>
+                </div>`;
+
               return `
                 <div class="periode-cell" onclick="ouvrirEdit('${classeNom}','${p}')">
                   <div class="periode-cell-header">
@@ -441,7 +620,6 @@ function renderProg() {
                   </div>
                   <div class="apsa-slots">
                     ${slots.length ? slots.map(s => {
-                      // Vérifier si un cycle existe en base pour cette APSA
                       const classeObj = toutesClassesCache.find(c => c.nom === classeNom);
                       const cycleOk   = classeObj && tousCyclesCache.some(cy =>
                         cy.classeId === classeObj.id && cy.periode === p
@@ -454,7 +632,8 @@ function renderProg() {
                         </div>`;
                     }).join('') : `<div class="periode-empty">Non renseigné</div>`}
                   </div>
-                  ${cell.notes ? `<div style="font-size:.62rem;color:#94a3b8;margin-top:.3rem;font-style:italic">📝 ${cell.notes}</div>` : ''}
+                  ${cell.notes ? `<div style="font-size:.62rem;color:#94a3b8;margin-top:.2rem;font-style:italic">📝 ${cell.notes}</div>` : ''}
+                  ${seancesBlock}
                 </div>`;
             }).join('')}
           </div>
@@ -465,6 +644,53 @@ function renderProg() {
   });
 
   el.innerHTML = html;
+}
+
+// ── Mini-timeline par classe ────────────────────────────────
+function buildMiniTimeline(classeNom, data, color) {
+  const today     = new Date(); today.setHours(0,0,0,0);
+  const anneeDebut = new Date('2025-09-01');
+  const anneeFin   = new Date('2026-06-13');
+  const totalMs    = anneeFin - anneeDebut;
+  const ecoulMs    = Math.max(0, Math.min(today - anneeDebut, totalMs));
+  const cursorPct  = Math.round(ecoulMs / totalMs * 100);
+  const isInYear   = today >= anneeDebut && today <= anneeFin;
+  const todayStr   = today.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+
+  const totalSeances = 33;
+  const poids = { P1:9/totalSeances, P2:8/totalSeances, P3:8/totalSeances, P4:8/totalSeances };
+  const P_COLORS = { P1:'#3B82F6', P2:'#10b981', P3:'#f59e0b', P4:'#ef4444' };
+
+  let segs = '';
+  ['P1','P2','P3','P4'].forEach(p => {
+    const slots = (data[p]?.slots || []);
+    const { statut, passees, total } = seancesPasseesPourPeriode(p);
+    const w = Math.round(poids[p] * 100);
+    const nomApsa = slots.length ? slots.map(s => getIcon(s)+' '+s).join(' · ') : '—';
+    const opacity = statut === 'future' ? .4 : 1;
+    const striped = statut === 'done' ?
+      `background:repeating-linear-gradient(45deg,${P_COLORS[p]},${P_COLORS[p]} 4px,${P_COLORS[p]}cc 4px,${P_COLORS[p]}cc 8px)` : '';
+    segs += `<div style="flex:${w};height:22px;background:${P_COLORS[p]};opacity:${opacity};${striped};
+      display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;"
+      title="${p} · ${nomApsa} · ${passees}/${total} séances">
+      <span style="font-size:.62rem;font-weight:700;color:#fff;white-space:nowrap;padding:0 .3rem;
+        text-overflow:ellipsis;overflow:hidden;">${slots.length ? slots[0] : p}</span>
+    </div>`;
+  });
+
+  const cursor = isInYear ? `<div style="position:absolute;top:0;bottom:0;left:${cursorPct}%;
+    width:2px;background:#fff;box-shadow:0 0 0 1.5px #1e293b;z-index:5;border-radius:1px;">
+    <span style="position:absolute;top:50%;transform:translateY(-50%) translateX(-50%);
+      background:#1e293b;color:#fff;font-size:.55rem;font-weight:700;border-radius:3px;
+      padding:.1rem .3rem;white-space:nowrap;">📍${todayStr}</span>
+  </div>` : '';
+
+  return `<div style="padding:.5rem 1rem .4rem;background:#f8fafc;border-bottom:1px solid #e5e7eb;">
+    <div style="position:relative;display:flex;border-radius:4px;overflow:hidden;gap:1px;">
+      ${segs}
+      ${cursor}
+    </div>
+  </div>`;
 }
 
 // ── Éditeur ────────────────────────────────────────────────
