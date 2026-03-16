@@ -155,7 +155,7 @@
     }
     .timeline-globale-bar {
       display: flex; height: 36px; border-radius: 7px;
-      overflow: hidden; position: relative;
+      overflow: visible; position: relative;
     }
     .tl-segment {
       display: flex; align-items: center; justify-content: center;
@@ -163,6 +163,8 @@
       color: #fff; transition: filter .15s; position: relative;
       overflow: hidden;
     }
+    .tl-segment:first-child { border-radius: 7px 0 0 7px; }
+    .tl-segment:last-child  { border-radius: 0 7px 7px 0; }
     .tl-segment:hover { filter: brightness(.9); }
     .tl-segment-label { white-space: nowrap; padding: 0 .5rem; }
 
@@ -545,7 +547,7 @@ function renderTimelineGlobale() {
   });
 
   const cursorHTML = isInYear ? `
-    <div class="tl-cursor" style="left:${cursorPct}%">
+    <div class="tl-cursor" style="left:${cursorPct}%" title="📍 Aujourd'hui · ${todayStr}">
       <div class="tl-cursor-label">📍 ${todayStr}</div>
     </div>` : '';
 
