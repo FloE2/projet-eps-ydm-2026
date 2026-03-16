@@ -450,6 +450,15 @@ let toutesClassesCache = [];
 let tousCyclesCache    = [];
 
 // ── Rendu programmation ────────────────────────────────────
+// ── Vacances Zone C 2025-2026 ─────────────────────────────
+  const VACANCES = [
+    { debut: new Date('2025-10-18'), fin: new Date('2025-11-02'), label: 'Toussaint' },
+    { debut: new Date('2025-12-20'), fin: new Date('2026-01-04'), label: 'Noël' },
+    { debut: new Date('2026-02-14'), fin: new Date('2026-03-01'), label: 'Hiver' },
+    { debut: new Date('2026-04-25'), fin: new Date('2026-05-10'), label: 'Printemps' },
+    { debut: new Date('2026-07-04'), fin: new Date('2027-01-01'), label: 'Été' }
+  ];
+
 // ── Calcul séances passées jusqu'à aujourd'hui ─────────────
 function seancesPasseesPourPeriode(p) {
   const pd = PERIODES_DATES[p];
