@@ -406,18 +406,43 @@ BERNARD Clara
     if (eleves.length === 0) {
       el.innerHTML = '<div class="alert alert-info">ℹ️ Aucun élève dans cette classe.</div>'; return;
     }
+    const baseUrl = window.location.origin + window.location.pathname.replace('gestion-classes.html','');
     el.innerHTML = `<div class="table-wrapper"><table>
-      <thead><tr><th>#</th><th>Prénom</th><th>Nom</th><th>Actions</th></tr></thead>
-      <tbody>${eleves.map((e,i) => `<tr>
-        <td>${i+1}</td>
-        <td>${e.prenom}</td>
-        <td>${e.nom.toUpperCase()}</td>
-        <td>
-          <a href="suivi-eleve.html?eleveId=${e.id}" class="btn btn-ghost btn-sm">📈 Suivi</a>
-          <button class="btn btn-danger btn-sm" onclick="supprimerEleve('${e.id}','${e.prenom} ${e.nom}')">🗑</button>
-        </td>
-      </tr>`).join('')}</tbody>
-    </table></div>`;
+      <thead><tr><th>#</th><th>Prénom</th><th>Nom</th><th>Genre</th><th>Actions</th></tr></thead>
+      <tbody>${eleves.map((e,i) => {
+        const lienSuivi = `${baseUrl}admin/suivi-eleve.html?eleveId=${e.id}`;
+        const genreBadge = e.genre === 'F'
+          ? '<span style="color:#ec4899;font-size:.8rem;">♀</span>'
+          : e.genre === 'M'
+          ? '<span style="color:#3b82f6;font-size:.8rem;">♂</span>'
+          : '<span style="color:#94a3b8;font-size:.75rem;">—</span>';
+        return `<tr>
+          <td>${i+1}</td>
+          <td>${e.prenom}</td>
+          <td>${e.nom.toUpperCase()}</td>
+          <td>${genreBadge}</td>
+          <td style="display:flex;gap:.3rem;flex-wrap:wrap;">
+            <a href="suivi-eleve.html?eleveId=${e.id}" class="btn btn-ghost btn-sm" title="Voir le suivi">📈 Suivi</a>
+            <button class="btn btn-ghost btn-sm" onclick="copierLienEleve('${e.id}','${e.prenom} ${e.nom}')" title="Copier le lien partageable">🔗 Lien</button>
+            <button class="btn btn-danger btn-sm" onclick="supprimerEleve('${e.id}','${e.prenom} ${e.nom}')">🗑</button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>
+    <div style="margin-top:.6rem;font-size:.75rem;color:#64748b;">
+      💡 Le bouton <strong>🔗 Lien</strong> génère une URL partageable — l'élève peut consulter sa fiche sans mot de passe.
+    </div>`;
+  }
+
+  function copierLienEleve(eleveId, nom) {
+    const baseUrl = window.location.origin + window.location.pathname.replace('gestion-classes.html','');
+    const lien = `${baseUrl}admin/suivi-eleve.html?eleveId=${eleveId}`;
+    navigator.clipboard.writeText(lien).then(() => {
+      showToast(`🔗 Lien copié pour ${nom}`, 'success');
+    }).catch(() => {
+      // Fallback si clipboard API indisponible
+      prompt(`Lien pour ${nom} :`, lien);
+    });
   }
 
   function ouvrirModalEleve() {
@@ -596,7 +621,6 @@ BERNARD Clara
     if (!classeId) { showToast('⚠️ Sélectionnez une classe cible', 'error'); return; }
 
     let elevesList = [];
-
     if (importTab === 'pronote') {
       if (pronoteEleves.length === 0) { showToast('⚠️ Aucun fichier CSV chargé', 'error'); return; }
       elevesList = pronoteEleves;
@@ -620,21 +644,54 @@ BERNARD Clara
     const btn = document.getElementById('btn-importer');
     btn.disabled = true; btn.textContent = '⏳ Import…';
 
-    // Récupère les élèves existants pour éviter doublons
-    const existants = await getEleves(classeId);
-    const dejaDans = new Set(existants.map(e => (e.nom + '|' + e.prenom).toLowerCase()));
+    // Charger TOUS les élèves en base pour détecter fusions inter-classes (rentrée)
+    const tousEleves = await getTousEleves();
+    const dejaDansClasse = new Set(
+      tousEleves.filter(e => e.classeId === classeId)
+               .map(e => (e.nom + '|' + e.prenom).toLowerCase())
+    );
 
-    let ok = 0, doublons = 0, erreurs = 0;
+    let ok = 0, fusionnes = 0, doublons = 0, erreurs = 0;
+    const fusionDetails = [];
+
     for (const { nom, prenom, genre } of elevesList) {
       const cle = (nom + '|' + prenom).toLowerCase();
-      if (dejaDans.has(cle)) { doublons++; continue; }
+
+      // Déjà dans cette classe → doublon
+      if (dejaDansClasse.has(cle)) { doublons++; continue; }
+
+      // Existe dans une autre classe → fusion (changement de classe à la rentrée)
+      const existant = tousEleves.find(e =>
+        e.nom.toLowerCase() === nom.toLowerCase() &&
+        e.prenom.toLowerCase() === prenom.toLowerCase() &&
+        e.classeId !== classeId
+      );
+
+      if (existant) {
+        try {
+          await dbUpdate('eleves/' + existant.id, {
+            classeId,
+            classe:     classe?.nom    || '',
+            niveau:     classe?.niveau || '',
+            classePrec: existant.classe || '',
+            niveauPrec: existant.niveau || '',
+            anneePrec:  window.ANNEE_SCOLAIRE,
+            dateMAJ:    new Date().toISOString()
+          });
+          fusionnes++;
+          fusionDetails.push(`${prenom} ${nom} (${existant.classe || '?'} → ${classe?.nom || '?'})`);
+        } catch { erreurs++; }
+        continue;
+      }
+
+      // Nouvel élève
       try {
         await dbPush('eleves', {
           prenom, nom,
-          genre: genre || '',
+          genre:    genre || '',
           classeId,
-          classe: classe?.nom || '',
-          niveau: classe?.niveau || '',
+          classe:   classe?.nom    || '',
+          niveau:   classe?.niveau || '',
           dateAjout: new Date().toISOString()
         });
         ok++;
@@ -643,16 +700,23 @@ BERNARD Clara
 
     btn.disabled = false; btn.textContent = '⬆️ Importer';
 
-    let msg = `✓ ${ok} élève${ok > 1 ? 's' : ''} importé${ok > 1 ? 's' : ''}`;
-    if (doublons) msg += ` · ${doublons} doublon${doublons > 1 ? 's' : ''} ignoré${doublons > 1 ? 's' : ''}`;
-    if (erreurs)  msg += ` · ${erreurs} erreur${erreurs > 1 ? 's' : ''}`;
-    showToast(msg, ok > 0 ? 'success' : 'error');
+    let msg = '';
+    if (ok)        msg += `✓ ${ok} nouveau${ok>1?'x':''} élève${ok>1?'s':''}`;
+    if (fusionnes) msg += `${msg?' · ':''}🔄 ${fusionnes} réaffecté${fusionnes>1?'s':''}`;
+    if (doublons)  msg += `${msg?' · ':''}${doublons} doublon${doublons>1?'s':''} ignoré${doublons>1?'s':''}`;
+    if (erreurs)   msg += `${msg?' · ':''}❌ ${erreurs} erreur${erreurs>1?'s':''}`;
+    showToast(msg || '✓ Import terminé', (ok + fusionnes) > 0 ? 'success' : 'error');
+    if (fusionDetails.length > 0) {
+      const apercu = fusionDetails.slice(0,3).join(', ') + (fusionDetails.length>3?' …':'');
+      setTimeout(() => showToast(`🔄 Réaffectés : ${apercu}`, 'success'), 1200);
+    }
 
     fermerModal('modal-import-bg');
     viderPreview();
     document.getElementById('select-classe-eleves').value = classeId;
     chargerElevesClasse(classeId);
   }
+
 
   // ── CYCLES ─────────────────────────────────────────────────
   async function chargerCycles() {
