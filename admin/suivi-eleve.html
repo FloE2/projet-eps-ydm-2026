@@ -119,7 +119,14 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
-  requireProf();
+  // Accès : profs = mode complet, lien direct = mode lecture seule
+  const estProf = !!localStorage.getItem('eps_prof');
+  if (!estProf) {
+    // Mode lecture seule — pas de redirection, juste cacher les boutons de correction
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.prof-btns, .save-correction-btn, .commentaire-prof').forEach(el => el.style.display = 'none');
+    });
+  }
   let tousEleves=[], apsaCache={}, cycleCache={}, correctionsEnCours={};
   const NIVEAUX = {
     NA:  {label:'Non Atteint',          scale:'0 — 2',  icon:'✕', couleur:'#ef4444'},
@@ -174,6 +181,7 @@
         <div class="suivi-info">
           <h2>${eleve.prenom} ${(eleve.nom||'').toUpperCase()}</h2>
           <p>${eleve.classe||'—'} · ${eleve.niveau||'—'} · ${window.ANNEE_SCOLAIRE}</p>
+          ${eleve.classePrec ? `<p style="font-size:.78rem;color:rgba(255,255,255,.5);margin-top:.15rem;">↳ Anciennement ${eleve.classePrec} (${eleve.niveauPrec||''})</p>` : ''}
           <p style="margin-top:.3rem;">${evals.length} auto-évaluation${evals.length>1?'s':''} enregistrée${evals.length>1?'s':''}</p>
         </div>
       </div>
@@ -197,6 +205,7 @@
         const dateStr=ev.dateModif?new Date(ev.dateModif).toLocaleDateString('fr-FR'):'—';
         const objKeys=Object.entries(ev.resultats||{}).filter(([k])=>k.startsWith('obj_'));
         const nbA=objKeys.filter(([,v])=>v==='A'||v==='D').length;
+        const dejavu=evals.filter(e2=>e2.id!==ev.id&&e2.apsaId===ev.apsaId).length>0;
         const corr=ev.resultats_prof||{};
         correctionsEnCours[ev.id]={...corr};
         // Regrouper objectifs par domaine
@@ -209,7 +218,13 @@
                 <div class="apsa-nom">${apsaData.nom||ev.apsaId}</div>
                 <div class="apsa-date">📅 ${dateStr}</div>
               </div>
-              <span class="badge-niveau badge-A">${nbA}/${objKeys.length} Acquis (élève)</span>
+              <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                  <span class="badge-niveau badge-A">${nbA}/${objKeys.length} Acquis (élève)</span>
+                  ${dejavu?`<span style="background:#fef3c7;color:#d97706;font-size:.7rem;font-weight:700;padding:.2rem .6rem;border-radius:10px;border:1px solid #fde68a">🔄 Activité déjà vue · Progression</span>`:''}
+                </div>
+                ${dejavu ? `<span style="background:#fef3c7;color:#d97706;font-size:.7rem;font-weight:700;padding:.2rem .6rem;border-radius:10px;border:1px solid #fde68a">🔄 APSA déjà vue · Progression</span>` : ''}
+              </div>
             </div>
             <div class="legende-2col">
               <div class="leg-item"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#bee7fb;border:1px solid #7dd3fc"></span> Auto-évaluation élève</div>
