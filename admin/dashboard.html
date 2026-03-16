@@ -169,16 +169,18 @@
     /* Curseur aujourd'hui */
     .tl-cursor {
       position: absolute; top: -4px; bottom: 0;
-      width: 3px; background: #fff;
-      box-shadow: 0 0 0 2px #1e293b, 0 2px 8px rgba(0,0,0,.3);
+      width: 12px; margin-left: -5px;
+      display: flex; justify-content: center;
+      box-shadow: none; background: transparent;
       border-radius: 2px; z-index: 10;
       transition: left .3s;
     }
-    .tl-cursor::before {
-      content: '▼';
-      position: absolute; top: -14px; left: 50%;
-      transform: translateX(-50%);
-      font-size: .65rem; color: #1e293b;
+    .tl-cursor::after {
+      content: '';
+      width: 3px; height: 100%;
+      background: #fff;
+      box-shadow: 0 0 0 2px #1e293b, 0 2px 8px rgba(0,0,0,.3);
+      border-radius: 2px;
     }
     .tl-cursor-label {
       position: absolute; top: -1.8rem; left: 50%;
@@ -188,7 +190,11 @@
       border: 1.5px solid #1e293b; border-radius: 4px;
       padding: .15rem .5rem;
       box-shadow: 0 1px 4px rgba(0,0,0,.15);
+      opacity: 0; transition: opacity .2s;
+      pointer-events: none;
     }
+    .tl-cursor:hover .tl-cursor-label { opacity: 1; }
+    .tl-cursor { cursor: pointer; }
 
     /* Axe dates */
     .tl-axis {
