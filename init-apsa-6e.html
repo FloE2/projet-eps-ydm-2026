@@ -5,6 +5,7 @@
 <title>Init APSA 6e — EPS YDM 2026</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <style>
   body { font-family: monospace; background: #07192e; color: #f0ead8; padding: 40px; max-width: 900px; margin: 0 auto; }
   h1 { color: #e8b84b; font-size: 1.4rem; margin-bottom: 6px; }
@@ -46,9 +47,22 @@
   Assure-toi d'être connecté à Internet et que les règles Firebase autorisent l'écriture.
 </div>
 
-<button class="btn" id="btn-init" onclick="lancerInit()">
-  🚀 Insérer les 12 APSA 6e dans Firebase
-</button>
+<!-- Étape 1 : connexion -->
+<div id="bloc-login">
+  <button class="btn" id="btn-login" onclick="seConnecter()">
+    🔑 Se connecter avec Google pour continuer
+  </button>
+</div>
+
+<!-- Étape 2 : insertion (visible après connexion) -->
+<div id="bloc-insert" style="display:none">
+  <div style="background:rgba(45,170,106,0.15);border:1px solid rgba(45,170,106,0.4);border-radius:6px;padding:12px 16px;margin-bottom:16px;font-size:.82rem;">
+    ✅ Connecté en tant que : <strong id="user-email"></strong>
+  </div>
+  <button class="btn" id="btn-init" onclick="lancerInit()">
+    🚀 Insérer les 12 APSA 6e dans Firebase
+  </button>
+</div>
 
 <div class="log" id="log"></div>
 
@@ -71,7 +85,28 @@ const firebaseConfig = {
   appId:             "1:504635237273:web:8bcefc790c3f09fa276908"
 };
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const db   = firebase.database();
+const auth = firebase.auth();
+
+// ── Connexion Google ───────────────────────────────────────
+async function seConnecter() {
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true;
+  btn.textContent = '⏳ Connexion en cours…';
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const result = await auth.signInWithPopup(provider);
+    document.getElementById('user-email').textContent = result.user.email;
+    document.getElementById('bloc-login').style.display  = 'none';
+    document.getElementById('bloc-insert').style.display = 'block';
+    document.getElementById('log').innerHTML += '<div class="ok">✔ Connecté — tu peux lancer l\'insertion.</div>';
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '🔑 Se connecter avec Google pour continuer';
+    document.getElementById('log').innerHTML += '<div class="err">❌ Connexion échouée : ' + e.message + '</div>';
+  }
+}
 
 // ── Données APSA 6e ────────────────────────────────────────
 const APSA_6E = [
