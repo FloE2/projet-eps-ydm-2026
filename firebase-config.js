@@ -1,6 +1,7 @@
 // ============================================================
 //  CONFIGURATION FIREBASE — Collège Yves du Manoir
 //  ✅ Utilise Realtime Database (gratuit, déjà activé)
+//  ✅ Authentification Google activée
 //  ❌ Firestore désactivé (nécessite facturation en Europe)
 // ============================================================
 const firebaseConfig = {
@@ -16,7 +17,16 @@ const firebaseConfig = {
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
-const db = firebase.database();  // Realtime Database
+const db   = firebase.database();   // Realtime Database
+const auth = firebase.auth();       // Google Auth
+
+// ============================================================
+//  UTILISATEURS AUTORISÉS (vos deux comptes Gmail uniquement)
+// ============================================================
+window.EMAILS_AUTORISES = [
+  "florianeude@gmail.com",
+  "cosperec.emeric@gmail.com"
+];
 
 // ============================================================
 //  CONFIGURATION DU COLLÈGE
@@ -24,8 +34,6 @@ const db = firebase.database();  // Realtime Database
 window.COLLEGE_NOM    = "Collège Yves du Manoir";
 window.COLLEGE_VILLE  = "Vaucresson";
 window.ANNEE_SCOLAIRE = "2025-2026";
-window.ADMIN_PASSWORD = "Eps2026";
-window.ADMIN_USERS    = ["florian.eude", "emeric.cosperec"];
 
 // ============================================================
 //  CONSTANTES PÉDAGOGIQUES
@@ -63,15 +71,34 @@ function getNiveaux(niveauClasse) {
 }
 
 // ============================================================
-//  AUTH
+//  AUTH — Firebase Google
 // ============================================================
-function isProf() { return localStorage.getItem("eps_prof") === "true"; }
-function requireProf() {
-  if (!isProf()) window.location.href = getBase() + "admin/login.html";
+
+// Vérifie si l'utilisateur connecté est un prof autorisé
+function isProf() {
+  const user = auth.currentUser;
+  return user && window.EMAILS_AUTORISES.includes(user.email);
 }
+
+// Redirige vers login si pas connecté (pour les pages protégées)
+function requireProf() {
+  auth.onAuthStateChanged(user => {
+    if (!user || !window.EMAILS_AUTORISES.includes(user.email)) {
+      window.location.href = getBase() + "login.html";
+    }
+  });
+}
+
 function getBase() {
   const p = window.location.pathname;
   return (p.includes("/admin/") || p.includes("/eleve/")) ? "../" : "./";
+}
+
+// Déconnexion
+function deconnexion() {
+  auth.signOut().then(() => {
+    window.location.href = getBase() + "login.html";
+  });
 }
 
 // ============================================================
