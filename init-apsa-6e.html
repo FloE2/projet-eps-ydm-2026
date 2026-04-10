@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Init APSA 6e — EPS YDM 2026</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<style>
+  body { font-family: monospace; background: #07192e; color: #f0ead8; padding: 40px; max-width: 900px; margin: 0 auto; }
+  h1 { color: #e8b84b; font-size: 1.4rem; margin-bottom: 6px; }
+  .sub { color: rgba(240,234,216,0.5); font-size: 0.8rem; margin-bottom: 30px; }
+  .btn {
+    display: block; width: 100%; padding: 18px;
+    background: linear-gradient(135deg, #c8922a, #e8b84b);
+    color: #07192e; font-size: 1.1rem; font-weight: 900;
+    border: none; border-radius: 6px; cursor: pointer;
+    margin-bottom: 20px; font-family: monospace;
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .btn:hover { opacity: 0.9; }
+  .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+  .log { background: #0d2545; border: 1px solid rgba(200,146,42,0.3); border-radius: 6px;
+         padding: 20px; height: 500px; overflow-y: auto; font-size: 0.78rem; line-height: 1.8; }
+  .ok   { color: #2daa6a; }
+  .warn { color: #e8b84b; }
+  .err  { color: #e05050; }
+  .head { color: #a06cd5; font-weight: bold; border-bottom: 1px solid rgba(160,108,213,0.3); margin: 8px 0 4px; padding-bottom: 4px; }
+  .success-box { margin-top: 20px; background: rgba(45,170,106,0.15); border: 1px solid rgba(45,170,106,0.4);
+                 border-radius: 6px; padding: 16px; display: none; }
+  .success-box h3 { color: #2daa6a; margin: 0 0 8px; }
+  .success-box p  { color: rgba(240,234,216,0.75); font-size: 0.82rem; margin: 4px 0; }
+  .warning-box { background: rgba(200,146,42,0.1); border: 1px solid rgba(200,146,42,0.4);
+                 border-radius: 6px; padding: 16px; margin-bottom: 20px; font-size: 0.82rem;
+                 color: rgba(240,234,216,0.8); line-height: 1.65; }
+  .warning-box strong { color: #e8b84b; }
+</style>
+</head>
+<body>
+
+<h1>🏃 Init APSA 6e — Collège Yves du Manoir</h1>
+<p class="sub">Insertion des descripteurs de niveaux (NA / ECA / A / D) en langage élève · 12 APSA · Niveau 6e</p>
+
+<div class="warning-box">
+  ⚠️ <strong>Ce script crée ou met à jour les APSA 6e dans Firebase.</strong><br>
+  S'il existe déjà une APSA avec le même nom, elle sera <strong>mise à jour</strong> (pas dupliquée).<br>
+  Assure-toi d'être connecté à Internet et que les règles Firebase autorisent l'écriture.
+</div>
+
+<button class="btn" id="btn-init" onclick="lancerInit()">
+  🚀 Insérer les 12 APSA 6e dans Firebase
+</button>
+
+<div class="log" id="log"></div>
+
+<div class="success-box" id="success-box">
+  <h3>✅ Insertion terminée !</h3>
+  <p>Les 12 APSA 6e sont disponibles dans votre application.</p>
+  <p>→ <a href="admin/gestion-apsa.html" style="color:#e8b84b">Vérifier dans Gestion APSA</a></p>
+  <p>→ <strong>Supprimez ce fichier</strong> de votre dépôt GitHub une fois terminé.</p>
+</div>
+
+<script>
+// ── Firebase ───────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey:            "AIzaSyBt_P5FLg105eCF-DVL_Fp5hctk6-qz_68",
+  authDomain:        "projet-eps-ydm-2026.firebaseapp.com",
+  databaseURL:       "https://projet-eps-ydm-2026-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "projet-eps-ydm-2026",
+  storageBucket:     "projet-eps-ydm-2026.firebasestorage.app",
+  messagingSenderId: "504635237273",
+  appId:             "1:504635237273:web:8bcefc790c3f09fa276908"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ── Données APSA 6e ────────────────────────────────────────
+const APSA_6E = [
+
+  // ────────────── CA4 — AFFRONTEMENT ──────────────
+  {
+    nom: "Badminton",
+    champAppr: "CA4",
+    description: "Construire le point par une tactique d'opposition individuelle en utilisant la variété des frappes et l'anticipation",
+    niveaux: ["6e", "5e", "4e", "3e"],
+    objectifs: [
+      {
+        id: 1, texte: "Rompre l'échange le plus vite possible grâce à son coup gagnant", domaine: "D1.4",
+        descripteurs: {
+          NA:  "J'envoie mon volant souvent au centre du terrain. Je renvoie le volant pour continuer l'échange.",
+          ECA: "Je cherche parfois un espace libre dans le terrain adverse. Je tente d'accélérer la frappe quand le volant est favorable.",
+          A:   "Je repère un volant favorable pour attaquer. Je joue vite vers un espace libre pour marquer le point.",
+          D:   "Je me place rapidement pour attaquer le volant. Je joue dans les angles ou loin de mon adversaire pour gagner l'échange."
+        }
+      },
+      {
+        id: 2, texte: "M'échauffer en reproduisant ce que je vois ou de manière autonome et complète", domaine: "D4",
+        descripteurs: {
+          NA:  "Je reproduis quelques exercices d'échauffement. Je participe au début de l'échauffement.",
+          ECA: "Je reproduis les exercices proposés pendant l'échauffement. Je participe à plusieurs exercices.",
+          A:   "Je réalise tous les exercices d'échauffement proposés. Je prépare mon corps pour jouer au badminton.",
+          D:   "Je réalise un échauffement complet de manière autonome. Je montre ou je propose des exercices d'échauffement aux camarades."
+        }
+      },
+      {
+        id: 3, texte: "Savoir arbitrer de manière dynamique et claire — Respecter les décisions arbitrales", domaine: "D3",
+        descripteurs: {
+          NA:  "Je regarde l'échange sans annoncer les points. Je conteste les décisions de l'arbitre.",
+          ECA: "J'annonce parfois les fautes et les points. J'accepte les décisions mais je les comprends pas toujours.",
+          A:   "J'annonce clairement les points et le score. Je respecte les décisions arbitrales sans les contester.",
+          D:   "J'arbitre le match en annonçant chaque point clairement et en gérant les situations litigieuses avec calme."
+        }
+      }
+    ]
+  },
+
+  {
+    nom: "Basket-ball",
+    champAppr: "CA4",
+    description: "Attaquer pour marquer en utilisant ses partenaires et défendre pour récupérer le ballon",
+    niveaux: ["6e", "5e", "4e", "3e"],
+    objectifs: [
+      {
+        id: 1, texte: "Attaquer pour marquer en utilisant mes partenaires", domaine: "D1.4",
+        descripteurs: {
+          NA:  "Je fonce vers le panier sans regarder mes partenaires. Je perds souvent le ballon face à un adversaire.",
+          ECA: "Je cherche parfois un partenaire libre avant de dribbler. J'avance vers le panier mais je me fais parfois stopper.",
+          A:   "Je choisis entre dribbler et passer selon la situation. J'utilise mes partenaires pour progresser vers le panier et marquer.",
+          D:   "J'organise l'attaque de mon équipe. Je crée des décalages et je prends les bonnes décisions rapidement pour mettre mes partenaires en position de marquer."
+        }
+      },
+      {
+        id: 2, texte: "M'échauffer de manière autonome et complète", domaine: "D2",
+        descripteurs: {
+          NA:  "Je ne m'échauffe pas vraiment avant de jouer. Je pars directement sans préparer mes muscles.",
+          ECA: "Je réalise les exercices d'échauffement proposés mais j'ai parfois besoin d'être relancé.",
+          A:   "Je réalise tous les exercices d'échauffement avec sérieux et autonomie. Je prépare mon corps pour jouer au basket.",
+          D:   "Je m'échauffe de façon autonome et j'explique à mes camarades l'utilité des exercices. Je guide l'échauffement du groupe."
+        }
+      },
+      {
+        id: 3, texte: "Respecter les règles et arbitrer", domaine: "D3",
+        descripteurs: {
+          NA:  "Je connais peu les règles du basket. Je conteste les décisions et j'ai du mal à arbitrer.",
+          ECA: "Je connais les règles principales. J'arbitre quand on me le demande mais j'hésite à siffler.",
+          A:   "Je respecte les règles et je les applique quand j'arbitre. J'annonce clairement les fautes et les remises en jeu.",
+          D:   "J'arbitre avec assurance et impartialité. J'explique les règles à mes camarades et je gère les situations de jeu complexes sans hésiter."
+        }
+      }
+    ]
+  },
+
+  {
+    nom: "Tennis de table",
+    champAppr: "CA4",
+    description: "Construire le point en variant les placements et les vitesses de balle pour déséquilibrer l'adversaire",
+    niveaux: ["6e", "5e"],
+    objectifs: [
+      {
+        id: 1, texte: "Construire le point en variant les placements", domaine: "D1.4",
+        descripteurs: {
+          NA:  "Je renvoie la balle sans chercher à la diriger. Je joue toujours au même endroit et je perds rapidement l'échange.",
+          ECA: "Je cherche parfois à diriger la balle pour mettre mon adversaire en difficulté. Je varie quelques coups mais sans vraie stratégie.",
+          A:   "Je place la balle à droite ou à gauche pour déséquilibrer mon adversaire. Je choisis mon coup en fonction de la situation pour marquer le point.",
+          D:   "Je construis le point avec intention. J'enchaîne les coups pour ouvrir le jeu et je termine l'échange avec un coup gagnant placé avec précision."
+        }
+      },
+      {
+        id: 2, texte: "M'échauffer de manière autonome et complète", domaine: "D2",
+        descripteurs: {
+          NA:  "Je fais quelques échanges sans vraiment m'échauffer. Je commence à jouer sans préparer mon corps.",
+          ECA: "Je réalise les exercices d'échauffement proposés. Je participe mais j'ai parfois besoin d'être relancé.",
+          A:   "Je réalise tous les exercices d'échauffement sérieusement. Je prépare mon corps et mes appuis pour jouer au tennis de table.",
+          D:   "Je m'échauffe de manière autonome et complète. Je propose des exercices adaptés au tennis de table à mes camarades."
+        }
+      },
+      {
+        id: 3, texte: "Arbitrer et respecter les règles", domaine: "D3",
+        descripteurs: {
+          NA:  "Je connais peu les règles. Je conteste les décisions et j'ai du mal à compter les points correctement.",
+          ECA: "Je connais les règles principales du tennis de table. J'arbitre quand on me le demande mais j'hésite parfois.",
+          A:   "Je respecte les règles et je les applique quand j'arbitre. J'annonce clairement le score et les fautes.",
+          D:   "J'arbitre avec assurance et impartialité. J'explique les règles à mes camarades et je gère les situations litigieuses avec calme."
+        }
+      }
+    ]
+  },
+
+  {
+    nom: "Rugby",
+    champAppr: "CA4",
+    description: "Avancer vers l'en-but en conservant le ballon collectivement et défendre en s'opposant au porteur",
+    niveaux: ["6e"],
+    objectifs: [
+      {
+        id: 1, texte: "Avancer vers la cible en conservant le ballon", domaine: "D1.4",
+        descripteurs: {
+          NA:  "Je cours sans chercher à avancer vers l'en-but. Je perds souvent le ballon et je ne sais pas quand passer.",
+          ECA: "J'avance vers l'en-but mais je passe le ballon tardivement ou trop tôt. Je conserve le ballon dans les situations simples.",
+          A:   "J'avance vers l'en-but et je passe le ballon au bon moment pour conserver la possession. Je choisis entre courir et passer selon la position des adversaires.",
+          D:   "J'organise l'avancée de mon équipe. Je crée des espaces, je fixe les défenseurs et je donne le ballon au bon moment pour permettre à mes partenaires d'aplatir."
+        }
+      },
+      {
+        id: 2, texte: "M'échauffer de manière autonome et complète", domaine: "D2",
+        descripteurs: {
+          NA:  "Je ne m'échauffe pas sérieusement. Je participe peu aux exercices et je commence à jouer sans avoir préparé mon corps.",
+          ECA: "Je réalise les exercices d'échauffement proposés. Je participe mais je m'arrête parfois.",
+          A:   "Je réalise tous les exercices d'échauffement avec sérieux. Je prépare mon corps pour les contacts et les courses du rugby.",
+          D:   "Je m'échauffe de façon autonome et complète. Je propose des exercices spécifiques au rugby à mes camarades et je guide l'échauffement."
+        }
+      },
+      {
+        id: 3, texte: "Respecter les règles et l'adversaire", domaine: "D3",
+        descripteurs: {
+          NA:  "Je ne connais pas bien les règles du rugby. J'ai des comportements dangereux ou irrespectueux envers l'adversaire.",
+          ECA: "Je connais les règles principales. Je respecte généralement l'adversaire mais je conteste parfois les décisions.",
+          A:   "Je respecte toutes les règles et j'adopte un comportement fair-play en toutes circonstances. Je reconnais mes fautes sans les contester.",
+          D:   "Je respecte les règles et l'adversaire avec exemplarité. J'aide à faire respecter le fair-play dans mon équipe et j'arbitre des situations de jeu."
+        }
+      }
+    ]
+  },
+
+  {
+    nom: "Handball",
+    champAppr: "CA4",
+    description: "Attaquer pour marquer en utilisant ses partenaires et défendre pour récupérer le ballon",
+    niveaux: ["6e"],
+    objectifs: [
+      {
+        id: 1, texte: "Attaquer pour marquer en utilisant mes partenaires", domaine: "D1.4",
+        descripteurs: {
+          NA:  "Je fonce vers le but sans regarder mes partenaires. Je tire de loin sans me créer d'occasion réelle.",
+          ECA: "Je cherche parfois mes partenaires avant de tirer. Je progresse vers le but mais je me fais souvent intercepter.",
+          A:   "Je choisis entre tirer et passer selon la position des défenseurs. J'utilise mes partenaires pour me rapprocher du but et créer des occasions.",
+          D:   "J'organise l'attaque de mon équipe. Je fixe les défenseurs, je crée des décalages et je prends les décisions justes pour mettre mes partenaires en position de marquer."
+        }
+      },
+      {
+        id: 2, texte: "M'échauffer de manière autonome et complète", domaine: "D2",
+        descripteurs: {
+          NA:  "Je ne m'échauffe pas vraiment. Je participe peu aux exercices et je commence à jouer sans préparation.",
+          ECA: "Je réalise les exercices d'échauffement proposés mais j'ai parfois besoin d'être relancé.",
+          A:   "Je réalise tous les exercices d'échauffement sérieusement. Je prépare mon corps pour les courses, les tirs et les contacts du handball.",
+          D:   "Je m'échauffe de manière autonome et complète. Je propose des exercices spécifiques au handball et je guide mes camarades."
+        }
+      },
+      {
+        id: 3, texte: "Respecter les règles et arbitrer", domaine: "D3",
+        descripteurs: {
+          NA:  "Je connais peu les règles. Je conteste les décisions et j'ai du mal à arbitrer un match.",
+          ECA: "Je connais les règles principales du handball. J'arbitre quand on me le demande mais j'hésite souvent à siffler.",
+          A:   "Je respecte les règles et je les applique quand j'arbitre. J'annonce clairement les fautes, les remises en jeu et le score.",
+          D:   "J'arbitre avec assurance et impartialité. J'explique les règles à mes camarades et je gère les situations de jeu complexes avec calme."
+        }
+      }
+    ]
+  },
+
+  // ────────────── CA1 — PERFORMANCE ──────────────
+  {
+    nom: "Demi-fond",
+    champAppr: "CA1",
+    description: "Courir à allure régulière sur durée longue en gérant ses ressources pour produire la meilleure performance",
+    niveaux: ["6e", "5e", "4e", "3e"],
+    objectifs: [
+      {
+        id: 1, texte: "Courir à une allure régulière adaptée à mon niveau", domaine: "D1.4",
+        descripteurs: {
+          NA:  "Je pars trop vite et je dois m'arrêter ou marcher avant la fin. Mon allure est très irrégulière.",
+          ECA: "Je cours à peu près à la même allure mais je ralentis souvent en fin de course. Je tiens sur une partie de la distance.",
+          A:   "Je cours à une allure régulière sur toute la distance sans m'arrêter. Je choisis mon allure en fonction de la distance et je la maintiens jusqu'à la fin.",
+          D:   "Je cours à une allure choisie et je l'ajuste en cours de route. Je gère mon effort pour accélérer sur la fin et réaliser ma meilleure performance."
+        }
+      },
+      {
+        id: 2, texte: "Mesurer et analyser ma performance", domaine: "D4",
+        descripteurs: {
+          NA:  "Je ne connais pas mon temps ni la distance parcourue. Je ne sais pas si j'ai progressé.",
+          ECA: "Je connais mon temps de course. Je compare parfois mes résultats mais je n'arrive pas bien à expliquer mes progrès.",
+          A:   "Je note mes temps et je compare mes performances d'une séance à l'autre. Je comprends ce qui me fait progresser ou régresser.",
+          D:   "J'analyse mes résultats précisément. Je me fixe des objectifs réalistes et j'explique ma progression à partir de données mesurées."
+        }
+      },
+      {
+        id: 3, texte: "Gérer mon effort et connaître mes limites", domaine: "D2",
+        descripteurs: {
+          NA:  "Je ne sais pas réguler mon effort. Je pars toujours trop vite ou trop lentement sans m'en rendre compte.",
+          ECA: "Je commence à sentir quand je force trop. J'essaie de réguler mon allure mais je n'y arrive pas toujours.",
+          A:   "Je connais mon allure de course et je la respecte. Je suis capable de reconnaître les signes de fatigue et d'adapter mon effort.",
+          D:   "Je gère parfaitement mon effort sur toute la course. Je conseille mes camarades sur la gestion de leur allure."
+        }
+      }
+    ]
+  },
+
+  {
+    nom: "Test Sport Santé",
+    champAppr: "CA1",
+    description: "Réaliser des épreuves de condition physique pour mesurer sa santé et comprendre les liens entre activité physique et bien-être",
+    niveaux: ["6e", "5e"],
+    objectifs: [
+      {
+        id: 1, texte: "Réaliser les épreuves avec le meilleur engagement possible", domaine: "D1.4",
+        descripteurs: {
+          NA:  "Je réalise les épreuves sans m'investir vraiment. Je m'arrête avant la fin ou je bâcle certains tests.",
+          ECA: "Je réalise la plupart des épreuves sérieusement mais je manque d'engagement sur certains tests physiquement difficiles.",
+          A:   "Je réalise toutes les épreuves avec sérieux et engagement. Je donne le maximum sur chaque test pour obtenir mon meilleur résultat.",
+          D:   "Je réalise toutes les épreuves avec un engagement maximal. J'aide à organiser les passages et j'encourage mes camarades."
+        }
+      },
+      {
+        id: 2, texte: "Comprendre les liens entre activité physique et santé", domaine: "D4",
+        descripteurs: {
+          NA:  "Je ne fais pas le lien entre les épreuves et ma condition physique. Je ne sais pas à quoi servent ces tests.",
+          ECA: "Je comprends que les tests évaluent ma condition physique mais j'ai du mal à expliquer ce que chaque épreuve mesure.",
+          A:   "Je comprends ce que chaque épreuve mesure (endurance, souplesse, force…) et je fais le lien avec ma santé et mon bien-être.",
+          D:   "J'explique clairement le lien entre chaque épreuve et la santé. Je sais quels axes je dois améliorer et pourquoi c'est important pour moi."
+        }
+      },
+      {
+        id: 3, texte: "Analyser mes résultats et me fixer des objectifs", domaine: "D2",
+        descripteurs: {
+          NA:  "Je ne note pas mes résultats et je ne cherche pas à progresser d'une fois à l'autre.",
+          ECA: "Je note mes résultats mais je les compare peu. Je n'ai pas vraiment d'objectif de progression.",
+          A:   "Je note mes résultats, je les compare à mes performances précédentes et je comprends mes points forts et mes points faibles.",
+          D:   "J'analyse mes résultats avec précision, je me fixe des objectifs réalistes et je propose des exercices pour progresser sur mes points faibles."
+        }
+      }
+    ]
+  },
+
+  {
+    nom: "Course de vitesse",
+    champAppr: "CA1",
+    description: "Courir le plus vite possible sur courte distance en maîtrisant la technique de sprint",
+    niveaux: ["6e"],
+    objectifs: [
+      {
+        id: 1, texte: "Réaliser un sprint avec une technique efficace", domaine: "D1.4",
+        descripteurs: {
+          NA:  "Je cours en me crispant. Mon départ est hésitant et mes bras ne m'aident pas à avancer.",
+          ECA: "Mon départ est correct mais je me redresse trop vite. Mes bras bougent mais pas toujours dans le bon sens.",
+          A:   "Je pars bas et je monte progressivement. Mes bras propulsent efficacement mon corps et je maintiens ma vitesse sur toute la distance.",
+          D:   "Mon départ est explosif et ma technique est maîtrisée de bout en bout. Je suis capable d'analyser ma course pour encore progresser."
+        }
+      },
+      {
+        id: 2, texte: "M'échauffer spécifiquement pour la course de vitesse", domaine: "D2",
+        descripteurs: {
+          NA:  "Je ne m'échauffe pas vraiment avant de courir. Je pars directement à fond sans préparer mes muscles.",
+          ECA: "Je réalise les exercices d'échauffement proposés mais sans toujours comprendre pourquoi je les fais.",
+          A:   "Je réalise un échauffement complet adapté à la vitesse (montées de genoux, talons-fesses, éducatifs…). Je comprends l'intérêt de chaque exercice.",
+          D:   "Je m'échauffe de façon autonome et j'explique à mes camarades l'utilité des éducatifs de course. Je guide l'échauffement du groupe."
+        }
+      },
+      {
+        id: 3, texte: "Mesurer et analyser ma performance", domaine: "D4",
+        descripteurs: {
+          NA:  "Je ne connais pas mon temps et je ne cherche pas à améliorer ma performance.",
+          ECA: "Je connais mon temps sur la distance. Je sais si j'ai été plus rapide mais je n'arrive pas à expliquer pourquoi.",
+          A:   "Je note mes temps et je les compare d'une séance à l'autre. J'identifie ce qui me permet de progresser (départ, technique, relâchement…).",
+          D:   "J'analyse finement ma course à partir de mes chronos. Je me fixe des objectifs précis et j'ajuste ma technique pour les atteindre."
+        }
+      }
+    ]
+  },
+
+  {
+    nom: "Biathlon",
+    champAppr: "CA1",
+    description: "Combiner course et tir de précision en gérant l'effort pour produire la meilleure performance globale",
+    niveaux: ["6e"],
+    objectifs: [
+      {
+        id: 1, texte: "Gérer ma course entre les tirs", domaine: "D1.4",
+        descripteurs: {
+          NA:  "Je pars trop vite et je suis trop essoufflé pour tirer correctement. Je ne gère pas mon effort entre les tours de piste.",
+          ECA: "Je commence à gérer mon allure mais j'arrive encore trop essoufflé au stand de tir. Mon rythme de course est irrégulier.",
+          A:   "Je gère mon allure de course pour arriver au stand de tir en état de tirer correctement. Je récupère rapidement avant de tirer.",
+          D:   "Je gère parfaitement mon effort entre les séquences de tir. J'ajuste mon allure selon ma fatigue pour optimiser mon temps total."
+        }
+      },
+      {
+        id: 2, texte: "Réaliser des tirs précis malgré l'essoufflement", domaine: "D1.4",
+        descripteurs: {
+          NA:  "Je tire rapidement sans viser. Je manque la plupart des cibles et j'accumule beaucoup de tours de pénalité.",
+          ECA: "Je prends le temps de viser mais mon essoufflement perturbe mes tirs. Je touche quelques cibles mais pas régulièrement.",
+          A:   "Je contrôle ma respiration avant de tirer. Je prends le temps de viser correctement et je touche la majorité des cibles.",
+          D:   "Je maîtrise ma respiration et ma visée même très essoufflé. Je touche presque toutes les cibles et je minimise mes tours de pénalité."
+        }
+      },
+      {
+        id: 3, texte: "Analyser ma performance et progresser", domaine: "D2",
+        descripteurs: {
+          NA:  "Je ne note pas mes résultats. Je ne sais pas combien de cibles j'ai touchées ni quel était mon temps.",
+          ECA: "Je note mon temps et le nombre de cibles touchées. Je sais si j'ai progressé mais je n'arrive pas à expliquer pourquoi.",
+          A:   "J'analyse mes résultats (temps de course, tirs réussis, pénalités) et j'identifie ce qui me fait gagner ou perdre du temps.",
+          D:   "J'analyse finement ma performance, je me fixe des objectifs précis sur la course ou le tir et j'ajuste ma stratégie pour progresser."
+        }
+      }
+    ]
+  },
+
+  // ────────────── CA2 — ENVIRONNEMENTS VARIÉS ──────────────
+  {
+    nom: "Course d'orientation",
+    champAppr: "CA2",
+    description: "Lire une carte, s'orienter et choisir un itinéraire pour enchaîner les balises le plus rapidement possible",
+    niveaux: ["6e", "5e"],
+    objectifs: [
+      {
+        id: 1, texte: "Lire une carte et m'orienter dans l'espace", domaine: "D1.1",
+        descripteurs: {
+          NA:  "Je n'arrive pas à orienter ma carte. Je me perds souvent et je dois demander de l'aide pour trouver les balises.",
+          ECA: "J'oriente ma carte et je retrouve quelques balises. Je me perds parfois et je perds du temps à me repérer.",
+          A:   "J'oriente ma carte correctement et je retrouve les balises en utilisant les éléments du terrain (chemins, bâtiments, relief…).",
+          D:   "Je lis la carte rapidement et avec précision. Je m'oriente sans hésiter et j'aide mes camarades à se repérer sur le terrain."
+        }
+      },
+      {
+        id: 2, texte: "Choisir un itinéraire et gérer mon déplacement", domaine: "D2",
+        descripteurs: {
+          NA:  "Je pars sans réfléchir à mon itinéraire. Je cours sans plan et je reviens souvent sur mes pas.",
+          ECA: "Je regarde ma carte avant de partir mais je ne choisis pas toujours le chemin le plus rapide. Je m'arrête souvent pour me repérer.",
+          A:   "Je choisis mon itinéraire avant de partir en tenant compte du terrain. Je gère mon allure pour enchaîner les balises sans m'épuiser.",
+          D:   "Je planifie mon itinéraire de façon stratégique. Je cours à une allure adaptée et j'optimise mes déplacements pour battre mon meilleur temps."
+        }
+      },
+      {
+        id: 3, texte: "Respecter l'environnement et les règles de sécurité", domaine: "D5",
+        descripteurs: {
+          NA:  "Je ne respecte pas toujours les zones interdites et je laisse des déchets ou j'abîme la végétation.",
+          ECA: "Je respecte la plupart des consignes de sécurité et d'environnement mais j'ai parfois des comportements inadaptés.",
+          A:   "Je respecte toutes les zones autorisées, je ne laisse aucun déchet et j'adopte un comportement responsable dans l'environnement naturel.",
+          D:   "Je respecte l'environnement et je sensibilise mes camarades aux règles de sécurité et au respect du milieu naturel pendant toute l'activité."
+        }
+      }
+    ]
+  },
+
+  {
+    nom: "Parkour",
+    champAppr: "CA2",
+    description: "Franchir des obstacles avec fluidité et efficacité en adaptant ses déplacements à l'environnement",
+    niveaux: ["6e", "5e"],
+    objectifs: [
+      {
+        id: 1, texte: "Franchir des obstacles en adaptant mes déplacements", domaine: "D1.4",
+        descripteurs: {
+          NA:  "Je franchis les obstacles de façon hésitante et peu efficace. Je m'arrête souvent et je contourne plutôt que de franchir.",
+          ECA: "Je franchis la plupart des obstacles mais mes mouvements manquent de fluidité. Je réussis les franchissements simples mais j'hésite sur les plus complexes.",
+          A:   "Je franchis les obstacles avec fluidité et efficacité. J'adapte ma technique (saut, réception, passage en appui…) selon l'obstacle.",
+          D:   "Je maîtrise plusieurs techniques de franchissement et je les enchaîne avec aisance. Je construis des parcours variés en combinant les obstacles."
+        }
+      },
+      {
+        id: 2, texte: "Progresser en toute sécurité", domaine: "D2",
+        descripteurs: {
+          NA:  "Je prends des risques inutiles et je ne respecte pas les consignes de sécurité. Je ne vérifie pas si le terrain est sûr avant de sauter.",
+          ECA: "Je respecte la plupart des consignes de sécurité. Je teste les obstacles avant de les franchir mais j'ai encore des comportements risqués.",
+          A:   "Je respecte toutes les consignes de sécurité. J'analyse les obstacles avant de les franchir et je choisis une difficulté adaptée à mon niveau.",
+          D:   "Je progresse en toute sécurité et j'aide à sécuriser les autres. Je conseille mes camarades sur le bon geste à adopter selon l'obstacle."
+        }
+      },
+      {
+        id: 3, texte: "Aider et encourager mes camarades", domaine: "D3",
+        descripteurs: {
+          NA:  "Je reste centré sur moi-même. Je ne fais pas attention à mes camarades et je ne les aide pas.",
+          ECA: "J'observe parfois mes camarades et je les encourage. J'essaie de les aider mais je ne sais pas toujours comment.",
+          A:   "J'aide mes camarades en les encourageant et en leur donnant des conseils simples. Je sécurise les passages quand c'est nécessaire.",
+          D:   "Je guide activement mes camarades, je les aide à choisir le bon niveau de difficulté et je les accompagne dans leur progression avec des conseils précis."
+        }
+      }
+    ]
+  },
+
+  // ────────────── CA3 — EXPRESSION ──────────────
+  {
+    nom: "Gym au sol",
+    champAppr: "CA3",
+    description: "Réaliser et présenter un enchaînement d'éléments gymniques avec amplitude, tenue et fluidité",
+    niveaux: ["6e"],
+    objectifs: [
+      {
+        id: 1, texte: "Réaliser des éléments gymniques avec amplitude et tenue", domaine: "D1.4",
+        descripteurs: {
+          NA:  "Je réalise les éléments de façon approximative. Mes jambes sont fléchies, mes bras ne sont pas tendus et je manque d'équilibre.",
+          ECA: "Je réalise les éléments principaux mais ma tenue n'est pas toujours parfaite. J'ai parfois les jambes fléchies ou les bras qui manquent d'extension.",
+          A:   "Je réalise les éléments gymniques avec de l'amplitude et une bonne tenue du corps (jambes tendues, pointes de pieds, gainage).",
+          D:   "Je réalise les éléments avec maîtrise et esthétisme. J'ajoute des éléments de difficulté et je soigne chaque détail de ma prestation."
+        }
+      },
+      {
+        id: 2, texte: "Construire et présenter un enchaînement", domaine: "D1.4",
+        descripteurs: {
+          NA:  "Mon enchaînement est décousu. Je m'arrête entre les éléments et je n'ai pas de début ni de fin clairs.",
+          ECA: "J'enchaîne quelques éléments mais je marque des pauses. Mon enchaînement a un début et une fin mais les transitions manquent de fluidité.",
+          A:   "Je présente un enchaînement fluide avec un début, des éléments bien enchaînés et une fin marquée. J'entre et je sors de scène de manière soignée.",
+          D:   "Mon enchaînement est maîtrisé, fluide et expressif. Je l'adapte en fonction de mes points forts et j'intègre des éléments variés et originaux."
+        }
+      },
+      {
+        id: 3, texte: "Observer et apprécier la prestation d'un camarade", domaine: "D3",
+        descripteurs: {
+          NA:  "Je regarde la prestation de mes camarades sans vraiment l'observer. Je ne suis pas capable de donner un avis précis.",
+          ECA: "J'observe la prestation et je donne un avis général. Je remarque les grandes erreurs mais je ne sais pas bien expliquer ce que j'ai vu.",
+          A:   "J'observe la prestation de mes camarades avec des critères précis. Je peux dire ce qui est réussi et ce qui peut être amélioré.",
+          D:   "J'observe et j'analyse la prestation avec précision. Je donne un retour constructif et argumenté qui aide mon camarade à progresser."
+        }
+      }
+    ]
+  }
+
+]; // fin APSA_6E
+
+// ── Logger ─────────────────────────────────────────────────
+function log(msg, type = '') {
+  const el = document.getElementById('log');
+  el.innerHTML += `<div class="${type}">${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ── Insertion principale ────────────────────────────────────
+async function lancerInit() {
+  const btn = document.getElementById('btn-init');
+  btn.disabled = true;
+  btn.textContent = '⏳ Insertion en cours…';
+
+  log('═══════════════════════════════════════════', 'head');
+  log('🏃 INSERTION DES APSA 6e — Collège YDM 2026', 'head');
+  log('═══════════════════════════════════════════', 'head');
+
+  let crees = 0, maj = 0, erreurs = 0;
+
+  try {
+    // Charger les APSA existantes
+    const snap = await db.ref('apsa').once('value');
+    const existing = snap.val() || {};
+
+    for (const apsa of APSA_6E) {
+      log('');
+      log(`▶ ${apsa.nom} (${apsa.champAppr})`, 'head');
+
+      // Chercher si l'APSA existe déjà par nom
+      let existingKey = null;
+      for (const [key, val] of Object.entries(existing)) {
+        if (val.nom && val.nom.toLowerCase() === apsa.nom.toLowerCase()) {
+          existingKey = key;
+          break;
+        }
+      }
+
+      const data = {
+        nom:        apsa.nom,
+        champAppr:  apsa.champAppr,
+        description: apsa.description,
+        niveaux:    apsa.niveaux,
+        objectifs:  apsa.objectifs,
+        dateModif:  new Date().toISOString()
+      };
+
+      try {
+        if (existingKey) {
+          await db.ref('apsa/' + existingKey).update(data);
+          log(`  ✔ Mise à jour : ${apsa.nom}`, 'warn');
+          maj++;
+        } else {
+          data.dateCreation = new Date().toISOString();
+          await db.ref('apsa').push(data);
+          log(`  ✔ Créée : ${apsa.nom}`, 'ok');
+          crees++;
+        }
+
+        apsa.objectifs.forEach((obj, i) => {
+          log(`    obj${i+1} [${obj.domaine}] ${obj.texte.substring(0, 50)}…`, 'ok');
+        });
+
+      } catch(e) {
+        log(`  ✘ Erreur sur ${apsa.nom} : ${e.message}`, 'err');
+        erreurs++;
+      }
+    }
+
+    log('');
+    log('═══════════════════════════════════════════', 'head');
+    log(`✅ Terminé — ${crees} créée(s) · ${maj} mise(s) à jour · ${erreurs} erreur(s)`, erreurs > 0 ? 'warn' : 'ok');
+    log('═══════════════════════════════════════════', 'head');
+
+    if (erreurs === 0) {
+      document.getElementById('success-box').style.display = 'block';
+    }
+
+  } catch(e) {
+    log(`❌ Erreur générale : ${e.message}`, 'err');
+    btn.disabled = false;
+    btn.textContent = '🚀 Réessayer';
+  }
+}
+</script>
+</body>
+</html>
