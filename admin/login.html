@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Connexion Professeur — EPS</title>
-  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="style.css">
   <style>
     body {
       background: var(--navy);
@@ -21,10 +21,7 @@
       width: 100%;
       max-width: 400px;
       box-shadow: 0 30px 80px rgba(0,0,0,.4);
-    }
-    .login-logo {
       text-align: center;
-      margin-bottom: 2rem;
     }
     .login-logo .icon {
       width: 72px; height: 72px;
@@ -41,16 +38,51 @@
       color: var(--navy);
       margin-bottom: .2rem;
     }
-    .login-logo p { font-size: .85rem; color: var(--gray-3); }
-    .back-link {
-      display: block;
-      text-align: center;
-      margin-top: 1.5rem;
-      color: var(--gray-3);
-      font-size: .85rem;
-      text-decoration: none;
+    .login-logo p { font-size: .85rem; color: var(--gray-3); margin-bottom: 2rem; }
+
+    /* Bouton Google */
+    .btn-google {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .75rem;
+      width: 100%;
+      padding: .85rem 1.5rem;
+      background: #fff;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #374151;
+      cursor: pointer;
+      transition: all .2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
     }
-    .back-link:hover { color: var(--blue-lt); }
+    .btn-google:hover {
+      border-color: #4285F4;
+      box-shadow: 0 4px 16px rgba(66,133,244,.2);
+      transform: translateY(-1px);
+    }
+    .btn-google svg { width: 22px; height: 22px; flex-shrink: 0; }
+    .btn-google:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    .divider {
+      margin: 1.5rem 0 .5rem;
+      font-size: .8rem;
+      color: var(--gray-3);
+    }
+    .acces-info {
+      background: #f0f4ff;
+      border-radius: 10px;
+      padding: .75rem 1rem;
+      font-size: .8rem;
+      color: #4b5563;
+      margin-top: 1.5rem;
+    }
+    .acces-info strong { display: block; margin-bottom: .3rem; color: var(--navy); }
+
+    #message { margin-bottom: 1rem; }
+    #loading { display: none; color: var(--gray-3); font-size: .9rem; margin-top: 1rem; }
   </style>
 </head>
 <body>
@@ -64,67 +96,83 @@
 
   <div id="message"></div>
 
-  <form onsubmit="connexion(event)">
-    <div class="form-group">
-      <label for="username">Identifiant</label>
-      <input type="text" id="username" placeholder="prenom.nom" autocomplete="username" autofocus>
-    </div>
-    <div class="form-group">
-      <label for="password">Mot de passe</label>
-      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
-    </div>
-    <button type="submit" class="btn btn-primary w-full btn-lg">
-      Se connecter →
-    </button>
-  </form>
+  <!-- Bouton Google Sign-In -->
+  <button class="btn-google" id="btn-google" onclick="connexionGoogle()">
+    <!-- Logo Google SVG officiel -->
+    <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      <path fill="none" d="M0 0h48v48H0z"/>
+    </svg>
+    Se connecter avec Google
+  </button>
 
-  <a href="../index.html" class="back-link">← Retour à l'accueil</a>
+  <div id="loading">⏳ Connexion en cours…</div>
+
+  <div class="acces-info">
+    <strong>🔒 Accès réservé</strong>
+    Collège Yves du Manoir — F. Eude &amp; E. Cosperec
+  </div>
 </div>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-<script src="../firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script>
-  document.getElementById('college-nm').textContent = window.COLLEGE_NOM + ' · ' + window.COLLEGE_VILLE;
+  document.getElementById('college-nm').textContent =
+    window.COLLEGE_NOM + ' · ' + window.COLLEGE_VILLE;
 
-  // Déjà connecté ?
-  if (isProf()) window.location.href = 'dashboard.html';
-
-  async function connexion(e) {
-    e.preventDefault();
-    const user = document.getElementById('username').value.trim().toLowerCase();
-    const pwd  = document.getElementById('password').value;
-    const msg  = document.getElementById('message');
-
-    // Vérification identifiant
-    const usersAutorises = window.ADMIN_USERS || [];
-    if (!usersAutorises.includes(user)) {
-      msg.innerHTML = '<div class="alert alert-error">❌ Identifiant non reconnu</div>';
-      document.getElementById('username').focus();
-      return;
+  // Si déjà connecté → dashboard directement
+  auth.onAuthStateChanged(user => {
+    if (user && window.EMAILS_AUTORISES.includes(user.email)) {
+      window.location.href = 'dashboard.html';
     }
+  });
+
+  async function connexionGoogle() {
+    const btn = document.getElementById('btn-google');
+    const msg = document.getElementById('message');
+    const loading = document.getElementById('loading');
+
+    btn.disabled = true;
+    loading.style.display = 'block';
+    msg.innerHTML = '';
 
     try {
-      let mdpValide = false;
-      const configProfs = await getConfigProfs();
-      if (configProfs && configProfs.password) {
-        mdpValide = (pwd === configProfs.password);
-      } else {
-        mdpValide = (pwd === window.ADMIN_PASSWORD);
+      const provider = new firebase.auth.GoogleAuthProvider();
+      // Force la sélection du compte Google à chaque fois
+      provider.setCustomParameters({ prompt: 'select_account' });
+
+      const result = await auth.signInWithPopup(provider);
+      const email = result.user.email;
+
+      // Vérification : seulement vos deux comptes
+      if (!window.EMAILS_AUTORISES.includes(email)) {
+        await auth.signOut();
+        msg.innerHTML = `<div class="alert alert-error">
+          ❌ Accès refusé — <strong>${email}</strong> n'est pas autorisé.
+        </div>`;
+        btn.disabled = false;
+        loading.style.display = 'none';
+        return;
       }
 
-      if (mdpValide) {
-        localStorage.setItem('eps_prof', 'true');
-        localStorage.setItem('eps_prof_user', user);
-        localStorage.setItem('eps_prof_ts', Date.now());
-        window.location.href = 'dashboard.html';
+      // Connexion réussie → dashboard
+      window.location.href = 'dashboard.html';
+
+    } catch (err) {
+      // L'utilisateur a fermé la popup
+      if (err.code === 'auth/popup-closed-by-user') {
+        msg.innerHTML = '';
       } else {
-        msg.innerHTML = '<div class="alert alert-error">❌ Mot de passe incorrect</div>';
-        document.getElementById('password').focus();
+        msg.innerHTML = `<div class="alert alert-error">❌ Erreur : ${err.message}</div>`;
       }
-    } catch(err) {
-      msg.innerHTML = `<div class="alert alert-error">❌ Erreur : ${err.message}</div>`;
+      btn.disabled = false;
+      loading.style.display = 'none';
     }
   }
 </script>
