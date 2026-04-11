@@ -167,9 +167,11 @@
     const cycleIds=[...new Set(evals.map(e=>e.cycleId))];
     const apsaIds=[...new Set(evals.map(e=>e.apsaId))];
 
-    // Programmation de la classe (cycles actifs)
-    const cyclesClasse = eleve.classeId ? await getCyclesActifs(eleve.classeId) : [];
-    const apsaClasseIds = [...new Set(cyclesClasse.map(c=>c.apsaId).filter(Boolean))];
+    // Tous les cycles de la classe (terminés + en cours) pour la programmation complète
+    const tousCyclesClasse = eleve.classeId
+      ? (await getTousCycles()).filter(c => c.classeId === eleve.classeId)
+      : [];
+    const apsaClasseIds = [...new Set(tousCyclesClasse.map(c=>c.apsaId).filter(Boolean))];
 
     await Promise.all([
       ...cycleIds.map(async id=>{if(!cycleCache[id]){const d=await dbGet('cycles/'+id);if(d)cycleCache[id]={id,...d};}}),
@@ -185,7 +187,7 @@
           const fait=apsaIds.includes(id);
           return `<span style="display:inline-flex;align-items:center;gap:.25rem;background:${fait?'rgba(34,197,94,.28)':'rgba(255,255,255,.12)'};border:1px solid ${fait?'rgba(34,197,94,.6)':'rgba(255,255,255,.22)'};color:#fff;border-radius:20px;padding:.18rem .6rem;font-size:.7rem;font-weight:600;margin:.12rem .12rem 0 0;white-space:nowrap">${fait?'✓ ':''}<span>${nom}</span></span>`;
         }).join('')
-      : `<span style="font-size:.73rem;color:rgba(255,255,255,.4);font-style:italic">Aucun cycle actif dans cette classe</span>`;
+      : `<span style="font-size:.73rem;color:rgba(255,255,255,.4);font-style:italic">Aucun cycle dans cette classe</span>`;
 
     const parNiveau={'6e':[],'5e':[],'4e':[],'3e':[]};
     evals.forEach(ev=>{const cy=cycleCache[ev.cycleId];const niv=ev.niveau||cy?.niveau||eleve.niveau||'6e';if(parNiveau[niv])parNiveau[niv].push(ev);});
