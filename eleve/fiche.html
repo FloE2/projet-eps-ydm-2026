@@ -3,272 +3,619 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma fiche auto-évaluation — EPS</title>
+  <title>Mes APSA — EPS</title>
   <link rel="stylesheet" href="../assets/style.css">
   <style>
-    body { padding-bottom: 90px; background: #f4f6fa; }
-    .fiche-header {
-      background: linear-gradient(135deg, var(--navy) 0%, #1e4d8c 100%);
-      color:#fff; border-radius:var(--radius); padding:1.4rem 2rem;
-      margin-bottom:1.5rem; display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap;
+    body { background: #f4f6fa; padding-bottom: 100px; }
+
+    /* ── En-tête élève ── */
+    .fiche-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a3f7a 100%);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 1.4rem 2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      flex-wrap: wrap;
     }
-    .fiche-avatar { width:60px;height:60px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-h);font-size:1.3rem;font-weight:700;flex-shrink:0; }
-    .fiche-info h1 { font-size:1.4rem;color:#fff;margin-bottom:.15rem; }
-    .fiche-info p  { color:rgba(255,255,255,.65);font-size:.85rem; }
-    .fiche-apsa-badge { margin-left:auto;background:var(--orange);color:#fff;padding:.5rem 1.2rem;border-radius:20px;text-align:center;font-family:var(--font-h);font-size:.95rem;font-weight:700; }
-    .fiche-apsa-badge small { display:block;font-family:var(--font-b);font-size:.7rem;opacity:.8;font-weight:400;margin-top:2px; }
-    .apsa-section { background:#fff;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:2rem;overflow:hidden; }
-    .apsa-section-header { background:var(--navy);color:#fff;padding:.9rem 1.4rem;display:flex;align-items:center;gap:1rem; }
-    .domaine-pill { background:rgba(255,255,255,.2);color:#fff;font-family:var(--font-h);font-size:.82rem;font-weight:700;padding:.25rem .8rem;border-radius:20px; }
-    .domaine-label { font-size:.9rem;opacity:.82; }
-    .eval-table-wrap { overflow-x:auto; }
-    .eval-table { width:100%;border-collapse:collapse;min-width:600px; }
-    .th-objectif { background:#2c3e6b;color:#fff;font-family:var(--font-h);font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:.7rem 1rem;width:26%;text-align:left;border-right:1px solid rgba(255,255,255,.15); }
-    .th-niveau { padding:0;vertical-align:top;border-right:1px solid #e5e7eb; }
-    .th-niveau:last-child { border-right:none; }
-    .th-niveau-inner { padding:.6rem .5rem .35rem;font-family:var(--font-h);font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:center; }
-    .th-NA  { background:#fee2e2;color:#b91c1c; }
-    .th-ECA { background:#fef3c7;color:#92400e; }
-    .th-A   { background:#dcfce7;color:#15803d; }
-    .th-D   { background:#ede9fe;color:#6d28d9; }
-    .th-scale { display:flex;align-items:center;justify-content:space-between;padding:.2rem .6rem .5rem;font-size:.65rem;font-weight:700;border-top:1px solid rgba(0,0,0,.06); }
-    .scale-NA  { background:#fee2e2;color:#ef4444; }
-    .scale-ECA { background:#fef3c7;color:#d97706; }
-    .scale-A   { background:#dcfce7;color:#22c55e; }
-    .scale-D   { background:#ede9fe;color:#8b5cf6; }
-    .eval-table tbody tr { border-bottom:1px solid #e5e7eb; }
-    .eval-table tbody tr:last-child { border-bottom:none; }
-    .td-objectif { padding:.85rem 1rem;vertical-align:middle;font-size:.82rem;font-weight:600;color:#1e293b;border-right:1px solid #e5e7eb;background:#f8fafc;line-height:1.45;border-left:4px solid transparent;transition:border-left-color .2s; }
-    .td-obj-num { display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;background:var(--navy);color:#fff;border-radius:50%;font-size:.65rem;font-weight:700;margin-right:.4rem;vertical-align:middle;flex-shrink:0; }
-    .td-niveau { padding:.7rem .65rem;vertical-align:top;text-align:center;font-size:.74rem;line-height:1.5;color:#374151;cursor:pointer;transition:all .12s;border-right:1px solid #e5e7eb;position:relative; }
-    .td-niveau:last-child { border-right:none; }
-    .td-niveau:hover { filter:brightness(.93); }
-    .td-NA  { background:#fef9f9; }
-    .td-ECA { background:#fffdf0; }
-    .td-A   { background:#f7fef9; }
-    .td-D   { background:#faf7ff; }
-    .td-niveau.selected { font-weight:700; outline:3px solid transparent; outline-offset:-3px; }
-    .td-NA.selected  { background:#fecaca;color:#7f1d1d;outline-color:#ef4444; }
-    .td-ECA.selected { background:#fde68a;color:#78350f;outline-color:#f59e0b; }
-    .td-A.selected   { background:#bbf7d0;color:#14532d;outline-color:#22c55e; }
-    .td-D.selected   { background:#ddd6fe;color:#3b0764;outline-color:#8b5cf6; }
-    /* Bandeau coloré en haut de la cellule sélectionnée */
-    .td-niveau.selected::before {
-      content: '';
-      display: block;
-      height: 5px;
-      margin: -.7rem -.65rem .5rem;
-      border-radius: 0;
+    .fiche-avatar {
+      width: 52px; height: 52px;
+      background: rgba(255,255,255,.18);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-h); font-size: 1.15rem; font-weight: 700;
+      flex-shrink: 0; border: 2px solid rgba(255,255,255,.3);
     }
-    .td-NA.selected::before  { background:#ef4444; }
-    .td-ECA.selected::before { background:#f59e0b; }
-    .td-A.selected::before   { background:#22c55e; }
-    .td-D.selected::before   { background:#8b5cf6; }
-    /* Grande coche visible */
+    .fiche-hero-info h1 { font-size: 1.25rem; color: #fff; margin-bottom: .15rem; }
+    .fiche-hero-info p  { color: rgba(255,255,255,.6); font-size: .83rem; }
+    .fiche-hero-stat {
+      margin-left: auto;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 12px;
+      padding: .7rem 1.2rem;
+      text-align: center;
+      min-width: 90px;
+    }
+    .fiche-hero-stat-num  { font-family: var(--font-h); font-size: 1.5rem; color: #fff; font-weight: 700; }
+    .fiche-hero-stat-lbl  { font-size: .7rem; color: rgba(255,255,255,.55); margin-top: 2px; }
+
+    /* ── Légende ── */
+    .legende-bar {
+      display: flex; gap: .5rem; flex-wrap: wrap;
+      align-items: center; margin-bottom: 1.2rem;
+      padding: .6rem 1rem; background: #fff;
+      border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    }
+    .legende-item { display: flex; align-items: center; gap: .35rem; font-size: .77rem; font-weight: 600; }
+    .legende-dot  { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── CA badge ── */
+    .ca-badge {
+      display: inline-flex; align-items: center; gap: .3rem;
+      font-family: var(--font-h); font-size: .7rem; font-weight: 700;
+      padding: .25rem .65rem; border-radius: 20px;
+      letter-spacing: .04em;
+    }
+    .ca-CA1 { background: #fff3cd; color: #856404; }
+    .ca-CA2 { background: #d1f0d1; color: #166534; }
+    .ca-CA3 { background: #f3e8ff; color: #6d28d9; }
+    .ca-CA4 { background: #dbeafe; color: #1d4ed8; }
+
+    /* ── Progress pill ── */
+    .progress-pill {
+      font-family: var(--font-h); font-size: .72rem; font-weight: 700;
+      padding: .2rem .6rem; border-radius: 20px;
+      background: #f1f5f9; color: #64748b;
+      transition: all .3s;
+    }
+    .progress-pill.done   { background: #dcfce7; color: #15803d; }
+    .progress-pill.partial { background: #fef3c7; color: #92400e; }
+
+    /* ── Accordéon APSA ── */
+    .apsa-accordion {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+      margin-bottom: 1rem;
+      overflow: hidden;
+      border: 2px solid transparent;
+      transition: border-color .25s, box-shadow .25s;
+    }
+    .apsa-accordion.open {
+      border-color: var(--navy);
+      box-shadow: 0 4px 24px rgba(30,45,100,.12);
+    }
+
+    .apsa-trigger {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.1rem 1.4rem;
+      cursor: pointer;
+      transition: background .15s;
+      user-select: none;
+    }
+    .apsa-trigger:hover { background: #f8fafc; }
+    .apsa-accordion.open .apsa-trigger { background: #f0f4ff; }
+
+    .apsa-trigger-left { flex: 1; min-width: 0; }
+    .apsa-nom {
+      font-family: var(--font-h); font-size: 1rem;
+      font-weight: 700; color: var(--navy);
+      margin-bottom: .25rem;
+    }
+    .apsa-meta { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+    .apsa-trigger-right { display: flex; align-items: center; gap: .6rem; flex-shrink: 0; }
+    .apsa-chevron {
+      width: 28px; height: 28px;
+      background: #f1f5f9; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--navy); font-size: .85rem;
+      transition: transform .3s, background .2s;
+    }
+    .apsa-accordion.open .apsa-chevron { transform: rotate(180deg); background: var(--navy); color: #fff; }
+
+    /* ── Contenu accordéon ── */
+    .apsa-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .45s cubic-bezier(.4,0,.2,1);
+    }
+    .apsa-accordion.open .apsa-body { max-height: 2000px; }
+    .apsa-body-inner { padding: .2rem 0 1.2rem; }
+
+    /* ── Table d'évaluation ── */
+    .domaine-section { margin: 0 1.2rem 1rem; }
+    .domaine-header {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .55rem .85rem;
+      background: var(--navy); color: #fff;
+      border-radius: 8px 8px 0 0;
+      font-family: var(--font-h); font-size: .82rem;
+    }
+    .domaine-pill-sm {
+      background: rgba(255,255,255,.2);
+      color: #fff; font-weight: 700;
+      padding: .15rem .5rem; border-radius: 10px;
+      font-size: .75rem;
+    }
+    .domaine-label-sm { font-size: .78rem; opacity: .8; }
+
+    /* Scroll sur mobile */
+    .eval-scroll { overflow-x: auto; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none; }
+
+    .eval-table { width: 100%; border-collapse: collapse; min-width: 540px; }
+    .eval-table thead th { border-bottom: 2px solid #e5e7eb; }
+
+    /* En-tête colonnes niveaux */
+    .th-obj { background: #2c3e6b; color: #fff; font-family: var(--font-h); font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: .65rem 1rem; width: 27%; text-align: left; border-right: 1px solid rgba(255,255,255,.15); }
+    .th-niv { padding: 0; vertical-align: top; border-right: 1px solid #e5e7eb; }
+    .th-niv:last-child { border-right: none; }
+    .th-niv-top { padding: .55rem .4rem .3rem; font-family: var(--font-h); font-size: .73rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; text-align: center; }
+    .th-niv-scale { display: flex; align-items: center; justify-content: space-between; padding: .15rem .55rem .45rem; font-size: .63rem; font-weight: 700; border-top: 1px solid rgba(0,0,0,.06); }
+    .th-NA  { background: #fee2e2; color: #b91c1c; }
+    .th-ECA { background: #fef3c7; color: #92400e; }
+    .th-A   { background: #dcfce7; color: #15803d; }
+    .th-D   { background: #ede9fe; color: #6d28d9; }
+
+    /* Lignes */
+    .eval-table tbody tr { border-bottom: 1px solid #e5e7eb; }
+    .eval-table tbody tr:last-child { border-bottom: none; }
+
+    .td-obj {
+      padding: .8rem 1rem; vertical-align: middle;
+      font-size: .81rem; font-weight: 600; color: #1e293b;
+      border-right: 1px solid #e5e7eb; background: #f8fafc;
+      line-height: 1.45; border-left: 4px solid transparent;
+      transition: border-left-color .2s;
+    }
+    .obj-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 19px; height: 19px;
+      background: var(--navy); color: #fff;
+      border-radius: 50%; font-size: .62rem; font-weight: 700;
+      margin-right: .35rem; vertical-align: middle; flex-shrink: 0;
+    }
+    .obj-badge {
+      display: inline-block; font-size: .62rem; font-weight: 700;
+      padding: .1rem .38rem; border-radius: 8px; margin-left: .35rem; vertical-align: middle;
+    }
+    .obj-badge-NA  { background: #fee2e2; color: #b91c1c; }
+    .obj-badge-ECA { background: #fef3c7; color: #92400e; }
+    .obj-badge-A   { background: #dcfce7; color: #15803d; }
+    .obj-badge-D   { background: #ede9fe; color: #6d28d9; }
+    .obj-badge-vide { background: #f1f5f9; color: #94a3b8; }
+
+    .td-niv {
+      padding: .65rem .55rem; vertical-align: top; text-align: center;
+      font-size: .73rem; line-height: 1.5; color: #374151;
+      cursor: pointer; transition: all .12s; border-right: 1px solid #e5e7eb;
+      position: relative;
+    }
+    .td-niv:last-child { border-right: none; }
+    .td-niv:hover { filter: brightness(.93); }
+    .td-NA  { background: #fef9f9; }
+    .td-ECA { background: #fffdf0; }
+    .td-A   { background: #f7fef9; }
+    .td-D   { background: #faf7ff; }
+
+    .td-niv.selected { font-weight: 700; }
+    .td-NA.selected  { background: #fecaca; color: #7f1d1d; outline: 3px solid #ef4444; outline-offset: -3px; }
+    .td-ECA.selected { background: #fde68a; color: #78350f; outline: 3px solid #f59e0b; outline-offset: -3px; }
+    .td-A.selected   { background: #bbf7d0; color: #14532d; outline: 3px solid #22c55e; outline-offset: -3px; }
+    .td-D.selected   { background: #ddd6fe; color: #3b0764; outline: 3px solid #8b5cf6; outline-offset: -3px; }
+
+    .td-niv.selected::before {
+      content: ''; display: block; height: 4px;
+      margin: -.65rem -.55rem .45rem; border-radius: 0;
+    }
+    .td-NA.selected::before  { background: #ef4444; }
+    .td-ECA.selected::before { background: #f59e0b; }
+    .td-A.selected::before   { background: #22c55e; }
+    .td-D.selected::before   { background: #8b5cf6; }
+
     .td-check {
-      display:none;
-      width:28px; height:28px;
-      border-radius:50%;
-      align-items:center; justify-content:center;
-      font-size:1rem; font-weight:900;
-      margin:0 auto .5rem;
-      color:#fff;
+      display: none; width: 26px; height: 26px; border-radius: 50%;
+      align-items: center; justify-content: center;
+      font-size: .95rem; font-weight: 900; margin: 0 auto .4rem; color: #fff;
     }
-    .td-NA.selected  .td-check { display:flex; background:#ef4444; }
-    .td-ECA.selected .td-check { display:flex; background:#f59e0b; }
-    .td-A.selected   .td-check { display:flex; background:#22c55e; }
-    .td-D.selected   .td-check { display:flex; background:#8b5cf6; }
-    .sel-NA  .td-objectif { border-left-color:#ef4444; }
-    .sel-ECA .td-objectif { border-left-color:#f59e0b; }
-    .sel-A   .td-objectif { border-left-color:#22c55e; }
-    .sel-D   .td-objectif { border-left-color:#8b5cf6; }
-    .obj-badge { display:inline-block;font-size:.63rem;font-weight:700;padding:.1rem .4rem;border-radius:8px;margin-left:.4rem;vertical-align:middle; }
-    .obj-badge-NA  { background:#fee2e2;color:#b91c1c; }
-    .obj-badge-ECA { background:#fef3c7;color:#92400e; }
-    .obj-badge-A   { background:#dcfce7;color:#15803d; }
-    .obj-badge-D   { background:#ede9fe;color:#6d28d9; }
-    .obj-badge-vide { background:#f1f5f9;color:#94a3b8; }
-    .td-desc-empty { color:#c5cdd8;font-style:italic; }
-    .commentaire-section { padding:.9rem 1.2rem;border-top:2px solid #f1f5f9; }
-    .commentaire-section label { font-size:.79rem;font-weight:700;color:var(--navy);display:block;margin-bottom:.4rem; }
-    .commentaire-section textarea { width:100%;box-sizing:border-box;min-height:60px;font-size:.83rem;resize:vertical;border:1px solid #d1d5db;border-radius:6px;padding:.55rem .75rem; }
-    .legende-bar { display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem;padding:.6rem 1rem;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.05); }
-    .legende-item { display:flex;align-items:center;gap:.35rem;font-size:.77rem;font-weight:600; }
-    .legende-dot { width:11px;height:11px;border-radius:50%; }
-    .scroll-hint { display:none;font-size:.7rem;color:#94a3b8;text-align:center;padding:.35rem;background:#f8fafc; }
-    @media(max-width:700px){ .scroll-hint{display:block;} }
-    .save-bar { position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #e5e7eb;padding:.9rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;z-index:50;box-shadow:0 -4px 20px rgba(0,0,0,.08); }
-    .save-status { font-size:.85rem;color:#94a3b8; }
-    .save-status.modified { color:#f59e0b;font-weight:600; }
-    .save-status.saved { color:#22c55e;font-weight:600; }
+    .td-NA.selected  .td-check { display: flex; background: #ef4444; }
+    .td-ECA.selected .td-check { display: flex; background: #f59e0b; }
+    .td-A.selected   .td-check { display: flex; background: #22c55e; }
+    .td-D.selected   .td-check { display: flex; background: #8b5cf6; }
+    .td-desc-empty { color: #c5cdd8; font-style: italic; }
+
+    /* Couleur bordure gauche selon choix */
+    tr.sel-NA  .td-obj { border-left-color: #ef4444; }
+    tr.sel-ECA .td-obj { border-left-color: #f59e0b; }
+    tr.sel-A   .td-obj { border-left-color: #22c55e; }
+    tr.sel-D   .td-obj { border-left-color: #8b5cf6; }
+
+    /* Commentaire */
+    .commentaire-wrap { margin: .8rem 1.2rem 0; }
+    .commentaire-wrap label { font-size: .78rem; font-weight: 700; color: var(--navy); display: block; margin-bottom: .35rem; }
+    .commentaire-wrap textarea {
+      width: 100%; box-sizing: border-box; min-height: 54px;
+      font-size: .82rem; resize: vertical;
+      border: 1px solid #d1d5db; border-radius: 8px;
+      padding: .5rem .7rem; font-family: var(--font-b);
+    }
+
+    /* Bouton save par APSA */
+    .apsa-save-row {
+      margin: .9rem 1.2rem 0;
+      display: flex; align-items: center; justify-content: flex-end; gap: .8rem;
+    }
+    .save-mini-status { font-size: .78rem; color: #94a3b8; }
+    .save-mini-status.modified { color: #f59e0b; font-weight: 600; }
+    .save-mini-status.saved    { color: #22c55e; font-weight: 600; }
+
+    /* scroll mobile */
+    .scroll-hint { display: none; font-size: .7rem; color: #94a3b8; text-align: center; padding: .3rem; }
+    @media(max-width:680px){ .scroll-hint{display:block;} }
   </style>
 </head>
 <body>
+
 <nav class="topbar">
   <a href="classe.html" class="topbar-logo">← Retour</a>
-  <span class="topbar-title" id="topbar-title">Ma fiche EPS</span>
+  <span class="topbar-title" id="topbar-title">Mes APSA</span>
 </nav>
+
 <div class="container-sm" id="main-content">
-  <div class="loader-wrap" style="min-height:60vh"><div class="spinner"></div><span>Chargement de ta fiche...</span></div>
+  <div class="loader-wrap" style="min-height:60vh">
+    <div class="spinner"></div>
+    <span>Chargement de tes activités...</span>
+  </div>
 </div>
-<div class="save-bar">
-  <span class="save-status" id="save-status">Clique sur une case pour t'évaluer</span>
-  <button class="btn btn-success btn-lg" id="btn-save" onclick="sauvegarder()">💾 Enregistrer</button>
-</div>
+
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
-  const params  = new URLSearchParams(window.location.search);
-  const eleveId = params.get('eleveId');
-  const cycleId = params.get('cycleId');
-  const apsaId  = params.get('apsaId');
-  const niveau  = params.get('niveau');
-  if (!eleveId || !cycleId || !apsaId) window.location.href = 'classe.html';
-  let evalActuelle = {}, eleve = null, apsa = null, modifie = false;
-  const NIVEAUX = {
+  const params   = new URLSearchParams(window.location.search);
+  const eleveId  = params.get('eleveId');
+  const classeId = params.get('classeId');
+  const niveau   = params.get('niveau');
+
+  if (!eleveId || !classeId) window.location.href = 'classe.html';
+
+  // niveau → quels codes afficher
+  const CODES = niveau === '6e' ? ['NA','ECA','A'] : ['NA','ECA','A','D'];
+
+  const NIVEAUX_INFO = {
     NA:  { label:'Non Atteint',           scale:'0 — 2',  icon:'✕', couleur:'#ef4444' },
     ECA: { label:'Partiellement Atteint', scale:'3 — 5',  icon:'⊙', couleur:'#f59e0b' },
     A:   { label:'Atteint',               scale:'6 — 8',  icon:'✓', couleur:'#22c55e' },
     D:   { label:'Dépassé',               scale:'9 — 10', icon:'★', couleur:'#8b5cf6' }
   };
+
+  const CA_ICONS = { CA1:'⏱️', CA2:'🌿', CA3:'🎭', CA4:'⚔️' };
+  const CA_COLORS = { CA1:'ca-CA1', CA2:'ca-CA2', CA3:'ca-CA3', CA4:'ca-CA4' };
+
+  // Stockage en mémoire : { cycleId: { resultats:{}, modifie:false } }
+  const evals = {};
+
   async function init() {
     try {
-      const [eleveData, apsaData, evalDoc] = await Promise.all([
-        dbGet('eleves/' + eleveId), dbGet('apsa/' + apsaId), getEvaluation(eleveId, cycleId)
-      ]);
-      if (!eleveData) throw new Error("Élève introuvable");
-      if (!apsaData)  throw new Error("APSA introuvable");
-      eleve = { id:eleveId, ...eleveData };
-      apsa  = { id:apsaId,  ...apsaData };
-      if (evalDoc) evalActuelle = evalDoc.resultats || {};
-      document.title = `${apsa.nom} — ${eleve.prenom} — EPS`;
-      document.getElementById('topbar-title').textContent = apsa.nom;
-      renderFiche();
+      // Charger élève
+      const eleveData = await dbGet(`eleves/${eleveId}`);
+      if (!eleveData) throw new Error('Élève introuvable');
+      const eleve = { id: eleveId, ...eleveData };
+
+      // Charger les cycles actifs pour cette classe
+      const cycles = await getCyclesActifs(classeId);
+      if (cycles.length === 0) {
+        document.getElementById('main-content').innerHTML =
+          `<div class="alert alert-info">ℹ️ Aucune activité programmée pour l'instant. Reviens plus tard !</div>`;
+        return;
+      }
+
+      // Charger les APSA
+      const apsaMap = {};
+      for (const cy of cycles) {
+        if (cy.apsaId && !apsaMap[cy.apsaId]) {
+          const a = await getApsa(cy.apsaId);
+          if (a) apsaMap[cy.apsaId] = a;
+        }
+      }
+
+      // Charger les évaluations existantes
+      for (const cy of cycles) {
+        const evalDoc = await getEvaluation(eleveId, cy.id);
+        evals[cy.id] = {
+          resultats: evalDoc ? (evalDoc.resultats || {}) : {},
+          apsaId: cy.apsaId,
+          modifie: false
+        };
+      }
+
+      // Mise à jour titre
+      const initiales = (eleve.prenom?.[0]||'') + (eleve.nom?.[0]||'');
+      document.title = `${eleve.prenom} — Mes APSA EPS`;
+      document.getElementById('topbar-title').textContent = `${eleve.prenom} ${(eleve.nom||'').toUpperCase()}`;
+
+      // Stats
+      const nbEval = Object.values(evals).filter(e => Object.keys(e.resultats).some(k => k.startsWith('obj_'))).length;
+
+      // Rendu
+      let html = `
+        <div class="fiche-hero">
+          <div class="fiche-avatar">${initiales.toUpperCase()}</div>
+          <div class="fiche-hero-info">
+            <h1>${eleve.prenom} ${(eleve.nom||'').toUpperCase()}</h1>
+            <p>${eleve.classe || ''} · ${niveau} · ${window.ANNEE_SCOLAIRE}</p>
+          </div>
+          <div class="fiche-hero-stat">
+            <div class="fiche-hero-stat-num">${cycles.length}</div>
+            <div class="fiche-hero-stat-lbl">APSA cette année</div>
+          </div>
+        </div>
+
+        <div class="legende-bar">
+          <span style="font-size:.77rem;font-weight:700;color:#64748b;margin-right:.2rem;">Niveaux :</span>
+          ${CODES.map(code =>
+            `<div class="legende-item">
+               <div class="legende-dot" style="background:${NIVEAUX_INFO[code].couleur}"></div>
+               <span style="color:${NIVEAUX_INFO[code].couleur}">${NIVEAUX_INFO[code].label}</span>
+             </div>`
+          ).join('<span style="color:#d1d5db;margin:0 .1rem">·</span>')}
+        </div>
+      `;
+
+      // Grouper les cycles par CA
+      const parCA = {};
+      cycles.forEach(cy => {
+        const apsa = apsaMap[cy.apsaId];
+        if (!apsa) return;
+        const ca = apsa.champAppr || 'Autre';
+        if (!parCA[ca]) parCA[ca] = [];
+        parCA[ca].push({ cycle: cy, apsa });
+      });
+
+      const ordreCA = ['CA1','CA2','CA3','CA4','Autre'];
+      ordreCA.forEach(ca => {
+        if (!parCA[ca]) return;
+        const caLabel = window.CHAMPS_APPRENTISSAGE[ca] || ca;
+        html += `
+          <div style="font-family:var(--font-h);color:var(--gray-3);font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;margin:1.2rem 0 .5rem .2rem;">
+            ${CA_ICONS[ca]||''} ${ca} — ${caLabel}
+          </div>`;
+
+        parCA[ca].forEach(({ cycle, apsa }) => {
+          html += renderAccordion(cycle, apsa, niveau);
+        });
+      });
+
+      document.getElementById('main-content').innerHTML = html;
+
+      // Restaurer les évaluations existantes dans l'UI
+      cycles.forEach(cy => {
+        const ev = evals[cy.id];
+        if (!ev) return;
+        const apsa = apsaMap[cy.apsaId];
+        if (!apsa) return;
+        Object.entries(ev.resultats).forEach(([key, code]) => {
+          if (!key.startsWith('obj_')) return;
+          const num = key.replace('obj_','');
+          actualiserLigne(cy.id, num, code);
+        });
+      });
+
     } catch(e) {
       document.getElementById('main-content').innerHTML =
         `<div class="alert alert-error">❌ ${e.message}<br><br><a href="classe.html" class="btn btn-ghost">← Retour</a></div>`;
     }
   }
-  function renderFiche() {
-    const niveauKeys = niveau === '6e' ? ['NA','ECA','A'] : ['NA','ECA','A','D'];
-    const initiales  = (eleve.prenom?.[0]||'') + (eleve.nom?.[0]||'');
+
+  // ── Rendu d'un accordéon APSA ────────────────────────────
+  function renderAccordion(cycle, apsa, niveau) {
+    const cycleId = cycle.id;
+    const ev = evals[cycleId] || { resultats: {} };
+    const objectifs = apsa.objectifs || [];
+    const nbEvalues = objectifs.filter(obj => ev.resultats[`obj_${obj.id || 1}`]).length;
+    const progressClass = nbEvalues === 0 ? '' : nbEvalues < objectifs.length ? 'partial' : 'done';
+    const progressLabel = objectifs.length > 0
+      ? (nbEvalues === 0 ? '— / ' + objectifs.length : `${nbEvalues} / ${objectifs.length}`)
+      : '0 objectif';
+
+    const debut = cycle.dateDebut ? new Date(cycle.dateDebut).toLocaleDateString('fr-FR',{month:'short'}) : '';
+    const fin   = cycle.dateFin   ? new Date(cycle.dateFin).toLocaleDateString('fr-FR',{month:'short',year:'numeric'}) : '';
+    const periode = (debut || fin) ? `📅 ${debut}${fin ? ' → ' + fin : ''}` : '';
+
+    // Regrouper objectifs par domaine
     const parDomaine = {};
-    (apsa.objectifs || []).forEach(obj => {
+    objectifs.forEach(obj => {
       const d = obj.domaine || 'Général';
       if (!parDomaine[d]) parDomaine[d] = [];
       parDomaine[d].push(obj);
     });
-    let html = `
-      <div class="fiche-header">
-        <div class="fiche-avatar">${initiales.toUpperCase()}</div>
-        <div class="fiche-info">
-          <h1>${eleve.prenom} ${(eleve.nom||'').toUpperCase()}</h1>
-          <p>${eleve.classe||''} · ${niveau} · ${window.ANNEE_SCOLAIRE}</p>
+
+    const tableHtml = Object.entries(parDomaine).map(([domaine, objs]) => {
+      const domLabel = window.DOMAINES_SOCLE[domaine] || domaine;
+      return `
+        <div class="domaine-section">
+          <div class="domaine-header">
+            <span class="domaine-pill-sm">${domaine}</span>
+            <span class="domaine-label-sm">${domLabel}</span>
+          </div>
+          <div class="scroll-hint">← Faire défiler →</div>
+          <div class="eval-scroll">
+            <table class="eval-table">
+              <thead><tr>
+                <th class="th-obj">Objectif</th>
+                ${CODES.map(code => `
+                  <th class="th-niv">
+                    <div class="th-niv-top th-${code}">${NIVEAUX_INFO[code].icon} ${code==='NA'?'Non Atteint':code==='ECA'?'Partiellement Atteint':code==='A'?'Atteint':'Dépassé'}</div>
+                    <div class="th-niv-scale scale-${code}">
+                      <span>${NIVEAUX_INFO[code].scale.split('—')[0].trim()}</span>
+                      <span style="opacity:.35">—</span>
+                      <span>${NIVEAUX_INFO[code].scale.split('—')[1].trim()}</span>
+                    </div>
+                  </th>`).join('')}
+              </tr></thead>
+              <tbody>
+                ${objs.map((obj, i) => {
+                  const num = obj.id || (i + 1);
+                  const code = ev.resultats[`obj_${num}`] || '';
+                  const d = obj.descripteurs || {};
+                  return `
+                    <tr id="row-${cycleId}-${num}" class="${code ? 'sel-'+code : ''}">
+                      <td class="td-obj">
+                        <span class="obj-num">${num}</span>${obj.texte}
+                        <span class="obj-badge ${code ? 'obj-badge-'+code : 'obj-badge-vide'}" id="badge-${cycleId}-${num}">${code||'—'}</span>
+                      </td>
+                      ${CODES.map(c => `
+                        <td class="td-niv td-${c}${code===c?' selected':''}" id="td-${cycleId}-${num}-${c}"
+                            onclick="setNiveau('${cycleId}','${num}','${c}')">
+                          <div class="td-check">✓</div>
+                          <div class="${d[c]?'':'td-desc-empty'}">${d[c]||'—'}</div>
+                        </td>`).join('')}
+                    </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="apsa-accordion" id="accordion-${cycleId}">
+        <div class="apsa-trigger" onclick="toggleAccordion('${cycleId}')">
+          <div class="apsa-trigger-left">
+            <div class="apsa-nom">${apsa.nom || 'APSA'}</div>
+            <div class="apsa-meta">
+              ${apsa.champAppr ? `<span class="ca-badge ${CA_COLORS[apsa.champAppr]||''}">${CA_ICONS[apsa.champAppr]||''} ${apsa.champAppr}</span>` : ''}
+              ${periode ? `<span style="font-size:.75rem;color:#94a3b8;">${periode}</span>` : ''}
+            </div>
+          </div>
+          <div class="apsa-trigger-right">
+            <span class="progress-pill ${progressClass}" id="pill-${cycleId}">
+              ✏️ ${progressLabel} évalué${nbEvalues > 1 ? 's' : ''}
+            </span>
+            <div class="apsa-chevron">▼</div>
+          </div>
         </div>
-        <div class="fiche-apsa-badge">${apsa.nom}<small>${apsa.champAppr||''}</small></div>
-      </div>
-      <div class="legende-bar">
-        <span style="font-size:.77rem;font-weight:700;color:#64748b;margin-right:.2rem;">Niveaux :</span>
-        ${niveauKeys.map(code => `<div class="legende-item"><div class="legende-dot" style="background:${NIVEAUX[code].couleur}"></div><span style="color:${NIVEAUX[code].couleur}">${code==='D'?'Dépassé':NIVEAUX[code].label}</span></div>`).join('<span style="color:#d1d5db;margin:0 .1rem">·</span>')}
-      </div>`;
-    if (Object.keys(parDomaine).length === 0) {
-      html += `<div class="alert alert-info">ℹ️ Aucun objectif configuré pour cette APSA. Contactez votre professeur.</div>`;
-    } else {
-      Object.entries(parDomaine).forEach(([domaine, objectifs]) => {
-        const domLabel = window.DOMAINES_SOCLE[domaine] || domaine;
-        html += `
-          <div class="apsa-section">
-            <div class="apsa-section-header">
-              <span class="domaine-pill">${domaine}</span>
-              <span class="domaine-label">${domLabel}</span>
-            </div>
-            <div class="scroll-hint">← Faire défiler →</div>
-            <div class="eval-table-wrap">
-              <table class="eval-table">
-                <thead><tr>
-                  <th class="th-objectif">Objectif</th>
-                  ${niveauKeys.map(code => `
-                    <th class="th-niveau">
-                      <div class="th-niveau-inner th-${code}">${NIVEAUX[code].icon} ${code==='NA'?'Non Atteint':code==='ECA'?'Partiellement Atteint':code==='A'?'Atteint':'Dépassé'}</div>
-                      <div class="th-scale scale-${code}"><span>${NIVEAUX[code].scale.split('—')[0].trim()}</span><span style="opacity:.35">—</span><span>${NIVEAUX[code].scale.split('—')[1].trim()}</span></div>
-                    </th>`).join('')}
-                </tr></thead>
-                <tbody>
-                  ${objectifs.map((obj,i) => {
-                    const num = obj.id || (i+1);
-                    const code = evalActuelle[`obj_${num}`] || '';
-                    const d = obj.descripteurs || {};
-                    return `
-                      <tr id="row-${num}" class="${code?'sel-'+code:''}">
-                        <td class="td-objectif">
-                          <span class="td-obj-num">${num}</span>${obj.texte}
-                          <span class="obj-badge ${code?'obj-badge-'+code:'obj-badge-vide'}" id="badge-${num}">${code||'—'}</span>
-                        </td>
-                        ${niveauKeys.map(c => `
-                          <td class="td-niveau td-${c}${code===c?' selected':''}" id="td-${num}-${c}" onclick="setNiveau('${num}','${c}')">
-                            <div class="td-check">✓</div>
-                            <div class="${d[c]?'':'td-desc-empty'}">${d[c]||'—'}</div>
-                          </td>`).join('')}
-                      </tr>`;
-                  }).join('')}
-                </tbody>
-              </table>
-            </div>
-            <div class="commentaire-section">
+        <div class="apsa-body" id="body-${cycleId}">
+          <div class="apsa-body-inner">
+            ${objectifs.length === 0
+              ? '<div class="alert alert-info" style="margin:0 1.2rem;">ℹ️ Aucun objectif défini. Contactez votre professeur.</div>'
+              : tableHtml}
+            <div class="commentaire-wrap">
               <label>💬 Commentaire (optionnel)</label>
-              <textarea id="commentaire-${domaine.replace(/\./g,'_')}" placeholder="Mes ressentis, mes progrès..." oninput="marquerModifie()">${evalActuelle['commentaire_'+domaine]||''}</textarea>
+              <textarea id="comment-${cycleId}" placeholder="Mes ressentis, mes progrès..." oninput="marquerModifie('${cycleId}')">${ev.resultats['commentaire']||''}</textarea>
             </div>
-          </div>`;
-      });
-    }
-    document.getElementById('main-content').innerHTML = html;
+            <div class="apsa-save-row">
+              <span class="save-mini-status" id="status-${cycleId}">Clique sur une case pour t'évaluer</span>
+              <button class="btn btn-success" onclick="sauvegarder('${cycleId}')">💾 Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
   }
-  function setNiveau(num, code) {
+
+  // ── Accordéon toggle ────────────────────────────────────
+  function toggleAccordion(cycleId) {
+    const acc = document.getElementById(`accordion-${cycleId}`);
+    if (!acc) return;
+    const isOpen = acc.classList.contains('open');
+    // Fermer tous les autres (optionnel — on peut laisser plusieurs ouverts)
+    // document.querySelectorAll('.apsa-accordion.open').forEach(a => a.classList.remove('open'));
+    acc.classList.toggle('open', !isOpen);
+  }
+
+  // ── Sélection niveau ────────────────────────────────────
+  function setNiveau(cycleId, num, code) {
+    const ev = evals[cycleId];
+    if (!ev) return;
     const key = `obj_${num}`;
-    const ancien = evalActuelle[key] || '';
-    if (ancien === code) { delete evalActuelle[key]; actualiserLigne(num,''); }
-    else { evalActuelle[key] = code; actualiserLigne(num, code); }
-    marquerModifie();
+    const ancien = ev.resultats[key] || '';
+    if (ancien === code) { delete ev.resultats[key]; actualiserLigne(cycleId, num, ''); }
+    else { ev.resultats[key] = code; actualiserLigne(cycleId, num, code); }
+    marquerModifie(cycleId);
+    mettreAJourPill(cycleId);
   }
-  function actualiserLigne(num, code) {
-    ['NA','ECA','A','D'].forEach(c => {
-      const td = document.getElementById(`td-${num}-${c}`);
+
+  function actualiserLigne(cycleId, num, code) {
+    CODES.concat(['D']).forEach(c => {
+      const td = document.getElementById(`td-${cycleId}-${num}-${c}`);
       if (!td) return;
-      td.className = `td-niveau td-${c}${code===c?' selected':''}`;
+      td.className = `td-niv td-${c}${code===c?' selected':''}`;
     });
-    const badge = document.getElementById(`badge-${num}`);
-    if (badge) { badge.className=`obj-badge ${code?'obj-badge-'+code:'obj-badge-vide'}`; badge.textContent=code||'—'; }
-    const row = document.getElementById(`row-${num}`);
-    if (row) row.className = code?'sel-'+code:'';
+    const badge = document.getElementById(`badge-${cycleId}-${num}`);
+    if (badge) {
+      badge.className = `obj-badge ${code ? 'obj-badge-'+code : 'obj-badge-vide'}`;
+      badge.textContent = code || '—';
+    }
+    const row = document.getElementById(`row-${cycleId}-${num}`);
+    if (row) row.className = code ? 'sel-'+code : '';
   }
-  function marquerModifie() {
-    modifie = true;
-    const el = document.getElementById('save-status');
-    el.textContent = '● Modifications non enregistrées';
-    el.className = 'save-status modified';
+
+  function mettreAJourPill(cycleId) {
+    const ev = evals[cycleId];
+    const pill = document.getElementById(`pill-${cycleId}`);
+    if (!pill || !ev) return;
+    // Compter les objectifs évalués (on ne peut pas compter total ici facilement, on cherche les clés obj_*)
+    const evalues = Object.keys(ev.resultats).filter(k => k.startsWith('obj_') && ev.resultats[k]).length;
+    // On ne connaît pas le total exactement ici, on affiche juste le count
+    if (evalues === 0) {
+      pill.textContent = '✏️ — évalué';
+      pill.className = 'progress-pill';
+    } else {
+      pill.textContent = `✅ ${evalues} évalué${evalues > 1 ? 's' : ''}`;
+      pill.className = 'progress-pill done';
+    }
   }
-  async function sauvegarder() {
-    const btn = document.getElementById('btn-save');
-    const status = document.getElementById('save-status');
-    btn.disabled=true; btn.textContent='⏳ Enregistrement...';
-    const resultats = { ...evalActuelle };
-    document.querySelectorAll('[id^="commentaire-"]').forEach(ta => {
-      const dom = ta.id.replace('commentaire-','').replace(/_/g,'.');
-      if (ta.value.trim()) resultats['commentaire_'+dom] = ta.value.trim();
-    });
+
+  function marquerModifie(cycleId) {
+    const ev = evals[cycleId];
+    if (ev) ev.modifie = true;
+    const st = document.getElementById(`status-${cycleId}`);
+    if (st) { st.textContent = '● Modifications non enregistrées'; st.className = 'save-mini-status modified'; }
+  }
+
+  async function sauvegarder(cycleId) {
+    const ev = evals[cycleId];
+    if (!ev) return;
+    const status = document.getElementById(`status-${cycleId}`);
+    const btn = document.querySelector(`#accordion-${cycleId} .btn-success`);
+    if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+
+    // Récupérer commentaire
+    const ta = document.getElementById(`comment-${cycleId}`);
+    const resultats = { ...ev.resultats };
+    if (ta && ta.value.trim()) resultats['commentaire'] = ta.value.trim();
+    else delete resultats['commentaire'];
+
     try {
-      await sauvegarderEvaluation(eleveId, cycleId, apsaId, resultats);
-      modifie=false;
-      status.textContent='✓ Enregistré à '+new Date().toLocaleTimeString('fr-FR');
-      status.className='save-status saved';
-      showToast('✓ Évaluation enregistrée !','success');
-    } catch(e) { status.textContent='❌ '+e.message; status.className='save-status'; }
-    finally { btn.disabled=false; btn.textContent='💾 Enregistrer'; }
+      await sauvegarderEvaluation(eleveId, cycleId, ev.apsaId, resultats);
+      ev.resultats = resultats;
+      ev.modifie = false;
+      if (status) { status.textContent = '✓ Enregistré à ' + new Date().toLocaleTimeString('fr-FR'); status.className = 'save-mini-status saved'; }
+      showToast('✓ Évaluation enregistrée !', 'success');
+    } catch(e) {
+      if (status) { status.textContent = '❌ ' + e.message; status.className = 'save-mini-status'; }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '💾 Enregistrer'; }
+    }
   }
-  window.addEventListener('beforeunload', e=>{ if(modifie){e.preventDefault();e.returnValue='';} });
-  function showToast(msg,type='success'){const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
+
+  function showToast(msg, type='success') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+  }
+
+  window.addEventListener('beforeunload', e => {
+    const hasUnsaved = Object.values(evals).some(ev => ev.modifie);
+    if (hasUnsaved) { e.preventDefault(); e.returnValue = ''; }
+  });
+
   init();
 </script>
 </body>
