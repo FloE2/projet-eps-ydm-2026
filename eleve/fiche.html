@@ -196,6 +196,9 @@
 <nav class="topbar">
   <a href="classe.html" class="topbar-logo">← Retour</a>
   <span class="topbar-title" id="topbar-title">Mes APSA</span>
+  <a id="btn-vue-prof" href="#" class="btn btn-ghost" style="font-size:.78rem;padding:.35rem .8rem;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.8);display:none;">
+    👨‍🏫 Vue prof
+  </a>
 </nav>
 
 <div class="container-sm" id="main-content">
@@ -272,6 +275,11 @@
       const initiales = (eleve.prenom?.[0]||'') + (eleve.nom?.[0]||'');
       document.title = `${eleve.prenom} — EPS`;
       document.getElementById('topbar-title').textContent = `${eleve.prenom} ${(eleve.nom||'').toUpperCase()}`;
+      // Bouton bascule vue prof (visible si prof connecté)
+      if (localStorage.getItem('eps_prof') === 'true') {
+        const btnP = document.getElementById('btn-vue-prof');
+        if (btnP) { btnP.href = `../admin/suivi-eleve.html?eleveId=${eleveId}`; btnP.style.display = 'inline-flex'; }
+      }
 
       // 6. Construire le HTML
       const initiales2 = initiales.toUpperCase();
