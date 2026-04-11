@@ -780,16 +780,19 @@ async function sauvegarderEdit() {
     // 1️⃣ Sauvegarder la programmation dashboard
     await dbSet(`programmation/${classeNom}/${periode}`, { slots, notes });
 
-    // 2️⃣ Créer/mettre à jour les cycles Firebase automatiquement
-    const cycleResult = await syncCycles(classeNom, periode, slots);
+    // 2️⃣ Synchroniser les cycles Firebase (création + désactivation + réactivation)
+    const r = await syncCycles(classeNom, periode, slots);
 
-    let msg = `✓ ${classeNom} – ${periode} enregistré`;
-    if (cycleResult.crees > 0)   msg += ` · ${cycleResult.crees} cycle${cycleResult.crees>1?'s':''} créé${cycleResult.crees>1?'s':''}`;
-    if (cycleResult.ignores > 0) msg += ` · ${cycleResult.ignores} APSA introuvable${cycleResult.ignores>1?'s':''}`;
+    let msg = `✓ ${classeNom} – ${periode} mis à jour`;
+    const details = [];
+    if (r.crees > 0)      details.push(`${r.crees} cycle${r.crees>1?'s':''} créé${r.crees>1?'s':''}`);
+    if (r.reactives > 0)  details.push(`${r.reactives} réactivé${r.reactives>1?'s':''}`);
+    if (r.desactives > 0) details.push(`${r.desactives} désactivé${r.desactives>1?'s':''} (APSA retirée)`);
+    if (details.length)   msg += ' · ' + details.join(' · ');
     showToast(msg, 'success');
 
-    if (cycleResult.ignores > 0) {
-      showToast(`⚠️ APSA non trouvée en base : ${cycleResult.apsasManquantes.join(', ')} — créez-les d'abord dans APSA`, 'error');
+    if (r.ignores > 0) {
+      showToast(`⚠️ APSA non trouvée : ${r.apsasManquantes.join(', ')} — créez-la d'abord dans APSA`, 'error');
     }
 
     fermerEdit();
@@ -802,59 +805,76 @@ async function sauvegarderEdit() {
   slotCounter = 0;
 }
 
+// ── Synchronisation programmation → cycles Firebase ──────────
+// Règles :
+//   • APSA ajoutée   → créer le cycle (actif:true)
+//   • APSA retirée   → désactiver le cycle (actif:false) — évals préservées
+//   • APSA réajoutée → réactiver le cycle existant (actif:true)
+//   • APSA inchangée → mettre à jour les dates si besoin, ne pas toucher aux évals
 async function syncCycles(classeNom, periode, slots) {
-  const result = { crees: 0, ignores: 0, apsasManquantes: [] };
-  if (!slots.length) return result;
-
+  const result = { crees: 0, reactives: 0, desactives: 0, ignores: 0, apsasManquantes: [] };
   const { debut, fin, nbSeances } = PERIODES_DATES[periode] || {};
 
-  // Charger classe + APSA + cycles existants en parallèle
   const [toutesClasses, toutesApsa, tousCycles] = await Promise.all([
     getClasses(), getToutesApsa(), getTousCycles()
   ]);
 
   const classe = toutesClasses.find(c => c.nom === classeNom);
-  if (!classe) return result; // classe pas encore en base
+  if (!classe) return result;
 
-  // Pour chaque APSA du slot, chercher par nom (insensible à la casse)
+  // Résoudre les APSA trouvées pour cette liste de slots
+  const apsasActuelles = new Map(); // apsaId → apsa
   for (const slotNom of slots) {
-    // Recherche floue : on cherche si le nom de l'APSA contient le slot ou vice-versa
-    const apsaTrouvee = toutesApsa.find(a => {
+    const found = toutesApsa.find(a => {
       const an = a.nom.toLowerCase().trim();
       const sn = slotNom.toLowerCase().trim();
       return an === sn || an.includes(sn) || sn.includes(an) ||
-             sn.split('/').some(part => an.includes(part.trim())) ||
-             an.split('/').some(part => sn.includes(part.trim()));
+             sn.split('/').some(p => an.includes(p.trim())) ||
+             an.split('/').some(p => sn.includes(p.trim()));
     });
-
-    if (!apsaTrouvee) {
-      result.ignores++;
-      result.apsasManquantes.push(slotNom);
-      continue;
-    }
-
-    // Vérifier si un cycle existe déjà pour cette classe + APSA + période
-    const cycleExistant = tousCycles.find(c =>
-      c.classeId === classe.id &&
-      c.apsaId   === apsaTrouvee.id &&
-      c.periode  === periode
-    );
-
-    if (!cycleExistant) {
-      await dbPush('cycles', {
-        classeId:    classe.id,
-        apsaId:      apsaTrouvee.id,
-        periode:     periode,
-        actif:       true,
-        dateDebut:   debut  || null,
-        dateFin:     fin    || null,
-        nbSeances:   nbSeances || null,
-        dateCreation: new Date().toISOString()
-      });
-      result.crees++;
-    }
-    // Si le cycle existe déjà, on ne le recrée pas
+    if (found) apsasActuelles.set(found.id, found);
+    else { result.ignores++; result.apsasManquantes.push(slotNom); }
   }
+
+  // Cycles existants pour cette classe × période
+  const cyclesExistants = tousCycles.filter(c => c.classeId === classe.id && c.periode === periode);
+
+  // Étape 1 — désactiver ou réactiver les cycles existants
+  for (const cy of cyclesExistants) {
+    if (apsasActuelles.has(cy.apsaId)) {
+      // APSA toujours présente → réactiver si désactivé + mettre à jour dates
+      if (cy.actif !== true) {
+        await dbUpdate('cycles/' + cy.id, { actif: true, dateDebut: debut||null, dateFin: fin||null });
+        result.reactives++;
+      } else {
+        // Mettre à jour les dates si changement de période
+        await dbUpdate('cycles/' + cy.id, { dateDebut: debut||null, dateFin: fin||null });
+      }
+      apsasActuelles.delete(cy.apsaId); // déjà traité
+    } else {
+      // APSA retirée → désactiver (on conserve les évals)
+      if (cy.actif !== false) {
+        await dbUpdate('cycles/' + cy.id, { actif: false });
+        result.desactives++;
+      }
+    }
+  }
+
+  // Étape 2 — créer les cycles pour les nouvelles APSA (pas encore en base)
+  for (const [apsaId] of apsasActuelles) {
+    await dbPush('cycles', {
+      classeId:     classe.id,
+      apsaId:       apsaId,
+      periode:      periode,
+      actif:        true,
+      dateDebut:    debut  || null,
+      dateFin:      fin    || null,
+      nbSeances:    nbSeances || null,
+      dateCreation: new Date().toISOString()
+    });
+    result.crees++;
+  }
+
   return result;
 }
 
