@@ -6,183 +6,141 @@
   <title>Mes APSA — EPS</title>
   <link rel="stylesheet" href="../assets/style.css">
   <style>
-    body { background: #f4f6fa; padding-bottom: 100px; }
+    body { background: #f4f6fa; padding-bottom: 40px; }
 
     /* ── En-tête élève ── */
     .fiche-hero {
       background: linear-gradient(135deg, var(--navy) 0%, #1a3f7a 100%);
-      color: #fff;
-      border-radius: var(--radius);
-      padding: 1.4rem 2rem;
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 1.2rem;
-      flex-wrap: wrap;
+      color: #fff; border-radius: var(--radius);
+      padding: 1.3rem 1.8rem; margin-bottom: 1.4rem;
+      display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap;
     }
     .fiche-avatar {
-      width: 52px; height: 52px;
-      background: rgba(255,255,255,.18);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-h); font-size: 1.15rem; font-weight: 700;
-      flex-shrink: 0; border: 2px solid rgba(255,255,255,.3);
+      width: 50px; height: 50px; background: rgba(255,255,255,.18);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-h); font-size: 1.1rem; font-weight: 700; flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,.3);
     }
-    .fiche-hero-info h1 { font-size: 1.25rem; color: #fff; margin-bottom: .15rem; }
-    .fiche-hero-info p  { color: rgba(255,255,255,.6); font-size: .83rem; }
-    .fiche-hero-stat {
-      margin-left: auto;
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.2);
-      border-radius: 12px;
-      padding: .7rem 1.2rem;
-      text-align: center;
-      min-width: 90px;
+    .fiche-hero-info h1 { font-size: 1.2rem; color: #fff; margin-bottom: .1rem; }
+    .fiche-hero-info p  { color: rgba(255,255,255,.6); font-size: .82rem; }
+    .hero-stat {
+      margin-left: auto; background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.2); border-radius: 10px;
+      padding: .6rem 1.1rem; text-align: center;
     }
-    .fiche-hero-stat-num  { font-family: var(--font-h); font-size: 1.5rem; color: #fff; font-weight: 700; }
-    .fiche-hero-stat-lbl  { font-size: .7rem; color: rgba(255,255,255,.55); margin-top: 2px; }
+    .hero-stat-num { font-family: var(--font-h); font-size: 1.4rem; color: #fff; font-weight: 700; line-height: 1; }
+    .hero-stat-lbl { font-size: .68rem; color: rgba(255,255,255,.55); margin-top: 3px; }
 
-    /* ── Légende ── */
+    /* ── Légende niveaux ── */
     .legende-bar {
-      display: flex; gap: .5rem; flex-wrap: wrap;
-      align-items: center; margin-bottom: 1.2rem;
-      padding: .6rem 1rem; background: #fff;
-      border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.05);
+      display: flex; gap: .5rem; flex-wrap: wrap; align-items: center;
+      padding: .55rem 1rem; background: #fff; border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.05); margin-bottom: 1.2rem;
     }
-    .legende-item { display: flex; align-items: center; gap: .35rem; font-size: .77rem; font-weight: 600; }
-    .legende-dot  { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+    .legende-item { display: flex; align-items: center; gap: .32rem; font-size: .76rem; font-weight: 600; }
+    .legende-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
-    /* ── CA badge ── */
+    /* ── Séparateur CA ── */
+    .ca-sep {
+      font-family: var(--font-h); color: var(--gray-3); font-size: .75rem;
+      text-transform: uppercase; letter-spacing: .1em;
+      margin: 1.3rem 0 .5rem .1rem;
+    }
+
+    /* ── Carte accordéon ── */
+    .apsa-acc {
+      background: #fff; border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.06);
+      margin-bottom: .9rem; overflow: hidden;
+      border: 2px solid transparent; transition: border-color .25s, box-shadow .25s;
+    }
+    .apsa-acc.open { border-color: var(--navy); box-shadow: 0 4px 24px rgba(30,45,100,.12); }
+
+    .apsa-trigger {
+      display: flex; align-items: center; gap: .9rem;
+      padding: 1rem 1.3rem; cursor: pointer;
+      transition: background .15s; user-select: none;
+    }
+    .apsa-trigger:hover { background: #f8fafc; }
+    .apsa-acc.open .apsa-trigger { background: #eef2ff; }
+
+    .apsa-nom { font-family: var(--font-h); font-size: .98rem; font-weight: 700; color: var(--navy); margin-bottom: .2rem; }
+    .apsa-meta { display: flex; gap: .45rem; flex-wrap: wrap; align-items: center; }
+
     .ca-badge {
-      display: inline-flex; align-items: center; gap: .3rem;
-      font-family: var(--font-h); font-size: .7rem; font-weight: 700;
-      padding: .25rem .65rem; border-radius: 20px;
-      letter-spacing: .04em;
+      display: inline-flex; align-items: center; gap: .25rem;
+      font-family: var(--font-h); font-size: .68rem; font-weight: 700;
+      padding: .2rem .55rem; border-radius: 20px; letter-spacing: .03em;
     }
     .ca-CA1 { background: #fff3cd; color: #856404; }
     .ca-CA2 { background: #d1f0d1; color: #166534; }
     .ca-CA3 { background: #f3e8ff; color: #6d28d9; }
     .ca-CA4 { background: #dbeafe; color: #1d4ed8; }
 
-    /* ── Progress pill ── */
-    .progress-pill {
-      font-family: var(--font-h); font-size: .72rem; font-weight: 700;
-      padding: .2rem .6rem; border-radius: 20px;
-      background: #f1f5f9; color: #64748b;
-      transition: all .3s;
+    .prog-pill {
+      font-family: var(--font-h); font-size: .7rem; font-weight: 700;
+      padding: .18rem .55rem; border-radius: 20px;
+      background: #f1f5f9; color: #64748b; transition: all .3s;
     }
-    .progress-pill.done   { background: #dcfce7; color: #15803d; }
-    .progress-pill.partial { background: #fef3c7; color: #92400e; }
+    .prog-pill.partial { background: #fef3c7; color: #92400e; }
+    .prog-pill.done    { background: #dcfce7; color: #15803d; }
 
-    /* ── Accordéon APSA ── */
-    .apsa-accordion {
-      background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 2px 12px rgba(0,0,0,.06);
-      margin-bottom: 1rem;
-      overflow: hidden;
-      border: 2px solid transparent;
-      transition: border-color .25s, box-shadow .25s;
-    }
-    .apsa-accordion.open {
-      border-color: var(--navy);
-      box-shadow: 0 4px 24px rgba(30,45,100,.12);
-    }
-
-    .apsa-trigger {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1.1rem 1.4rem;
-      cursor: pointer;
-      transition: background .15s;
-      user-select: none;
-    }
-    .apsa-trigger:hover { background: #f8fafc; }
-    .apsa-accordion.open .apsa-trigger { background: #f0f4ff; }
-
-    .apsa-trigger-left { flex: 1; min-width: 0; }
-    .apsa-nom {
-      font-family: var(--font-h); font-size: 1rem;
-      font-weight: 700; color: var(--navy);
-      margin-bottom: .25rem;
-    }
-    .apsa-meta { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
-    .apsa-trigger-right { display: flex; align-items: center; gap: .6rem; flex-shrink: 0; }
     .apsa-chevron {
-      width: 28px; height: 28px;
-      background: #f1f5f9; border-radius: 50%;
+      width: 26px; height: 26px; background: #f1f5f9; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      color: var(--navy); font-size: .85rem;
+      font-size: .8rem; color: var(--navy); flex-shrink: 0;
       transition: transform .3s, background .2s;
     }
-    .apsa-accordion.open .apsa-chevron { transform: rotate(180deg); background: var(--navy); color: #fff; }
+    .apsa-acc.open .apsa-chevron { transform: rotate(180deg); background: var(--navy); color: #fff; }
 
     /* ── Contenu accordéon ── */
-    .apsa-body {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height .45s cubic-bezier(.4,0,.2,1);
+    .apsa-body { max-height: 0; overflow: hidden; transition: max-height .45s cubic-bezier(.4,0,.2,1); }
+    .apsa-acc.open .apsa-body { max-height: 3000px; }
+    .apsa-body-inner { padding: 0 0 1.1rem; }
+
+    /* ── Section domaine ── */
+    .dom-section { margin: .3rem 1.1rem .9rem; }
+    .dom-header {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .5rem .8rem; background: var(--navy); color: #fff;
+      border-radius: 7px 7px 0 0; font-family: var(--font-h); font-size: .8rem;
     }
-    .apsa-accordion.open .apsa-body { max-height: 2000px; }
-    .apsa-body-inner { padding: .2rem 0 1.2rem; }
+    .dom-pill { background: rgba(255,255,255,.2); color: #fff; font-weight: 700; padding: .12rem .45rem; border-radius: 8px; font-size: .72rem; }
+    .dom-lbl  { font-size: .76rem; opacity: .82; }
 
-    /* ── Table d'évaluation ── */
-    .domaine-section { margin: 0 1.2rem 1rem; }
-    .domaine-header {
-      display: flex; align-items: center; gap: .6rem;
-      padding: .55rem .85rem;
-      background: var(--navy); color: #fff;
-      border-radius: 8px 8px 0 0;
-      font-family: var(--font-h); font-size: .82rem;
-    }
-    .domaine-pill-sm {
-      background: rgba(255,255,255,.2);
-      color: #fff; font-weight: 700;
-      padding: .15rem .5rem; border-radius: 10px;
-      font-size: .75rem;
-    }
-    .domaine-label-sm { font-size: .78rem; opacity: .8; }
+    .scroll-hint { display: none; font-size: .68rem; color: #94a3b8; text-align: center; padding: .3rem .5rem; }
+    @media(max-width:650px){ .scroll-hint{ display:block; } }
 
-    /* Scroll sur mobile */
-    .eval-scroll { overflow-x: auto; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none; }
+    /* ── Table évaluation ── */
+    .eval-scroll { overflow-x: auto; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 7px 7px; }
+    .eval-table  { width: 100%; border-collapse: collapse; min-width: 520px; }
 
-    .eval-table { width: 100%; border-collapse: collapse; min-width: 540px; }
-    .eval-table thead th { border-bottom: 2px solid #e5e7eb; }
-
-    /* En-tête colonnes niveaux */
-    .th-obj { background: #2c3e6b; color: #fff; font-family: var(--font-h); font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: .65rem 1rem; width: 27%; text-align: left; border-right: 1px solid rgba(255,255,255,.15); }
+    .th-obj { background: #2c3e6b; color: #fff; font-family: var(--font-h); font-size: .77rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: .6rem .9rem; width: 26%; text-align: left; border-right: 1px solid rgba(255,255,255,.15); vertical-align: middle; }
     .th-niv { padding: 0; vertical-align: top; border-right: 1px solid #e5e7eb; }
     .th-niv:last-child { border-right: none; }
-    .th-niv-top { padding: .55rem .4rem .3rem; font-family: var(--font-h); font-size: .73rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; text-align: center; }
-    .th-niv-scale { display: flex; align-items: center; justify-content: space-between; padding: .15rem .55rem .45rem; font-size: .63rem; font-weight: 700; border-top: 1px solid rgba(0,0,0,.06); }
+    .th-niv-top   { padding: .5rem .4rem .28rem; font-family: var(--font-h); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; text-align: center; }
+    .th-niv-scale { display: flex; align-items: center; justify-content: space-between; padding: .12rem .5rem .4rem; font-size: .62rem; font-weight: 700; border-top: 1px solid rgba(0,0,0,.06); }
     .th-NA  { background: #fee2e2; color: #b91c1c; }
     .th-ECA { background: #fef3c7; color: #92400e; }
     .th-A   { background: #dcfce7; color: #15803d; }
     .th-D   { background: #ede9fe; color: #6d28d9; }
 
-    /* Lignes */
     .eval-table tbody tr { border-bottom: 1px solid #e5e7eb; }
     .eval-table tbody tr:last-child { border-bottom: none; }
 
     .td-obj {
-      padding: .8rem 1rem; vertical-align: middle;
-      font-size: .81rem; font-weight: 600; color: #1e293b;
+      padding: .75rem .9rem; vertical-align: middle;
+      font-size: .8rem; font-weight: 600; color: #1e293b;
       border-right: 1px solid #e5e7eb; background: #f8fafc;
-      line-height: 1.45; border-left: 4px solid transparent;
-      transition: border-left-color .2s;
+      line-height: 1.45; border-left: 4px solid transparent; transition: border-left-color .2s;
     }
     .obj-num {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 19px; height: 19px;
-      background: var(--navy); color: #fff;
-      border-radius: 50%; font-size: .62rem; font-weight: 700;
-      margin-right: .35rem; vertical-align: middle; flex-shrink: 0;
+      width: 18px; height: 18px; background: var(--navy); color: #fff;
+      border-radius: 50%; font-size: .6rem; font-weight: 700;
+      margin-right: .3rem; vertical-align: middle; flex-shrink: 0;
     }
-    .obj-badge {
-      display: inline-block; font-size: .62rem; font-weight: 700;
-      padding: .1rem .38rem; border-radius: 8px; margin-left: .35rem; vertical-align: middle;
-    }
+    .obj-badge { display: inline-block; font-size: .6rem; font-weight: 700; padding: .08rem .35rem; border-radius: 7px; margin-left: .3rem; vertical-align: middle; }
     .obj-badge-NA  { background: #fee2e2; color: #b91c1c; }
     .obj-badge-ECA { background: #fef3c7; color: #92400e; }
     .obj-badge-A   { background: #dcfce7; color: #15803d; }
@@ -190,10 +148,9 @@
     .obj-badge-vide { background: #f1f5f9; color: #94a3b8; }
 
     .td-niv {
-      padding: .65rem .55rem; vertical-align: top; text-align: center;
-      font-size: .73rem; line-height: 1.5; color: #374151;
-      cursor: pointer; transition: all .12s; border-right: 1px solid #e5e7eb;
-      position: relative;
+      padding: .6rem .5rem; vertical-align: top; text-align: center;
+      font-size: .72rem; line-height: 1.5; color: #374151;
+      cursor: pointer; transition: all .12s; border-right: 1px solid #e5e7eb; position: relative;
     }
     .td-niv:last-child { border-right: none; }
     .td-niv:hover { filter: brightness(.93); }
@@ -201,65 +158,41 @@
     .td-ECA { background: #fffdf0; }
     .td-A   { background: #f7fef9; }
     .td-D   { background: #faf7ff; }
+    .td-desc-empty { color: #c5cdd8; font-style: italic; }
 
     .td-niv.selected { font-weight: 700; }
     .td-NA.selected  { background: #fecaca; color: #7f1d1d; outline: 3px solid #ef4444; outline-offset: -3px; }
     .td-ECA.selected { background: #fde68a; color: #78350f; outline: 3px solid #f59e0b; outline-offset: -3px; }
     .td-A.selected   { background: #bbf7d0; color: #14532d; outline: 3px solid #22c55e; outline-offset: -3px; }
     .td-D.selected   { background: #ddd6fe; color: #3b0764; outline: 3px solid #8b5cf6; outline-offset: -3px; }
+    .td-niv.selected::before { content:''; display:block; height:4px; margin:-.6rem -.5rem .4rem; }
+    .td-NA.selected::before  { background:#ef4444; }
+    .td-ECA.selected::before { background:#f59e0b; }
+    .td-A.selected::before   { background:#22c55e; }
+    .td-D.selected::before   { background:#8b5cf6; }
+    .td-check { display:none; width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;font-size:.9rem;font-weight:900;margin:0 auto .35rem;color:#fff; }
+    .td-NA.selected  .td-check { display:flex;background:#ef4444; }
+    .td-ECA.selected .td-check { display:flex;background:#f59e0b; }
+    .td-A.selected   .td-check { display:flex;background:#22c55e; }
+    .td-D.selected   .td-check { display:flex;background:#8b5cf6; }
 
-    .td-niv.selected::before {
-      content: ''; display: block; height: 4px;
-      margin: -.65rem -.55rem .45rem; border-radius: 0;
-    }
-    .td-NA.selected::before  { background: #ef4444; }
-    .td-ECA.selected::before { background: #f59e0b; }
-    .td-A.selected::before   { background: #22c55e; }
-    .td-D.selected::before   { background: #8b5cf6; }
+    tr.sel-NA  .td-obj { border-left-color:#ef4444; }
+    tr.sel-ECA .td-obj { border-left-color:#f59e0b; }
+    tr.sel-A   .td-obj { border-left-color:#22c55e; }
+    tr.sel-D   .td-obj { border-left-color:#8b5cf6; }
 
-    .td-check {
-      display: none; width: 26px; height: 26px; border-radius: 50%;
-      align-items: center; justify-content: center;
-      font-size: .95rem; font-weight: 900; margin: 0 auto .4rem; color: #fff;
-    }
-    .td-NA.selected  .td-check { display: flex; background: #ef4444; }
-    .td-ECA.selected .td-check { display: flex; background: #f59e0b; }
-    .td-A.selected   .td-check { display: flex; background: #22c55e; }
-    .td-D.selected   .td-check { display: flex; background: #8b5cf6; }
-    .td-desc-empty { color: #c5cdd8; font-style: italic; }
+    /* ── Commentaire + save ── */
+    .comment-wrap { margin: .8rem 1.1rem 0; }
+    .comment-wrap label { font-size: .77rem; font-weight: 700; color: var(--navy); display: block; margin-bottom: .3rem; }
+    .comment-wrap textarea { width:100%;box-sizing:border-box;min-height:52px;font-size:.81rem;resize:vertical;border:1px solid #d1d5db;border-radius:7px;padding:.5rem .7rem;font-family:var(--font-b); }
 
-    /* Couleur bordure gauche selon choix */
-    tr.sel-NA  .td-obj { border-left-color: #ef4444; }
-    tr.sel-ECA .td-obj { border-left-color: #f59e0b; }
-    tr.sel-A   .td-obj { border-left-color: #22c55e; }
-    tr.sel-D   .td-obj { border-left-color: #8b5cf6; }
-
-    /* Commentaire */
-    .commentaire-wrap { margin: .8rem 1.2rem 0; }
-    .commentaire-wrap label { font-size: .78rem; font-weight: 700; color: var(--navy); display: block; margin-bottom: .35rem; }
-    .commentaire-wrap textarea {
-      width: 100%; box-sizing: border-box; min-height: 54px;
-      font-size: .82rem; resize: vertical;
-      border: 1px solid #d1d5db; border-radius: 8px;
-      padding: .5rem .7rem; font-family: var(--font-b);
-    }
-
-    /* Bouton save par APSA */
-    .apsa-save-row {
-      margin: .9rem 1.2rem 0;
-      display: flex; align-items: center; justify-content: flex-end; gap: .8rem;
-    }
-    .save-mini-status { font-size: .78rem; color: #94a3b8; }
-    .save-mini-status.modified { color: #f59e0b; font-weight: 600; }
-    .save-mini-status.saved    { color: #22c55e; font-weight: 600; }
-
-    /* scroll mobile */
-    .scroll-hint { display: none; font-size: .7rem; color: #94a3b8; text-align: center; padding: .3rem; }
-    @media(max-width:680px){ .scroll-hint{display:block;} }
+    .save-row { margin: .75rem 1.1rem 0; display:flex;align-items:center;justify-content:flex-end;gap:.75rem; }
+    .save-status-mini { font-size:.77rem;color:#94a3b8; }
+    .save-status-mini.modified { color:#f59e0b;font-weight:600; }
+    .save-status-mini.saved    { color:#22c55e;font-weight:600; }
   </style>
 </head>
 <body>
-
 <nav class="topbar">
   <a href="classe.html" class="topbar-logo">← Retour</a>
   <span class="topbar-title" id="topbar-title">Mes APSA</span>
@@ -267,8 +200,7 @@
 
 <div class="container-sm" id="main-content">
   <div class="loader-wrap" style="min-height:60vh">
-    <div class="spinner"></div>
-    <span>Chargement de tes activités...</span>
+    <div class="spinner"></div><span>Chargement de tes activités...</span>
   </div>
 </div>
 
@@ -276,45 +208,47 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
+  // ── Lecture des params URL ────────────────────────────────
   const params   = new URLSearchParams(window.location.search);
   const eleveId  = params.get('eleveId');
   const classeId = params.get('classeId');
   const niveau   = params.get('niveau');
 
-  if (!eleveId || !classeId) window.location.href = 'classe.html';
+  // Garde-fou : si les params manquent → retour
+  if (!eleveId || !classeId || !niveau) window.location.href = 'classe.html';
 
-  // niveau → quels codes afficher
+  // Codes de niveau selon le cycle
   const CODES = niveau === '6e' ? ['NA','ECA','A'] : ['NA','ECA','A','D'];
-
-  const NIVEAUX_INFO = {
-    NA:  { label:'Non Atteint',           scale:'0 — 2',  icon:'✕', couleur:'#ef4444' },
-    ECA: { label:'Partiellement Atteint', scale:'3 — 5',  icon:'⊙', couleur:'#f59e0b' },
-    A:   { label:'Atteint',               scale:'6 — 8',  icon:'✓', couleur:'#22c55e' },
-    D:   { label:'Dépassé',               scale:'9 — 10', icon:'★', couleur:'#8b5cf6' }
+  const NIV = {
+    NA:  { label:'Non Atteint',           scale:'0 — 2',  icon:'✕', col:'#ef4444' },
+    ECA: { label:'Partiellement Atteint', scale:'3 — 5',  icon:'⊙', col:'#f59e0b' },
+    A:   { label:'Atteint',               scale:'6 — 8',  icon:'✓', col:'#22c55e' },
+    D:   { label:'Dépassé',               scale:'9 — 10', icon:'★', col:'#8b5cf6' }
   };
+  const CA_ICON  = { CA1:'⏱️', CA2:'🌿', CA3:'🎭', CA4:'⚔️' };
+  const CA_COLOR = { CA1:'ca-CA1', CA2:'ca-CA2', CA3:'ca-CA3', CA4:'ca-CA4' };
 
-  const CA_ICONS = { CA1:'⏱️', CA2:'🌿', CA3:'🎭', CA4:'⚔️' };
-  const CA_COLORS = { CA1:'ca-CA1', CA2:'ca-CA2', CA3:'ca-CA3', CA4:'ca-CA4' };
-
-  // Stockage en mémoire : { cycleId: { resultats:{}, modifie:false } }
+  // Stockage mémoire des évaluations par cycle
+  // evals[cycleId] = { apsaId, resultats:{}, modifie:false }
   const evals = {};
 
+  // ── Init ─────────────────────────────────────────────────
   async function init() {
     try {
-      // Charger élève
-      const eleveData = await dbGet(`eleves/${eleveId}`);
+      // 1. Charger l'élève
+      const eleveData = await dbGet('eleves/' + eleveId);
       if (!eleveData) throw new Error('Élève introuvable');
       const eleve = { id: eleveId, ...eleveData };
 
-      // Charger les cycles actifs pour cette classe
+      // 2. Charger les cycles actifs pour cette classe
       const cycles = await getCyclesActifs(classeId);
-      if (cycles.length === 0) {
+      if (!cycles.length) {
         document.getElementById('main-content').innerHTML =
-          `<div class="alert alert-info">ℹ️ Aucune activité programmée pour l'instant. Reviens plus tard !</div>`;
+          '<div class="alert alert-info">ℹ️ Aucune activité programmée pour ta classe. Reviens plus tard !</div>';
         return;
       }
 
-      // Charger les APSA
+      // 3. Charger les APSA
       const apsaMap = {};
       for (const cy of cycles) {
         if (cy.apsaId && !apsaMap[cy.apsaId]) {
@@ -323,85 +257,65 @@
         }
       }
 
-      // Charger les évaluations existantes
+      // 4. Charger les évaluations existantes
       for (const cy of cycles) {
-        const evalDoc = await getEvaluation(eleveId, cy.id);
+        const ev = await getEvaluation(eleveId, cy.id);
         evals[cy.id] = {
-          resultats: evalDoc ? (evalDoc.resultats || {}) : {},
-          apsaId: cy.apsaId,
-          modifie: false
+          apsaId:   cy.apsaId,
+          resultats: ev ? (ev.resultats || {}) : {},
+          modifie:  false
         };
       }
 
-      // Mise à jour titre
+      // 5. Titre
       const initiales = (eleve.prenom?.[0]||'') + (eleve.nom?.[0]||'');
-      document.title = `${eleve.prenom} — Mes APSA EPS`;
+      document.title = `${eleve.prenom} — EPS`;
       document.getElementById('topbar-title').textContent = `${eleve.prenom} ${(eleve.nom||'').toUpperCase()}`;
 
-      // Stats
-      const nbEval = Object.values(evals).filter(e => Object.keys(e.resultats).some(k => k.startsWith('obj_'))).length;
-
-      // Rendu
+      // 6. Construire le HTML
+      const initiales2 = initiales.toUpperCase();
       let html = `
         <div class="fiche-hero">
-          <div class="fiche-avatar">${initiales.toUpperCase()}</div>
+          <div class="fiche-avatar">${initiales2}</div>
           <div class="fiche-hero-info">
             <h1>${eleve.prenom} ${(eleve.nom||'').toUpperCase()}</h1>
-            <p>${eleve.classe || ''} · ${niveau} · ${window.ANNEE_SCOLAIRE}</p>
+            <p>${eleve.classe||''} · ${niveau} · ${window.ANNEE_SCOLAIRE}</p>
           </div>
-          <div class="fiche-hero-stat">
-            <div class="fiche-hero-stat-num">${cycles.length}</div>
-            <div class="fiche-hero-stat-lbl">APSA cette année</div>
+          <div class="hero-stat">
+            <div class="hero-stat-num">${cycles.length}</div>
+            <div class="hero-stat-lbl">APSA cette année</div>
           </div>
         </div>
-
         <div class="legende-bar">
-          <span style="font-size:.77rem;font-weight:700;color:#64748b;margin-right:.2rem;">Niveaux :</span>
-          ${CODES.map(code =>
-            `<div class="legende-item">
-               <div class="legende-dot" style="background:${NIVEAUX_INFO[code].couleur}"></div>
-               <span style="color:${NIVEAUX_INFO[code].couleur}">${NIVEAUX_INFO[code].label}</span>
-             </div>`
-          ).join('<span style="color:#d1d5db;margin:0 .1rem">·</span>')}
-        </div>
-      `;
+          <span style="font-size:.76rem;font-weight:700;color:#64748b;margin-right:.15rem;">Niveaux :</span>
+          ${CODES.map(c => `<div class="legende-item"><div class="legende-dot" style="background:${NIV[c].col}"></div><span style="color:${NIV[c].col}">${NIV[c].label}</span></div>`).join('<span style="color:#d1d5db;margin:0 .08rem">·</span>')}
+        </div>`;
 
-      // Grouper les cycles par CA
+      // Grouper par CA
       const parCA = {};
       cycles.forEach(cy => {
-        const apsa = apsaMap[cy.apsaId];
-        if (!apsa) return;
-        const ca = apsa.champAppr || 'Autre';
+        const ap = apsaMap[cy.apsaId];
+        if (!ap) return;
+        const ca = ap.champAppr || 'Autre';
         if (!parCA[ca]) parCA[ca] = [];
-        parCA[ca].push({ cycle: cy, apsa });
+        parCA[ca].push({ cy, ap });
       });
 
-      const ordreCA = ['CA1','CA2','CA3','CA4','Autre'];
-      ordreCA.forEach(ca => {
+      ['CA1','CA2','CA3','CA4','Autre'].forEach(ca => {
         if (!parCA[ca]) return;
-        const caLabel = window.CHAMPS_APPRENTISSAGE[ca] || ca;
-        html += `
-          <div style="font-family:var(--font-h);color:var(--gray-3);font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;margin:1.2rem 0 .5rem .2rem;">
-            ${CA_ICONS[ca]||''} ${ca} — ${caLabel}
-          </div>`;
-
-        parCA[ca].forEach(({ cycle, apsa }) => {
-          html += renderAccordion(cycle, apsa, niveau);
-        });
+        const caLbl = window.CHAMPS_APPRENTISSAGE[ca] || ca;
+        html += `<div class="ca-sep">${CA_ICON[ca]||''} ${ca} — ${caLbl}</div>`;
+        parCA[ca].forEach(({ cy, ap }) => { html += buildAccordion(cy, ap); });
       });
 
       document.getElementById('main-content').innerHTML = html;
 
-      // Restaurer les évaluations existantes dans l'UI
+      // Restaurer visuellement les évals existantes
       cycles.forEach(cy => {
         const ev = evals[cy.id];
         if (!ev) return;
-        const apsa = apsaMap[cy.apsaId];
-        if (!apsa) return;
         Object.entries(ev.resultats).forEach(([key, code]) => {
-          if (!key.startsWith('obj_')) return;
-          const num = key.replace('obj_','');
-          actualiserLigne(cy.id, num, code);
+          if (key.startsWith('obj_')) actualiserLigne(cy.id, key.replace('obj_',''), code);
         });
       });
 
@@ -411,209 +325,177 @@
     }
   }
 
-  // ── Rendu d'un accordéon APSA ────────────────────────────
-  function renderAccordion(cycle, apsa, niveau) {
-    const cycleId = cycle.id;
-    const ev = evals[cycleId] || { resultats: {} };
-    const objectifs = apsa.objectifs || [];
-    const nbEvalues = objectifs.filter(obj => ev.resultats[`obj_${obj.id || 1}`]).length;
-    const progressClass = nbEvalues === 0 ? '' : nbEvalues < objectifs.length ? 'partial' : 'done';
-    const progressLabel = objectifs.length > 0
-      ? (nbEvalues === 0 ? '— / ' + objectifs.length : `${nbEvalues} / ${objectifs.length}`)
-      : '0 objectif';
+  // ── Construire un accordéon ───────────────────────────────
+  function buildAccordion(cy, ap) {
+    const cyId = cy.id;
+    const ev   = evals[cyId] || { resultats:{} };
+    const objs = ap.objectifs || [];
 
-    const debut = cycle.dateDebut ? new Date(cycle.dateDebut).toLocaleDateString('fr-FR',{month:'short'}) : '';
-    const fin   = cycle.dateFin   ? new Date(cycle.dateFin).toLocaleDateString('fr-FR',{month:'short',year:'numeric'}) : '';
-    const periode = (debut || fin) ? `📅 ${debut}${fin ? ' → ' + fin : ''}` : '';
+    // Comptage progression
+    const nbEval = objs.filter(o => ev.resultats[`obj_${o.id||1}`]).length;
+    const pillCls = nbEval === 0 ? '' : nbEval < objs.length ? 'partial' : 'done';
+    const pillTxt = objs.length === 0 ? '—' : `${nbEval}/${objs.length}`;
 
-    // Regrouper objectifs par domaine
-    const parDomaine = {};
-    objectifs.forEach(obj => {
-      const d = obj.domaine || 'Général';
-      if (!parDomaine[d]) parDomaine[d] = [];
-      parDomaine[d].push(obj);
-    });
+    // Période
+    const d1 = cy.dateDebut ? new Date(cy.dateDebut).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
+    const d2 = cy.dateFin   ? new Date(cy.dateFin).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}) : '';
+    const periode = d1 ? `📅 ${d1}${d2?' → '+d2:''}` : '';
 
-    const tableHtml = Object.entries(parDomaine).map(([domaine, objs]) => {
-      const domLabel = window.DOMAINES_SOCLE[domaine] || domaine;
-      return `
-        <div class="domaine-section">
-          <div class="domaine-header">
-            <span class="domaine-pill-sm">${domaine}</span>
-            <span class="domaine-label-sm">${domLabel}</span>
-          </div>
-          <div class="scroll-hint">← Faire défiler →</div>
-          <div class="eval-scroll">
-            <table class="eval-table">
-              <thead><tr>
-                <th class="th-obj">Objectif</th>
-                ${CODES.map(code => `
-                  <th class="th-niv">
-                    <div class="th-niv-top th-${code}">${NIVEAUX_INFO[code].icon} ${code==='NA'?'Non Atteint':code==='ECA'?'Partiellement Atteint':code==='A'?'Atteint':'Dépassé'}</div>
-                    <div class="th-niv-scale scale-${code}">
-                      <span>${NIVEAUX_INFO[code].scale.split('—')[0].trim()}</span>
-                      <span style="opacity:.35">—</span>
-                      <span>${NIVEAUX_INFO[code].scale.split('—')[1].trim()}</span>
-                    </div>
-                  </th>`).join('')}
-              </tr></thead>
-              <tbody>
-                ${objs.map((obj, i) => {
-                  const num = obj.id || (i + 1);
-                  const code = ev.resultats[`obj_${num}`] || '';
-                  const d = obj.descripteurs || {};
-                  return `
-                    <tr id="row-${cycleId}-${num}" class="${code ? 'sel-'+code : ''}">
-                      <td class="td-obj">
-                        <span class="obj-num">${num}</span>${obj.texte}
-                        <span class="obj-badge ${code ? 'obj-badge-'+code : 'obj-badge-vide'}" id="badge-${cycleId}-${num}">${code||'—'}</span>
-                      </td>
-                      ${CODES.map(c => `
-                        <td class="td-niv td-${c}${code===c?' selected':''}" id="td-${cycleId}-${num}-${c}"
-                            onclick="setNiveau('${cycleId}','${num}','${c}')">
-                          <div class="td-check">✓</div>
-                          <div class="${d[c]?'':'td-desc-empty'}">${d[c]||'—'}</div>
-                        </td>`).join('')}
-                    </tr>`;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>`;
-    }).join('');
+    // Tables par domaine
+    const parDom = {};
+    objs.forEach(obj => { const d=obj.domaine||'Général'; if(!parDom[d]) parDom[d]=[]; parDom[d].push(obj); });
+
+    const tablesHtml = Object.keys(parDom).length === 0
+      ? '<div class="alert alert-info" style="margin:.8rem 1.1rem;">ℹ️ Objectifs non encore définis.</div>'
+      : Object.entries(parDom).map(([dom, domObjs]) => {
+          const domLbl = window.DOMAINES_SOCLE[dom] || dom;
+          const rows = domObjs.map((obj, i) => {
+            const num  = obj.id || (i + 1);
+            const code = ev.resultats[`obj_${num}`] || '';
+            const desc = obj.descripteurs || {};
+            return `
+              <tr id="row-${cyId}-${num}" class="${code?'sel-'+code:''}">
+                <td class="td-obj">
+                  <span class="obj-num">${num}</span>${obj.texte||''}
+                  <span class="obj-badge ${code?'obj-badge-'+code:'obj-badge-vide'}" id="badge-${cyId}-${num}">${code||'—'}</span>
+                </td>
+                ${CODES.map(c => `
+                  <td class="td-niv td-${c}${code===c?' selected':''}" id="td-${cyId}-${num}-${c}"
+                      onclick="setNiveau('${cyId}','${num}','${c}')">
+                    <div class="td-check">✓</div>
+                    <div class="${desc[c]?'':'td-desc-empty'}">${desc[c]||'—'}</div>
+                  </td>`).join('')}
+              </tr>`;
+          }).join('');
+
+          return `
+            <div class="dom-section">
+              <div class="dom-header">
+                <span class="dom-pill">${dom}</span>
+                <span class="dom-lbl">${domLbl}</span>
+              </div>
+              <div class="scroll-hint">← Faire défiler →</div>
+              <div class="eval-scroll">
+                <table class="eval-table">
+                  <thead><tr>
+                    <th class="th-obj">Objectif</th>
+                    ${CODES.map(c => `
+                      <th class="th-niv">
+                        <div class="th-niv-top th-${c}">${NIV[c].icon} ${c==='NA'?'Non Atteint':c==='ECA'?'Part. Atteint':c==='A'?'Atteint':'Dépassé'}</div>
+                        <div class="th-niv-scale">
+                          <span>${NIV[c].scale.split('—')[0].trim()}</span>
+                          <span style="opacity:.3">—</span>
+                          <span>${NIV[c].scale.split('—')[1].trim()}</span>
+                        </div>
+                      </th>`).join('')}
+                  </tr></thead>
+                  <tbody>${rows}</tbody>
+                </table>
+              </div>
+            </div>`;
+        }).join('');
 
     return `
-      <div class="apsa-accordion" id="accordion-${cycleId}">
-        <div class="apsa-trigger" onclick="toggleAccordion('${cycleId}')">
-          <div class="apsa-trigger-left">
-            <div class="apsa-nom">${apsa.nom || 'APSA'}</div>
+      <div class="apsa-acc" id="acc-${cyId}">
+        <div class="apsa-trigger" onclick="toggleAcc('${cyId}')">
+          <div style="flex:1;min-width:0;">
+            <div class="apsa-nom">${ap.nom||'APSA'}</div>
             <div class="apsa-meta">
-              ${apsa.champAppr ? `<span class="ca-badge ${CA_COLORS[apsa.champAppr]||''}">${CA_ICONS[apsa.champAppr]||''} ${apsa.champAppr}</span>` : ''}
-              ${periode ? `<span style="font-size:.75rem;color:#94a3b8;">${periode}</span>` : ''}
+              ${ap.champAppr ? `<span class="ca-badge ${CA_COLOR[ap.champAppr]||''}">${CA_ICON[ap.champAppr]||''} ${ap.champAppr}</span>` : ''}
+              ${periode ? `<span style="font-size:.73rem;color:#94a3b8;">${periode}</span>` : ''}
             </div>
           </div>
-          <div class="apsa-trigger-right">
-            <span class="progress-pill ${progressClass}" id="pill-${cycleId}">
-              ✏️ ${progressLabel} évalué${nbEvalues > 1 ? 's' : ''}
-            </span>
-            <div class="apsa-chevron">▼</div>
-          </div>
+          <span class="prog-pill ${pillCls}" id="pill-${cyId}">✏️ ${pillTxt} évalué${nbEval>1?'s':''}</span>
+          <div class="apsa-chevron">▼</div>
         </div>
-        <div class="apsa-body" id="body-${cycleId}">
+        <div class="apsa-body" id="body-${cyId}">
           <div class="apsa-body-inner">
-            ${objectifs.length === 0
-              ? '<div class="alert alert-info" style="margin:0 1.2rem;">ℹ️ Aucun objectif défini. Contactez votre professeur.</div>'
-              : tableHtml}
-            <div class="commentaire-wrap">
+            ${tablesHtml}
+            <div class="comment-wrap">
               <label>💬 Commentaire (optionnel)</label>
-              <textarea id="comment-${cycleId}" placeholder="Mes ressentis, mes progrès..." oninput="marquerModifie('${cycleId}')">${ev.resultats['commentaire']||''}</textarea>
+              <textarea id="comment-${cyId}" placeholder="Mes ressentis, mes progrès..." oninput="marquerModifie('${cyId}')">${ev.resultats['commentaire']||''}</textarea>
             </div>
-            <div class="apsa-save-row">
-              <span class="save-mini-status" id="status-${cycleId}">Clique sur une case pour t'évaluer</span>
-              <button class="btn btn-success" onclick="sauvegarder('${cycleId}')">💾 Enregistrer</button>
+            <div class="save-row">
+              <span class="save-status-mini" id="status-${cyId}">Clique sur une case pour t'évaluer</span>
+              <button class="btn btn-success" onclick="sauvegarder('${cyId}')">💾 Enregistrer</button>
             </div>
           </div>
         </div>
       </div>`;
   }
 
-  // ── Accordéon toggle ────────────────────────────────────
-  function toggleAccordion(cycleId) {
-    const acc = document.getElementById(`accordion-${cycleId}`);
-    if (!acc) return;
-    const isOpen = acc.classList.contains('open');
-    // Fermer tous les autres (optionnel — on peut laisser plusieurs ouverts)
-    // document.querySelectorAll('.apsa-accordion.open').forEach(a => a.classList.remove('open'));
-    acc.classList.toggle('open', !isOpen);
+  // ── Accordéon toggle ─────────────────────────────────────
+  function toggleAcc(cyId) {
+    document.getElementById('acc-'+cyId)?.classList.toggle('open');
   }
 
-  // ── Sélection niveau ────────────────────────────────────
-  function setNiveau(cycleId, num, code) {
-    const ev = evals[cycleId];
-    if (!ev) return;
-    const key = `obj_${num}`;
-    const ancien = ev.resultats[key] || '';
-    if (ancien === code) { delete ev.resultats[key]; actualiserLigne(cycleId, num, ''); }
-    else { ev.resultats[key] = code; actualiserLigne(cycleId, num, code); }
-    marquerModifie(cycleId);
-    mettreAJourPill(cycleId);
+  // ── Sélection niveau ─────────────────────────────────────
+  function setNiveau(cyId, num, code) {
+    const ev = evals[cyId]; if (!ev) return;
+    const key = 'obj_' + num;
+    if (ev.resultats[key] === code) { delete ev.resultats[key]; actualiserLigne(cyId, num, ''); }
+    else { ev.resultats[key] = code; actualiserLigne(cyId, num, code); }
+    marquerModifie(cyId);
+    majPill(cyId);
   }
 
-  function actualiserLigne(cycleId, num, code) {
-    CODES.concat(['D']).forEach(c => {
-      const td = document.getElementById(`td-${cycleId}-${num}-${c}`);
-      if (!td) return;
-      td.className = `td-niv td-${c}${code===c?' selected':''}`;
+  function actualiserLigne(cyId, num, code) {
+    ['NA','ECA','A','D'].forEach(c => {
+      const td = document.getElementById(`td-${cyId}-${num}-${c}`);
+      if (td) td.className = `td-niv td-${c}${code===c?' selected':''}`;
     });
-    const badge = document.getElementById(`badge-${cycleId}-${num}`);
-    if (badge) {
-      badge.className = `obj-badge ${code ? 'obj-badge-'+code : 'obj-badge-vide'}`;
-      badge.textContent = code || '—';
-    }
-    const row = document.getElementById(`row-${cycleId}-${num}`);
-    if (row) row.className = code ? 'sel-'+code : '';
+    const badge = document.getElementById(`badge-${cyId}-${num}`);
+    if (badge) { badge.className=`obj-badge ${code?'obj-badge-'+code:'obj-badge-vide'}`; badge.textContent=code||'—'; }
+    const row = document.getElementById(`row-${cyId}-${num}`);
+    if (row) row.className = code?'sel-'+code:'';
   }
 
-  function mettreAJourPill(cycleId) {
-    const ev = evals[cycleId];
-    const pill = document.getElementById(`pill-${cycleId}`);
-    if (!pill || !ev) return;
-    // Compter les objectifs évalués (on ne peut pas compter total ici facilement, on cherche les clés obj_*)
-    const evalues = Object.keys(ev.resultats).filter(k => k.startsWith('obj_') && ev.resultats[k]).length;
-    // On ne connaît pas le total exactement ici, on affiche juste le count
-    if (evalues === 0) {
-      pill.textContent = '✏️ — évalué';
-      pill.className = 'progress-pill';
-    } else {
-      pill.textContent = `✅ ${evalues} évalué${evalues > 1 ? 's' : ''}`;
-      pill.className = 'progress-pill done';
-    }
+  function majPill(cyId) {
+    const ev   = evals[cyId]; if (!ev) return;
+    const pill = document.getElementById('pill-'+cyId); if (!pill) return;
+    const n = Object.keys(ev.resultats).filter(k=>k.startsWith('obj_')&&ev.resultats[k]).length;
+    pill.textContent = n===0 ? '✏️ — évalué' : `✅ ${n} évalué${n>1?'s':''}`;
+    pill.className   = 'prog-pill ' + (n===0?'':ev.modifie||n>0?'partial':'');
   }
 
-  function marquerModifie(cycleId) {
-    const ev = evals[cycleId];
-    if (ev) ev.modifie = true;
-    const st = document.getElementById(`status-${cycleId}`);
-    if (st) { st.textContent = '● Modifications non enregistrées'; st.className = 'save-mini-status modified'; }
+  function marquerModifie(cyId) {
+    if (evals[cyId]) evals[cyId].modifie = true;
+    const st = document.getElementById('status-'+cyId);
+    if (st) { st.textContent='● Non enregistré'; st.className='save-status-mini modified'; }
   }
 
-  async function sauvegarder(cycleId) {
-    const ev = evals[cycleId];
-    if (!ev) return;
-    const status = document.getElementById(`status-${cycleId}`);
-    const btn = document.querySelector(`#accordion-${cycleId} .btn-success`);
-    if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
-
-    // Récupérer commentaire
-    const ta = document.getElementById(`comment-${cycleId}`);
+  async function sauvegarder(cyId) {
+    const ev  = evals[cyId]; if (!ev) return;
+    const btn = document.querySelector(`#acc-${cyId} .btn-success`);
+    const st  = document.getElementById('status-'+cyId);
+    if (btn) { btn.disabled=true; btn.textContent='⏳...'; }
     const resultats = { ...ev.resultats };
-    if (ta && ta.value.trim()) resultats['commentaire'] = ta.value.trim();
-    else delete resultats['commentaire'];
-
+    const ta = document.getElementById('comment-'+cyId);
+    if (ta?.value.trim()) resultats['commentaire']=ta.value.trim(); else delete resultats['commentaire'];
     try {
-      await sauvegarderEvaluation(eleveId, cycleId, ev.apsaId, resultats);
-      ev.resultats = resultats;
-      ev.modifie = false;
-      if (status) { status.textContent = '✓ Enregistré à ' + new Date().toLocaleTimeString('fr-FR'); status.className = 'save-mini-status saved'; }
-      showToast('✓ Évaluation enregistrée !', 'success');
+      await sauvegarderEvaluation(eleveId, cyId, ev.apsaId, resultats);
+      ev.resultats = resultats; ev.modifie = false;
+      if (st) { st.textContent='✓ Enregistré à '+new Date().toLocaleTimeString('fr-FR'); st.className='save-status-mini saved'; }
+      // Mettre à jour la pill en vert
+      const pill = document.getElementById('pill-'+cyId);
+      if (pill) {
+        const n = Object.keys(resultats).filter(k=>k.startsWith('obj_')&&resultats[k]).length;
+        if (n > 0) { pill.textContent=`✅ ${n} évalué${n>1?'s':''}`; pill.className='prog-pill done'; }
+      }
+      showToast('✓ Évaluation enregistrée !');
     } catch(e) {
-      if (status) { status.textContent = '❌ ' + e.message; status.className = 'save-mini-status'; }
+      if (st) { st.textContent='❌ '+e.message; st.className='save-status-mini'; }
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = '💾 Enregistrer'; }
+      if (btn) { btn.disabled=false; btn.textContent='💾 Enregistrer'; }
     }
   }
 
-  function showToast(msg, type='success') {
-    const t = document.createElement('div');
-    t.className = `toast ${type}`;
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
+  function showToast(msg) {
+    const t=document.createElement('div'); t.className='toast success'; t.textContent=msg;
+    document.body.appendChild(t); setTimeout(()=>t.remove(),3000);
   }
-
-  window.addEventListener('beforeunload', e => {
-    const hasUnsaved = Object.values(evals).some(ev => ev.modifie);
-    if (hasUnsaved) { e.preventDefault(); e.returnValue = ''; }
+  window.addEventListener('beforeunload', e=>{
+    if (Object.values(evals).some(ev=>ev.modifie)) { e.preventDefault(); e.returnValue=''; }
   });
 
   init();
