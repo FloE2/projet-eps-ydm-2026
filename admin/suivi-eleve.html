@@ -98,7 +98,10 @@
 <nav class="topbar">
   <a href="dashboard.html" class="topbar-logo">← Dashboard</a>
   <span class="topbar-title">Suivi individuel élève</span>
-  <div class="topbar-nav">
+  <div class="topbar-nav" style="display:flex;align-items:center;gap:.6rem;">
+    <a id="btn-vue-eleve" href="#" style="display:none;font-size:.78rem;padding:.35rem .85rem;background:var(--orange);color:#fff;border-radius:20px;font-weight:700;text-decoration:none;">
+      📚 Vue élève
+    </a>
     <a href="gestion-classes.html">Classes</a>
     <a href="gestion-apsa.html">APSA</a>
     <a href="bilan-classe.html">Bilans</a>
@@ -117,7 +120,6 @@
 </div>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
   // Accès : profs = mode complet, lien direct = mode lecture seule
@@ -162,6 +164,12 @@
     const el=document.getElementById('suivi-content');
     el.classList.remove('hidden');
     el.innerHTML=`<div class="loader-wrap"><div class="spinner"></div><span>Chargement...</span></div>`;
+    // Bouton bascule vers vue élève
+    const btnE = document.getElementById('btn-vue-eleve');
+    if (btnE) {
+      const url = `../eleve/fiche.html?eleveId=${eleve.id}&classeId=${eleve.classeId||''}&niveau=${eleve.niveau||'6e'}`;
+      btnE.href = url; btnE.style.display = 'inline-block';
+    }
     const evals=(await getHistoriqueEleve(eleve.id)).reverse();
     correctionsEnCours={};
     const cycleIds=[...new Set(evals.map(e=>e.cycleId))];
