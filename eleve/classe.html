@@ -3,151 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mon espace EPS</title>
+  <title>Sélection de classe — EPS</title>
   <link rel="stylesheet" href="../assets/style.css">
   <style>
     body { background: #f4f6fa; }
-
-    /* ── En-tête élève ── */
-    .eleve-hero {
-      background: linear-gradient(135deg, var(--navy) 0%, #1e4d8c 100%);
-      color: #fff;
-      border-radius: var(--radius);
-      padding: 1.6rem 2rem;
-      margin-bottom: 1.5rem;
-      text-align: center;
-    }
-    .eleve-hero h1 { font-size: 1.5rem; color: #fff; margin-bottom: .3rem; }
-    .eleve-hero p  { color: rgba(255,255,255,.65); font-size: .88rem; }
-
-    /* ── Cartes de classe ── */
-    .classe-card {
-      background: var(--white);
-      border: 2px solid var(--gray-1);
-      border-radius: var(--radius);
-      padding: 1rem 1.5rem;
-      margin-bottom: .75rem;
-      cursor: pointer;
-      transition: all .2s;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      text-decoration: none;
-      color: var(--navy);
-    }
-    .classe-card:hover {
-      border-color: var(--orange);
-      transform: translateX(4px);
-      box-shadow: 0 4px 16px rgba(0,0,0,.1);
-    }
-    .classe-card-nom  { font-family: var(--font-h); font-size: 1.05rem; font-weight: 700; }
-    .classe-card-meta { font-size: .82rem; color: var(--gray-3); margin-top: .15rem; }
-    .classe-card-arrow { font-size: 1.2rem; color: var(--orange); }
-
-    .niveau-label {
-      font-family: var(--font-h);
-      color: var(--gray-3);
-      font-size: .75rem;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      margin: 1rem 0 .4rem;
-    }
-
-    /* ── Steps ── */
     .step { display: none; }
     .step.active { display: block; }
 
-    .back-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: .4rem;
-      color: var(--gray-3);
-      cursor: pointer;
-      font-size: .9rem;
-      margin-bottom: 1.2rem;
-      background: none;
-      border: none;
-      padding: 0;
-      font-family: var(--font-b);
+    .classe-card {
+      background: var(--white); border: 2px solid var(--gray-1);
+      border-radius: var(--radius); padding: 1rem 1.5rem;
+      margin-bottom: .75rem; cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; justify-content: space-between;
+      color: var(--navy);
     }
+    .classe-card:hover { border-color: var(--orange); transform: translateX(4px); box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+    .classe-card-nom  { font-family: var(--font-h); font-size: 1.1rem; font-weight: 700; }
+    .classe-card-meta { font-size: .82rem; color: var(--gray-3); margin-top: .15rem; }
+    .niveau-label { font-family: var(--font-h); color: var(--gray-3); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; margin: 1rem 0 .4rem; }
+
+    .back-btn { display: inline-flex; align-items: center; gap: .4rem; color: var(--gray-3); cursor: pointer; font-size: .9rem; margin-bottom: 1.5rem; background: none; border: none; padding: 0; font-family: var(--font-b); }
     .back-btn:hover { color: var(--navy); }
 
-    /* ── Recherche élève ── */
-    .search-wrap {
-      position: relative;
-      margin-bottom: 1.2rem;
-    }
+    .search-wrap { position: relative; margin-bottom: 1.2rem; }
     .search-wrap input { padding-left: 2.8rem; }
-    .search-icon {
-      position: absolute;
-      left: 1rem; top: 50%;
-      transform: translateY(-50%);
-      color: var(--gray-3);
-      pointer-events: none;
-      font-size: 1rem;
-    }
+    .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--gray-3); pointer-events: none; }
 
-    /* ── Grille élèves ── */
-    .eleve-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: .7rem;
-    }
-    .eleve-card {
-      background: #fff;
-      border: 2px solid var(--gray-1);
-      border-radius: 12px;
-      padding: .9rem .6rem;
-      text-align: center;
-      cursor: pointer;
-      text-decoration: none;
-      color: var(--navy);
-      transition: all .18s;
-    }
-    .eleve-card:hover {
-      border-color: var(--orange);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0,0,0,.1);
-    }
-    .eleve-initiales {
-      width: 44px; height: 44px;
-      background: linear-gradient(135deg, var(--navy), #1e4d8c);
-      color: #fff;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-h); font-size: 1rem; font-weight: 700;
-      margin: 0 auto .6rem;
-    }
-    .eleve-prenom { font-size: .82rem; font-weight: 700; color: var(--navy); }
-    .eleve-nom    { font-size: .72rem; color: var(--gray-3); margin-top: 1px; }
+    .eleve-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .75rem; }
+    .eleve-card { background: #fff; border: 2px solid var(--gray-1); border-radius: 12px; padding: 1rem .75rem; text-align: center; cursor: pointer; text-decoration: none; color: var(--navy); transition: all .18s; display: block; }
+    .eleve-card:hover { border-color: var(--orange); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.1); }
+    .eleve-initiales { width: 48px; height: 48px; background: linear-gradient(135deg, var(--navy), #1e4d8c); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-h); font-size: 1.05rem; font-weight: 700; margin: 0 auto .65rem; }
+    .eleve-prenom { font-size: .8rem; color: var(--gray-3); margin-bottom: 2px; }
+    .eleve-nom    { font-size: .85rem; font-weight: 700; color: var(--navy); }
   </style>
 </head>
 <body>
-
 <nav class="topbar">
   <a href="../index.html" class="topbar-logo">⚡ EPS</a>
   <span class="topbar-title" id="college-nom"></span>
 </nav>
-
 <div class="container-sm">
 
-  <!-- ÉTAPE 1 : Choix de la classe -->
+  <!-- ÉTAPE 1 : Classe -->
   <div class="step active" id="step-classe">
-    <div class="eleve-hero">
-      <h1>📚 Mes auto-évaluations EPS</h1>
-      <p>Sélectionne ta classe pour accéder à tes fiches</p>
-    </div>
     <div class="card">
-      <div class="card-header">
-        <h2>Quelle est ta classe ?</h2>
-      </div>
+      <div class="card-header"><h2>📚 Sélectionne ta classe</h2></div>
       <div id="liste-classes">
         <div class="loader-wrap"><div class="spinner"></div><span>Chargement...</span></div>
       </div>
     </div>
   </div>
 
-  <!-- ÉTAPE 2 : Choix de l'élève -->
+  <!-- ÉTAPE 2 : Élève -->
   <div class="step" id="step-eleve">
     <button class="back-btn" onclick="retour('step-classe')">← Retour aux classes</button>
     <div class="card">
@@ -168,104 +75,69 @@
   </div>
 
 </div>
-
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
   document.getElementById('college-nom').textContent = window.COLLEGE_NOM;
+  let classeSelectionnee = null, tousLesEleves = [];
 
-  let classeSelectionnee = null;
-  let tousLesEleves      = [];
-
-  // ── Étape 1 : chargement des classes ──────────────────────
   async function chargerClasses() {
     const el = document.getElementById('liste-classes');
     try {
       const classes = await getClasses();
-      if (classes.length === 0) {
-        el.innerHTML = '<div class="alert alert-info">ℹ️ Aucune classe configurée. Contactez votre professeur.</div>';
-        return;
-      }
-      const niveaux = {};
-      classes.forEach(c => {
-        const niv = c.niveau || '?';
-        if (!niveaux[niv]) niveaux[niv] = [];
-        niveaux[niv].push(c);
-      });
+      if (!classes.length) { el.innerHTML = '<div class="alert alert-info">ℹ️ Aucune classe configurée.</div>'; return; }
+      const parNiveau = {};
+      classes.forEach(c => { const n = c.niveau||'?'; if (!parNiveau[n]) parNiveau[n]=[]; parNiveau[n].push(c); });
       let html = '';
       ['6e','5e','4e','3e'].forEach(niv => {
-        if (!niveaux[niv]) return;
+        if (!parNiveau[niv]) return;
         html += `<div class="niveau-label">${niv}</div>`;
-        niveaux[niv].forEach(c => {
-          const nbEleves = ''; // on ne charge pas les élèves ici
-          html += `
-            <div class="classe-card" onclick="choisirClasse('${c.id}','${c.nom}','${c.niveau}')">
-              <div>
-                <div class="classe-card-nom">${c.nom}</div>
-                <div class="classe-card-meta">${c.niveau} · ${window.ANNEE_SCOLAIRE}</div>
-              </div>
-              <span class="classe-card-arrow">→</span>
-            </div>`;
+        parNiveau[niv].forEach(c => {
+          html += `<div class="classe-card" onclick="choisirClasse('${c.id}','${c.nom}','${c.niveau}')">
+            <div><div class="classe-card-nom">${c.nom}</div><div class="classe-card-meta">${c.niveau} · ${window.ANNEE_SCOLAIRE}</div></div>
+            <span style="color:var(--orange);font-size:1.1rem;">→</span>
+          </div>`;
         });
       });
       el.innerHTML = html;
-    } catch(e) {
-      el.innerHTML = `<div class="alert alert-error">❌ Erreur : ${e.message}</div>`;
-    }
+    } catch(e) { el.innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`; }
   }
 
   async function choisirClasse(id, nom, niveau) {
     classeSelectionnee = { id, nom, niveau };
-    document.getElementById('sous-titre-eleve').textContent = `Classe : ${nom} · ${niveau}`;
+    document.getElementById('sous-titre-eleve').textContent = `Classe ${nom} · ${niveau}`;
     afficher('step-eleve');
-    await chargerEleves(id);
-  }
-
-  // ── Étape 2 : élèves de la classe ─────────────────────────
-  async function chargerEleves(classeId) {
     const el = document.getElementById('liste-eleves');
     el.innerHTML = '<div class="loader-wrap"><div class="spinner"></div><span>Chargement...</span></div>';
     try {
-      tousLesEleves = await getEleves(classeId);
+      tousLesEleves = await getEleves(id);
       afficherEleves(tousLesEleves);
-    } catch(e) {
-      el.innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
-    }
+    } catch(e) { el.innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`; }
   }
 
   function afficherEleves(eleves) {
     const el = document.getElementById('liste-eleves');
-    if (eleves.length === 0) {
-      el.innerHTML = '<div class="alert alert-info">ℹ️ Aucun élève trouvé.</div>';
-      return;
-    }
+    if (!eleves.length) { el.innerHTML = '<div class="alert alert-info">ℹ️ Aucun élève trouvé.</div>'; return; }
     el.innerHTML = eleves.map(e => {
-      const initiales = (e.prenom?.[0]||'') + (e.nom?.[0]||'');
-      // Nouvelle URL : on passe classeId + niveau, fiche charge toutes les APSA
+      const init = (e.prenom?.[0]||'') + (e.nom?.[0]||'');
+      // ⚠️ URL avec classeId + niveau (pas cycleId ni apsaId)
       const url = `fiche.html?eleveId=${e.id}&classeId=${classeSelectionnee.id}&niveau=${classeSelectionnee.niveau}`;
-      return `
-        <a href="${url}" class="eleve-card">
-          <div class="eleve-initiales">${initiales.toUpperCase()}</div>
-          <div class="eleve-prenom">${e.prenom}</div>
-          <div class="eleve-nom">${(e.nom||'').toUpperCase()}</div>
-        </a>`;
+      return `<a href="${url}" class="eleve-card">
+        <div class="eleve-initiales">${init.toUpperCase()}</div>
+        <div class="eleve-prenom">${e.prenom}</div>
+        <div class="eleve-nom">${(e.nom||'').toUpperCase()}</div>
+      </a>`;
     }).join('');
   }
 
   function filtrerEleves() {
     const q = document.getElementById('recherche-eleve').value.toLowerCase();
-    afficherEleves(tousLesEleves.filter(e =>
-      (e.nom + e.prenom).toLowerCase().includes(q)
-    ));
+    afficherEleves(tousLesEleves.filter(e => (e.nom+' '+e.prenom).toLowerCase().includes(q)));
   }
 
-  function afficher(stepId) {
-    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-    document.getElementById(stepId).classList.add('active');
-  }
-  function retour(stepId) { afficher(stepId); }
-
+  function afficher(id) { document.querySelectorAll('.step').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+  function retour(id) { afficher(id); }
   chargerClasses();
 </script>
 </body>
