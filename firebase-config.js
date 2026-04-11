@@ -25,7 +25,7 @@ const auth = firebase.auth();       // Google Auth
 // ============================================================
 window.EMAILS_AUTORISES = [
   "florianeude@gmail.com",
-  "cosperec.emeric@gmail.com"
+  "cosperecemeric@gmail.com"
 ];
 
 // ============================================================
