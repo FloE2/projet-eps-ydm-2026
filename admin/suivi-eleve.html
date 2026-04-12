@@ -167,88 +167,105 @@
     const cycleIds=[...new Set(evals.map(e=>e.cycleId))];
     const apsaIds=[...new Set(evals.map(e=>e.apsaId))];
 
-    // Lire la programmation depuis le dashboard (source de vérité)
-    const classeNom = eleve.classe || '';
+    // Charger tout en parallèle
     const [progClasse, toutesApsa] = await Promise.all([
-      dbGet('programmation/' + classeNom),
+      dbGet('programmation/' + (eleve.classe||'')),
       getToutesApsa()
     ]);
     toutesApsa.forEach(a => { apsaCache[a.id] = a; });
-
-    // Pour chaque APSA évaluée, savoir si l'élève et/ou le prof ont évalué
-    const apsaEleveIds  = new Set(apsaIds); // auto-éval élève
-    const apsaProfIds   = new Set(
-      evals.filter(ev => ev.resultats_prof && Object.keys(ev.resultats_prof).some(k=>k.startsWith('obj_')))
-           .map(ev => ev.apsaId)
-    );
-
-    // Fuzzy match nom → id
-    function matchApsa(slotNom) {
-      return toutesApsa.find(a => {
-        const an = a.nom.toLowerCase().trim();
-        const sn = slotNom.toLowerCase().trim();
-        return an === sn || an.includes(sn) || sn.includes(an) ||
-               sn.split('/').some(p => an.includes(p.trim())) ||
-               an.split('/').some(p => sn.includes(p.trim()));
-      });
-    }
-
-    // Construire les tags par période, dans l'ordre P1→P4
-    const PERIODES_ORDRE = ['P1','P2','P3','P4'];
-    const PERIODE_COLORS = { P1:'#3B82F6', P2:'#10b981', P3:'#f59e0b', P4:'#ef4444' };
-    let apsaParPeriodeHtml = '';
-
-    if (progClasse) {
-      PERIODES_ORDRE.forEach(p => {
-        const periode = progClasse[p];
-        if (!periode || !periode.slots || !periode.slots.length) return;
-        const tags = periode.slots.map(slotNom => {
-          const apsa = matchApsa(slotNom);
-          const id   = apsa?.id;
-          const nom  = apsa?.nom || slotNom;
-          const eleveA = id && apsaEleveIds.has(id);
-          const profA  = id && apsaProfIds.has(id);
-          // Style selon statut
-          let bg, border, icons;
-          if (eleveA && profA) {
-            bg='rgba(34,197,94,.28)'; border='rgba(34,197,94,.7)';
-            icons=`<span title="Auto-évaluation élève" style="font-size:.65rem">👤✓</span><span title="Correction prof" style="font-size:.65rem">✏️✓</span>`;
-          } else if (eleveA) {
-            bg='rgba(59,130,246,.22)'; border='rgba(59,130,246,.6)';
-            icons=`<span title="Auto-évaluation élève uniquement" style="font-size:.65rem">👤✓</span><span title="Pas encore corrigé" style="opacity:.45;font-size:.65rem">✏️…</span>`;
-          } else if (profA) {
-            bg='rgba(245,158,11,.22)'; border='rgba(245,158,11,.6)';
-            icons=`<span title="Pas d'auto-éval" style="opacity:.45;font-size:.65rem">👤…</span><span title="Correction prof" style="font-size:.65rem">✏️✓</span>`;
-          } else {
-            bg='rgba(255,255,255,.09)'; border='rgba(255,255,255,.2)';
-            icons=`<span style="opacity:.35;font-size:.65rem">À venir</span>`;
-          }
-          return `<span style="display:inline-flex;align-items:center;gap:.3rem;background:${bg};border:1px solid ${border};color:#fff;border-radius:20px;padding:.2rem .65rem;font-size:.72rem;font-weight:600;margin:.15rem .15rem 0 0;white-space:nowrap">${nom} <span style="display:flex;gap:.15rem;align-items:center;margin-left:.2rem">${icons}</span></span>`;
-        }).join('');
-
-        apsaParPeriodeHtml += `
-          <div style="margin-bottom:.55rem">
-            <span style="display:inline-block;background:${PERIODE_COLORS[p]};color:#fff;border-radius:6px;padding:.1rem .45rem;font-size:.62rem;font-weight:800;letter-spacing:.06em;margin-bottom:.3rem">${p}</span>
-            <div style="display:flex;flex-wrap:wrap;">${tags}</div>
-          </div>`;
-      });
-    }
-    if (!apsaParPeriodeHtml) {
-      apsaParPeriodeHtml = `<span style="font-size:.73rem;color:rgba(255,255,255,.4);font-style:italic">Aucune programmation pour ${classeNom}</span>`;
-    }
-
-    // Légende
-    const legendeHtml = `
-      <div style="display:flex;gap:.8rem;flex-wrap:wrap;margin-top:.5rem;font-size:.63rem;color:rgba(255,255,255,.55);">
-        <span>👤✓ = Auto-éval élève</span>
-        <span>✏️✓ = Corrigé prof</span>
-        <span style="opacity:.6">À venir = non encore fait</span>
-      </div>`;
 
     await Promise.all([
       ...cycleIds.map(async id=>{if(!cycleCache[id]){const d=await dbGet('cycles/'+id);if(d)cycleCache[id]={id,...d};}}),
       ...apsaIds.map(async id=>{if(!apsaCache[id]){const d=await dbGet('apsa/'+id);if(d)apsaCache[id]={id,...d};}})
     ]);
+
+    // Construire un map apsaId → { eleveOk, profOk }
+    const apsaStatus = {};
+    evals.forEach(ev => {
+      const id = ev.apsaId; if(!id) return;
+      if(!apsaStatus[id]) apsaStatus[id] = { eleveOk:false, profOk:false };
+      // élève : a rempli au moins un obj_
+      const hasEleve = Object.keys(ev.resultats||{}).some(k=>k.startsWith('obj_'));
+      if(hasEleve) apsaStatus[id].eleveOk = true;
+      // prof : a rempli au moins un obj_ dans resultats_prof
+      const hasProf = ev.resultats_prof && Object.keys(ev.resultats_prof).some(k=>k.startsWith('obj_'));
+      if(hasProf) apsaStatus[id].profOk = true;
+    });
+
+    // Fuzzy match nom → APSA
+    function matchApsa(slotNom) {
+      return toutesApsa.find(a => {
+        const an = a.nom.toLowerCase().trim();
+        const sn = slotNom.toLowerCase().trim();
+        return an===sn || an.includes(sn) || sn.includes(an) ||
+               sn.split('/').some(p=>an.includes(p.trim())) ||
+               an.split('/').some(p=>sn.includes(p.trim()));
+      });
+    }
+
+    // Construire les blocs par période
+    const PERIODES_ORDRE = ['P1','P2','P3','P4'];
+    const P_COL = { P1:'#3B82F6', P2:'#10b981', P3:'#f59e0b', P4:'#ef4444' };
+    let periodesHtml = '';
+
+    if(progClasse) {
+      PERIODES_ORDRE.forEach(p => {
+        const periode = progClasse[p];
+        if(!periode?.slots?.length) return;
+        const tags = periode.slots.map(slotNom => {
+          const apsa   = matchApsa(slotNom);
+          const id     = apsa?.id;
+          const nom    = apsa?.nom || slotNom;
+          const st     = id ? (apsaStatus[id]||{}) : {};
+          const { eleveOk=false, profOk=false } = st;
+
+          if(eleveOk && profOk) {
+            // Vert plein : tout fait
+            return `<div style="background:#16a34a;border-radius:10px;padding:.55rem .85rem;min-width:110px;box-shadow:0 2px 8px rgba(22,163,74,.35);">
+              <div style="font-size:.78rem;font-weight:700;color:#fff;margin-bottom:.35rem;">${nom}</div>
+              <div style="display:flex;gap:.4rem;">
+                <span style="background:rgba(255,255,255,.25);color:#fff;border-radius:5px;padding:.1rem .4rem;font-size:.63rem;font-weight:700;">👤 Élève ✓</span>
+                <span style="background:rgba(255,255,255,.25);color:#fff;border-radius:5px;padding:.1rem .4rem;font-size:.63rem;font-weight:700;">✏️ Prof ✓</span>
+              </div>
+            </div>`;
+          } else if(eleveOk && !profOk) {
+            // Bleu : élève ok, prof manquant
+            return `<div style="background:#1d4ed8;border-radius:10px;padding:.55rem .85rem;min-width:110px;box-shadow:0 2px 8px rgba(29,78,216,.35);">
+              <div style="font-size:.78rem;font-weight:700;color:#fff;margin-bottom:.35rem;">${nom}</div>
+              <div style="display:flex;gap:.4rem;">
+                <span style="background:rgba(255,255,255,.25);color:#fff;border-radius:5px;padding:.1rem .4rem;font-size:.63rem;font-weight:700;">👤 Élève ✓</span>
+                <span style="background:rgba(255,255,255,.12);color:rgba(255,255,255,.55);border-radius:5px;padding:.1rem .4rem;font-size:.63rem;font-weight:600;border:1px dashed rgba(255,255,255,.3);">✏️ Prof —</span>
+              </div>
+            </div>`;
+          } else if(!eleveOk && profOk) {
+            // Orange : prof ok, élève manquant
+            return `<div style="background:#b45309;border-radius:10px;padding:.55rem .85rem;min-width:110px;box-shadow:0 2px 8px rgba(180,83,9,.35);">
+              <div style="font-size:.78rem;font-weight:700;color:#fff;margin-bottom:.35rem;">${nom}</div>
+              <div style="display:flex;gap:.4rem;">
+                <span style="background:rgba(255,255,255,.12);color:rgba(255,255,255,.55);border-radius:5px;padding:.1rem .4rem;font-size:.63rem;font-weight:600;border:1px dashed rgba(255,255,255,.3);">👤 Élève —</span>
+                <span style="background:rgba(255,255,255,.25);color:#fff;border-radius:5px;padding:.1rem .4rem;font-size:.63rem;font-weight:700;">✏️ Prof ✓</span>
+              </div>
+            </div>`;
+          } else {
+            // Gris : pas encore fait
+            return `<div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:.55rem .85rem;min-width:110px;">
+              <div style="font-size:.78rem;font-weight:600;color:rgba(255,255,255,.6);margin-bottom:.35rem;">${nom}</div>
+              <div><span style="color:rgba(255,255,255,.35);font-size:.63rem;font-style:italic;">⏳ À venir</span></div>
+            </div>`;
+          }
+        }).join('');
+
+        periodesHtml += `
+          <div style="margin-bottom:.8rem;">
+            <div style="display:inline-flex;align-items:center;gap:.5rem;margin-bottom:.45rem;">
+              <span style="background:${P_COL[p]};color:#fff;border-radius:6px;padding:.15rem .55rem;font-size:.68rem;font-weight:800;letter-spacing:.06em;">${p}</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:.5rem;">${tags}</div>
+          </div>`;
+      });
+    }
+    if(!periodesHtml) periodesHtml = `<span style="font-size:.8rem;color:rgba(255,255,255,.4);font-style:italic;">Aucune programmation enregistrée</span>`;
+
     const parNiveau={'6e':[],'5e':[],'4e':[],'3e':[]};
     evals.forEach(ev=>{const cy=cycleCache[ev.cycleId];const niv=ev.niveau||cy?.niveau||eleve.niveau||'6e';if(parNiveau[niv])parNiveau[niv].push(ev);});
     let totalObj=0,totalA=0,totalD=0,totalECA=0;
@@ -256,20 +273,29 @@
     const pct=totalObj>0?Math.round((totalA+totalD)/totalObj*100):0;
     const ini=(eleve.prenom?.[0]||'')+(eleve.nom?.[0]||'');
     let html=`
-      <div class="suivi-header" style="flex-wrap:wrap;gap:1rem;">
-        <div style="display:flex;align-items:center;gap:1.5rem;flex:1;min-width:220px;">
+      <div class="suivi-header" style="flex-wrap:wrap;gap:0;padding:0;overflow:hidden;">
+        <!-- Gauche : identité -->
+        <div style="display:flex;align-items:center;gap:1.2rem;padding:1.5rem 2rem;flex-shrink:0;">
           <div class="suivi-avatar">${ini.toUpperCase()}</div>
           <div class="suivi-info">
             <h2>${eleve.prenom} ${(eleve.nom||'').toUpperCase()}</h2>
             <p>${eleve.classe||'—'} · ${eleve.niveau||'—'} · ${window.ANNEE_SCOLAIRE}</p>
-            ${eleve.classePrec ? `<p style="font-size:.78rem;color:rgba(255,255,255,.5);margin-top:.15rem;">↳ Anciennement ${eleve.classePrec} (${eleve.niveauPrec||''})</p>` : ''}
-            <p style="margin-top:.3rem;">${evals.length} auto-évaluation${evals.length>1?'s':''} enregistrée${evals.length>1?'s':''}</p>
+            ${eleve.classePrec?`<p style="font-size:.78rem;color:rgba(255,255,255,.5);margin-top:.15rem;">↳ Anciennement ${eleve.classePrec} (${eleve.niveauPrec||''})</p>`:''}
+            <p style="margin-top:.4rem;">${evals.length} auto-évaluation${evals.length>1?'s':''} enregistrée${evals.length>1?'s':''}</p>
           </div>
         </div>
-        <div style="flex:1;min-width:280px;border-left:1px solid rgba(255,255,255,.15);padding-left:1.2rem;">
-          <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.5);margin-bottom:.5rem;">📋 Programmation ${classeNom} — APSA de l'année</div>
-          ${apsaParPeriodeHtml}
-          ${legendeHtml}
+        <!-- Droite : APSA -->
+        <div style="flex:1;min-width:300px;border-left:1px solid rgba(255,255,255,.12);padding:1.2rem 1.5rem;background:rgba(0,0,0,.15);">
+          <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.45);margin-bottom:.85rem;">
+            📋 Programmation ${eleve.classe||''} · APSA de l'année
+          </div>
+          ${periodesHtml}
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:.6rem;padding-top:.6rem;border-top:1px solid rgba(255,255,255,.1);font-size:.62rem;color:rgba(255,255,255,.4);">
+            <span style="display:flex;align-items:center;gap:.3rem;"><span style="background:#16a34a;border-radius:4px;padding:.1rem .35rem;color:#fff;font-size:.6rem;">👤✓ ✏️✓</span> Les deux faits</span>
+            <span style="display:flex;align-items:center;gap:.3rem;"><span style="background:#1d4ed8;border-radius:4px;padding:.1rem .35rem;color:#fff;font-size:.6rem;">👤✓</span> Élève seul</span>
+            <span style="display:flex;align-items:center;gap:.3rem;"><span style="background:#b45309;border-radius:4px;padding:.1rem .35rem;color:#fff;font-size:.6rem;">✏️✓</span> Prof seul</span>
+            <span style="display:flex;align-items:center;gap:.3rem;"><span style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:.1rem .35rem;color:rgba(255,255,255,.4);font-size:.6rem;">⏳</span> À venir</span>
+          </div>
         </div>
       </div>
       <div class="recap-grid">
