@@ -165,7 +165,7 @@
     const evals=(await getHistoriqueEleve(eleve.id)).reverse();
     correctionsEnCours={};
     const cycleIds=[...new Set(evals.map(e=>e.cycleId))];
-    const apsaIds=[...new Set(evals.map(e=>e.apsaId))];
+    const apsaIds=[...new Set(evals.map(e=>e.apsaId).filter(Boolean))];
 
     // Charger tout en parallèle
     const [progClasse, toutesApsa] = await Promise.all([
@@ -174,25 +174,26 @@
     ]);
     toutesApsa.forEach(a => { apsaCache[a.id] = a; });
 
+    // Charger tous les cycles et APSA des évaluations
     await Promise.all([
       ...cycleIds.map(async id=>{if(!cycleCache[id]){const d=await dbGet('cycles/'+id);if(d)cycleCache[id]={id,...d};}}),
       ...apsaIds.map(async id=>{if(!apsaCache[id]){const d=await dbGet('apsa/'+id);if(d)apsaCache[id]={id,...d};}})
     ]);
 
-    // Construire un map apsaId → { eleveOk, profOk }
+    // Construire apsaStatus en croisant apsaId direct + apsaId via cycle
     const apsaStatus = {};
     evals.forEach(ev => {
-      const id = ev.apsaId; if(!id) return;
+      // Récupérer l'apsaId : direct ou via cycle
+      const id = ev.apsaId || cycleCache[ev.cycleId]?.apsaId;
+      if(!id) return;
       if(!apsaStatus[id]) apsaStatus[id] = { eleveOk:false, profOk:false };
-      // élève : a rempli au moins un obj_
       const hasEleve = Object.keys(ev.resultats||{}).some(k=>k.startsWith('obj_'));
       if(hasEleve) apsaStatus[id].eleveOk = true;
-      // prof : a rempli au moins un obj_ dans resultats_prof
       const hasProf = ev.resultats_prof && Object.keys(ev.resultats_prof).some(k=>k.startsWith('obj_'));
       if(hasProf) apsaStatus[id].profOk = true;
     });
 
-    // Fuzzy match nom → APSA
+    // Fuzzy match nom → APSA id
     function matchApsa(slotNom) {
       return toutesApsa.find(a => {
         const an = a.nom.toLowerCase().trim();
@@ -203,7 +204,7 @@
       });
     }
 
-    // Construire les blocs par période
+    // Construire les blocs par période P1→P4
     const PERIODES_ORDRE = ['P1','P2','P3','P4'];
     const P_COL = { P1:'#3B82F6', P2:'#10b981', P3:'#f59e0b', P4:'#ef4444' };
     let periodesHtml = '';
@@ -213,55 +214,41 @@
         const periode = progClasse[p];
         if(!periode?.slots?.length) return;
         const tags = periode.slots.map(slotNom => {
-          const apsa   = matchApsa(slotNom);
-          const id     = apsa?.id;
-          const nom    = apsa?.nom || slotNom;
-          const st     = id ? (apsaStatus[id]||{}) : {};
-          const { eleveOk=false, profOk=false } = st;
+          const apsa = matchApsa(slotNom);
+          const id   = apsa?.id;
+          const nom  = apsa?.nom || slotNom;
+          const { eleveOk=false, profOk=false } = (id && apsaStatus[id]) || {};
 
           if(eleveOk && profOk) {
-            // Vert plein : tout fait
-            return `<div style="background:#16a34a;border-radius:10px;padding:.55rem .85rem;min-width:110px;box-shadow:0 2px 8px rgba(22,163,74,.35);">
-              <div style="font-size:.78rem;font-weight:700;color:#fff;margin-bottom:.35rem;">${nom}</div>
-              <div style="display:flex;gap:.4rem;">
-                <span style="background:rgba(255,255,255,.25);color:#fff;border-radius:5px;padding:.1rem .4rem;font-size:.63rem;font-weight:700;">👤 Élève ✓</span>
-                <span style="background:rgba(255,255,255,.25);color:#fff;border-radius:5px;padding:.1rem .4rem;font-size:.63rem;font-weight:700;">✏️ Prof ✓</span>
-              </div>
+            return `<div style="display:flex;align-items:center;gap:.4rem;background:#16a34a;border-radius:8px;padding:.28rem .7rem;box-shadow:0 1px 5px rgba(22,163,74,.4);">
+              <span style="font-size:.75rem;font-weight:700;color:#fff;">${nom}</span>
+              <span style="font-size:.6rem;background:rgba(255,255,255,.25);color:#fff;border-radius:4px;padding:.05rem .3rem;font-weight:700;">👤✓</span>
+              <span style="font-size:.6rem;background:rgba(255,255,255,.25);color:#fff;border-radius:4px;padding:.05rem .3rem;font-weight:700;">✏️✓</span>
             </div>`;
-          } else if(eleveOk && !profOk) {
-            // Bleu : élève ok, prof manquant
-            return `<div style="background:#1d4ed8;border-radius:10px;padding:.55rem .85rem;min-width:110px;box-shadow:0 2px 8px rgba(29,78,216,.35);">
-              <div style="font-size:.78rem;font-weight:700;color:#fff;margin-bottom:.35rem;">${nom}</div>
-              <div style="display:flex;gap:.4rem;">
-                <span style="background:rgba(255,255,255,.25);color:#fff;border-radius:5px;padding:.1rem .4rem;font-size:.63rem;font-weight:700;">👤 Élève ✓</span>
-                <span style="background:rgba(255,255,255,.12);color:rgba(255,255,255,.55);border-radius:5px;padding:.1rem .4rem;font-size:.63rem;font-weight:600;border:1px dashed rgba(255,255,255,.3);">✏️ Prof —</span>
-              </div>
+          } else if(eleveOk) {
+            return `<div style="display:flex;align-items:center;gap:.4rem;background:#1d4ed8;border-radius:8px;padding:.28rem .7rem;box-shadow:0 1px 5px rgba(29,78,216,.4);">
+              <span style="font-size:.75rem;font-weight:700;color:#fff;">${nom}</span>
+              <span style="font-size:.6rem;background:rgba(255,255,255,.25);color:#fff;border-radius:4px;padding:.05rem .3rem;font-weight:700;">👤✓</span>
+              <span style="font-size:.6rem;background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:4px;padding:.05rem .3rem;font-weight:600;border:1px dashed rgba(255,255,255,.3);">✏️—</span>
             </div>`;
-          } else if(!eleveOk && profOk) {
-            // Orange : prof ok, élève manquant
-            return `<div style="background:#b45309;border-radius:10px;padding:.55rem .85rem;min-width:110px;box-shadow:0 2px 8px rgba(180,83,9,.35);">
-              <div style="font-size:.78rem;font-weight:700;color:#fff;margin-bottom:.35rem;">${nom}</div>
-              <div style="display:flex;gap:.4rem;">
-                <span style="background:rgba(255,255,255,.12);color:rgba(255,255,255,.55);border-radius:5px;padding:.1rem .4rem;font-size:.63rem;font-weight:600;border:1px dashed rgba(255,255,255,.3);">👤 Élève —</span>
-                <span style="background:rgba(255,255,255,.25);color:#fff;border-radius:5px;padding:.1rem .4rem;font-size:.63rem;font-weight:700;">✏️ Prof ✓</span>
-              </div>
+          } else if(profOk) {
+            return `<div style="display:flex;align-items:center;gap:.4rem;background:#b45309;border-radius:8px;padding:.28rem .7rem;box-shadow:0 1px 5px rgba(180,83,9,.4);">
+              <span style="font-size:.75rem;font-weight:700;color:#fff;">${nom}</span>
+              <span style="font-size:.6rem;background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:4px;padding:.05rem .3rem;font-weight:600;border:1px dashed rgba(255,255,255,.3);">👤—</span>
+              <span style="font-size:.6rem;background:rgba(255,255,255,.25);color:#fff;border-radius:4px;padding:.05rem .3rem;font-weight:700;">✏️✓</span>
             </div>`;
           } else {
-            // Gris : pas encore fait
-            return `<div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:.55rem .85rem;min-width:110px;">
-              <div style="font-size:.78rem;font-weight:600;color:rgba(255,255,255,.6);margin-bottom:.35rem;">${nom}</div>
-              <div><span style="color:rgba(255,255,255,.35);font-size:.63rem;font-style:italic;">⏳ À venir</span></div>
+            return `<div style="display:flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:.28rem .7rem;">
+              <span style="font-size:.75rem;font-weight:500;color:rgba(255,255,255,.5);">${nom}</span>
+              <span style="font-size:.6rem;color:rgba(255,255,255,.3);font-style:italic;">⏳</span>
             </div>`;
           }
         }).join('');
 
-        periodesHtml += `
-          <div style="margin-bottom:.8rem;">
-            <div style="display:inline-flex;align-items:center;gap:.5rem;margin-bottom:.45rem;">
-              <span style="background:${P_COL[p]};color:#fff;border-radius:6px;padding:.15rem .55rem;font-size:.68rem;font-weight:800;letter-spacing:.06em;">${p}</span>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:.5rem;">${tags}</div>
-          </div>`;
+        periodesHtml += `<div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.4rem;">
+          <span style="background:${P_COL[p]};color:#fff;border-radius:5px;padding:.1rem .45rem;font-size:.62rem;font-weight:800;letter-spacing:.05em;flex-shrink:0;">${p}</span>
+          ${tags}
+        </div>`;
       });
     }
     if(!periodesHtml) periodesHtml = `<span style="font-size:.8rem;color:rgba(255,255,255,.4);font-style:italic;">Aucune programmation enregistrée</span>`;
@@ -274,27 +261,23 @@
     const ini=(eleve.prenom?.[0]||'')+(eleve.nom?.[0]||'');
     let html=`
       <div class="suivi-header" style="flex-wrap:wrap;gap:0;padding:0;overflow:hidden;">
-        <!-- Gauche : identité -->
-        <div style="display:flex;align-items:center;gap:1.2rem;padding:1.5rem 2rem;flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:1.2rem;padding:1.4rem 1.8rem;flex-shrink:0;min-width:240px;">
           <div class="suivi-avatar">${ini.toUpperCase()}</div>
           <div class="suivi-info">
             <h2>${eleve.prenom} ${(eleve.nom||'').toUpperCase()}</h2>
             <p>${eleve.classe||'—'} · ${eleve.niveau||'—'} · ${window.ANNEE_SCOLAIRE}</p>
-            ${eleve.classePrec?`<p style="font-size:.78rem;color:rgba(255,255,255,.5);margin-top:.15rem;">↳ Anciennement ${eleve.classePrec} (${eleve.niveauPrec||''})</p>`:''}
-            <p style="margin-top:.4rem;">${evals.length} auto-évaluation${evals.length>1?'s':''} enregistrée${evals.length>1?'s':''}</p>
+            ${eleve.classePrec?`<p style="font-size:.78rem;color:rgba(255,255,255,.5);margin-top:.1rem;">↳ ${eleve.classePrec} (${eleve.niveauPrec||''})</p>`:''}
+            <p style="margin-top:.3rem;">${evals.length} auto-évaluation${evals.length>1?'s':''} enregistrée${evals.length>1?'s':''}</p>
           </div>
         </div>
-        <!-- Droite : APSA -->
-        <div style="flex:1;min-width:300px;border-left:1px solid rgba(255,255,255,.12);padding:1.2rem 1.5rem;background:rgba(0,0,0,.15);">
-          <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.45);margin-bottom:.85rem;">
-            📋 Programmation ${eleve.classe||''} · APSA de l'année
-          </div>
+        <div style="flex:1;min-width:300px;border-left:1px solid rgba(255,255,255,.12);padding:1rem 1.4rem;background:rgba(0,0,0,.15);">
+          <div style="font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:.6rem;">📋 Programmation ${eleve.classe||''}</div>
           ${periodesHtml}
-          <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:.6rem;padding-top:.6rem;border-top:1px solid rgba(255,255,255,.1);font-size:.62rem;color:rgba(255,255,255,.4);">
-            <span style="display:flex;align-items:center;gap:.3rem;"><span style="background:#16a34a;border-radius:4px;padding:.1rem .35rem;color:#fff;font-size:.6rem;">👤✓ ✏️✓</span> Les deux faits</span>
-            <span style="display:flex;align-items:center;gap:.3rem;"><span style="background:#1d4ed8;border-radius:4px;padding:.1rem .35rem;color:#fff;font-size:.6rem;">👤✓</span> Élève seul</span>
-            <span style="display:flex;align-items:center;gap:.3rem;"><span style="background:#b45309;border-radius:4px;padding:.1rem .35rem;color:#fff;font-size:.6rem;">✏️✓</span> Prof seul</span>
-            <span style="display:flex;align-items:center;gap:.3rem;"><span style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:.1rem .35rem;color:rgba(255,255,255,.4);font-size:.6rem;">⏳</span> À venir</span>
+          <div style="display:flex;gap:.8rem;flex-wrap:wrap;margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.08);font-size:.6rem;color:rgba(255,255,255,.35);">
+            <span><span style="background:#16a34a;border-radius:3px;padding:.05rem .25rem;color:#fff;">👤✓ ✏️✓</span> Les deux</span>
+            <span><span style="background:#1d4ed8;border-radius:3px;padding:.05rem .25rem;color:#fff;">👤✓</span> Élève seul</span>
+            <span><span style="background:#b45309;border-radius:3px;padding:.05rem .25rem;color:#fff;">✏️✓</span> Prof seul</span>
+            <span>⏳ À venir</span>
           </div>
         </div>
       </div>
