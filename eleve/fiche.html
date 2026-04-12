@@ -97,6 +97,13 @@
     .legende-dot { width:11px;height:11px;border-radius:50%; }
     .scroll-hint { display:none;font-size:.7rem;color:#94a3b8;text-align:center;padding:.35rem;background:#f8fafc; }
     @media(max-width:700px){ .scroll-hint{display:block;} }
+    .prof-feedback-row td { padding:0 !important; border-bottom:3px solid #e5e7eb !important; }
+    .prof-feedback-cell { padding:.3rem .65rem;font-size:.69rem;font-weight:600;border-right:1px solid #e5e7eb;text-align:center; }
+    .prof-feedback-cell:last-child { border-right:none; }
+    .prof-feedback-label { padding:.3rem 1rem;font-size:.67rem;font-weight:700;color:#64748b;background:#f1f5f9;border-right:1px solid #e5e7eb;white-space:nowrap; }
+    .feedback-accord    { background:#dcfce7;color:#15803d; }
+    .feedback-desaccord-sel { background:#fde68a;color:#713f12;font-weight:800;outline:2px solid #f59e0b;outline-offset:-2px; }
+    .feedback-vide      { background:#f8fafc;color:#cbd5e1;font-style:italic; }
     .save-bar { position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #e5e7eb;padding:.9rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;z-index:50;box-shadow:0 -4px 20px rgba(0,0,0,.08); }
     .save-status { font-size:.85rem;color:#94a3b8; }
     .save-status.modified { color:#f59e0b;font-weight:600; }
@@ -128,12 +135,13 @@
   const classeId = params.get('classeId');
   if (!eleveId || !cycleId || !apsaId) window.location.href = 'classe.html';
 
-  // Mettre à jour le bouton retour avec classeId+cycleId pour revenir à la liste élèves
+  // Bouton retour → liste élèves (pas liste des classes)
   const retourUrl = classeId
     ? `classe.html?classeId=${classeId}&cycleId=${cycleId}`
     : 'classe.html';
   document.querySelector('.topbar-logo').href = retourUrl;
-  let evalActuelle = {}, eleve = null, apsa = null, modifie = false;
+
+  let evalActuelle = {}, evalProf = {}, eleve = null, apsa = null, modifie = false;
   const NIVEAUX = {
     NA:  { label:'Non Atteint',           scale:'0 — 2',  icon:'✕', couleur:'#ef4444' },
     ECA: { label:'Partiellement Atteint', scale:'3 — 5',  icon:'⊙', couleur:'#f59e0b' },
@@ -149,7 +157,7 @@
       if (!apsaData)  throw new Error("APSA introuvable");
       eleve = { id:eleveId, ...eleveData };
       apsa  = { id:apsaId,  ...apsaData };
-      if (evalDoc) evalActuelle = evalDoc.resultats || {};
+      if (evalDoc) { evalActuelle = evalDoc.resultats || {}; evalProf = evalDoc.resultats_prof || {}; }
       document.title = `${apsa.nom} — ${eleve.prenom} — EPS`;
       document.getElementById('topbar-title').textContent = apsa.nom;
       renderFiche();
@@ -161,13 +169,42 @@
   function renderFiche() {
     const niveauKeys = niveau === '6e' ? ['NA','ECA','A'] : ['NA','ECA','A','D'];
     const initiales  = (eleve.prenom?.[0]||'') + (eleve.nom?.[0]||'');
+    const hasProfCorr = Object.keys(evalProf).some(k=>k.startsWith('obj_'));
+
+    // Compter accords / désaccords
+    let nbDesaccord=0, nbAccord=0;
+    if(hasProfCorr) {
+      Object.keys(evalProf).filter(k=>k.startsWith('obj_')).forEach(k=>{
+        const ec=evalActuelle[k]||'', pc=evalProf[k]||'';
+        if(ec&&pc){ ec===pc ? nbAccord++ : nbDesaccord++; }
+      });
+    }
+
     const parDomaine = {};
-    (apsa.objectifs || []).forEach(obj => {
-      const d = obj.domaine || 'Général';
-      if (!parDomaine[d]) parDomaine[d] = [];
+    (apsa.objectifs||[]).forEach(obj=>{
+      const d=obj.domaine||'Général';
+      if(!parDomaine[d]) parDomaine[d]=[];
       parDomaine[d].push(obj);
     });
-    let html = `
+
+    // Bannière retour prof
+    let bannerHtml='';
+    if(hasProfCorr){
+      if(nbDesaccord===0){
+        bannerHtml=`<div style="background:#dcfce7;border:2px solid #22c55e;border-radius:12px;padding:.85rem 1.2rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:.8rem;">
+          <span style="font-size:1.6rem;">🎉</span>
+          <div><div style="font-weight:800;color:#15803d;font-size:.95rem;">Ton professeur est d'accord avec ton auto-évaluation !</div>
+          <div style="font-size:.8rem;color:#166534;margin-top:.1rem;">Tous tes niveaux sont validés. Bravo pour ton honnêteté !</div></div></div>`;
+      } else {
+        bannerHtml=`<div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:12px;padding:.85rem 1.2rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:.8rem;">
+          <span style="font-size:1.6rem;">📝</span>
+          <div><div style="font-weight:800;color:#92400e;font-size:.95rem;">Ton professeur a corrigé ton évaluation</div>
+          <div style="font-size:.8rem;color:#78350f;margin-top:.1rem;"><strong>${nbDesaccord} désaccord${nbDesaccord>1?'s':''}</strong> · ${nbAccord} accord${nbAccord>1?'s':''}
+          — Regarde la ligne <span style="background:#fde68a;border-radius:4px;padding:.05rem .35rem;font-weight:700;">✏️ Prof</span> sous chaque objectif.</div></div></div>`;
+      }
+    }
+
+    let html=`
       <div class="fiche-header">
         <div class="fiche-avatar">${initiales.toUpperCase()}</div>
         <div class="fiche-info">
@@ -176,61 +213,69 @@
         </div>
         <div class="fiche-apsa-badge">${apsa.nom}<small>${apsa.champAppr||''}</small></div>
       </div>
+      ${bannerHtml}
       <div class="legende-bar">
         <span style="font-size:.77rem;font-weight:700;color:#64748b;margin-right:.2rem;">Niveaux :</span>
-        ${niveauKeys.map(code => `<div class="legende-item"><div class="legende-dot" style="background:${NIVEAUX[code].couleur}"></div><span style="color:${NIVEAUX[code].couleur}">${code==='D'?'Dépassé':NIVEAUX[code].label}</span></div>`).join('<span style="color:#d1d5db;margin:0 .1rem">·</span>')}
+        ${niveauKeys.map(code=>`<div class="legende-item"><div class="legende-dot" style="background:${NIVEAUX[code].couleur}"></div><span style="color:${NIVEAUX[code].couleur}">${code==='D'?'Dépassé':NIVEAUX[code].label}</span></div>`).join('<span style="color:#d1d5db;margin:0 .1rem">·</span>')}
       </div>`;
-    if (Object.keys(parDomaine).length === 0) {
-      html += `<div class="alert alert-info">ℹ️ Aucun objectif configuré pour cette APSA. Contactez votre professeur.</div>`;
+
+    if(Object.keys(parDomaine).length===0){
+      html+=`<div class="alert alert-info">ℹ️ Aucun objectif configuré pour cette APSA.</div>`;
     } else {
-      Object.entries(parDomaine).forEach(([domaine, objectifs]) => {
-        const domLabel = window.DOMAINES_SOCLE[domaine] || domaine;
-        html += `
-          <div class="apsa-section">
-            <div class="apsa-section-header">
-              <span class="domaine-pill">${domaine}</span>
-              <span class="domaine-label">${domLabel}</span>
-            </div>
-            <div class="scroll-hint">← Faire défiler →</div>
-            <div class="eval-table-wrap">
-              <table class="eval-table">
-                <thead><tr>
-                  <th class="th-objectif">Objectif</th>
-                  ${niveauKeys.map(code => `
-                    <th class="th-niveau">
-                      <div class="th-niveau-inner th-${code}">${NIVEAUX[code].icon} ${code==='NA'?'Non Atteint':code==='ECA'?'Partiellement Atteint':code==='A'?'Atteint':'Dépassé'}</div>
-                      <div class="th-scale scale-${code}"><span>${NIVEAUX[code].scale.split('—')[0].trim()}</span><span style="opacity:.35">—</span><span>${NIVEAUX[code].scale.split('—')[1].trim()}</span></div>
-                    </th>`).join('')}
-                </tr></thead>
-                <tbody>
-                  ${objectifs.map((obj,i) => {
-                    const num = obj.id || (i+1);
-                    const code = evalActuelle[`obj_${num}`] || '';
-                    const d = obj.descripteurs || {};
-                    return `
-                      <tr id="row-${num}" class="${code?'sel-'+code:''}">
-                        <td class="td-objectif">
-                          <span class="td-obj-num">${num}</span>${obj.texte}
-                          <span class="obj-badge ${code?'obj-badge-'+code:'obj-badge-vide'}" id="badge-${num}">${code||'—'}</span>
-                        </td>
-                        ${niveauKeys.map(c => `
-                          <td class="td-niveau td-${c}${code===c?' selected':''}" id="td-${num}-${c}" onclick="setNiveau('${num}','${c}')">
-                            <div class="td-check">✓</div>
-                            <div class="${d[c]?'':'td-desc-empty'}">${d[c]||'—'}</div>
-                          </td>`).join('')}
-                      </tr>`;
+      Object.entries(parDomaine).forEach(([domaine,objectifs])=>{
+        const domLabel=window.DOMAINES_SOCLE[domaine]||domaine;
+        html+=`<div class="apsa-section">
+          <div class="apsa-section-header">
+            <span class="domaine-pill">${domaine}</span>
+            <span class="domaine-label">${domLabel}</span>
+          </div>
+          <div class="scroll-hint">← Faire défiler →</div>
+          <div class="eval-table-wrap"><table class="eval-table">
+            <thead><tr>
+              <th class="th-objectif">Objectif</th>
+              ${niveauKeys.map(code=>`<th class="th-niveau">
+                <div class="th-niveau-inner th-${code}">${NIVEAUX[code].icon} ${code==='NA'?'Non Atteint':code==='ECA'?'Partiellement Atteint':code==='A'?'Atteint':'Dépassé'}</div>
+                <div class="th-scale scale-${code}"><span>${NIVEAUX[code].scale.split('—')[0].trim()}</span><span style="opacity:.35">—</span><span>${NIVEAUX[code].scale.split('—')[1].trim()}</span></div>
+              </th>`).join('')}
+            </tr></thead>
+            <tbody>
+              ${objectifs.map((obj,i)=>{
+                const num=obj.id||(i+1);
+                const code=evalActuelle[`obj_${num}`]||'';
+                const profCode=evalProf[`obj_${num}`]||'';
+                const d=obj.descripteurs||{};
+                const feedbackRow = hasProfCorr ? `<tr class="prof-feedback-row">
+                  <td class="prof-feedback-label">✏️ Avis prof</td>
+                  ${niveauKeys.map(c=>{
+                    const isProfSel=profCode===c, isEleveSel=code===c;
+                    if(isProfSel&&isEleveSel) return `<td class="prof-feedback-cell feedback-accord">✓ D'accord</td>`;
+                    if(isProfSel) return `<td class="prof-feedback-cell feedback-desaccord-sel">⚠️ ${NIVEAUX[c].label}</td>`;
+                    return `<td class="prof-feedback-cell feedback-vide">${profCode?'':'…'}</td>`;
                   }).join('')}
-                </tbody>
-              </table>
-            </div>
-            <div class="commentaire-section">
-              <label>💬 Commentaire (optionnel)</label>
-              <textarea id="commentaire-${domaine.replace(/\./g,'_')}" placeholder="Mes ressentis, mes progrès..." oninput="marquerModifie()">${evalActuelle['commentaire_'+domaine]||''}</textarea>
-            </div>
-          </div>`;
+                </tr>` : '';
+                return `<tr id="row-${num}" class="${code?'sel-'+code:''}">
+                  <td class="td-objectif">
+                    <span class="td-obj-num">${num}</span>${obj.texte}
+                    <span class="obj-badge ${code?'obj-badge-'+code:'obj-badge-vide'}" id="badge-${num}">${code||'—'}</span>
+                    ${hasProfCorr&&profCode&&profCode!==code?`<span class="obj-badge" style="background:#fde68a;color:#92400e;margin-left:.2rem;">Prof: ${profCode}</span>`:''}
+                  </td>
+                  ${niveauKeys.map(c=>`<td class="td-niveau td-${c}${code===c?' selected':''}" id="td-${num}-${c}" onclick="setNiveau('${num}','${c}')">
+                    <div class="td-check">✓</div>
+                    <div class="${d[c]?'':'td-desc-empty'}">${d[c]||'—'}</div>
+                  </td>`).join('')}
+                </tr>${feedbackRow}`;
+              }).join('')}
+            </tbody>
+          </table></div>
+          <div class="commentaire-section">
+            <label>💬 Commentaire (optionnel)</label>
+            <textarea id="commentaire-${domaine.replace(/\./g,'_')}" placeholder="Mes ressentis, mes progrès..." oninput="marquerModifie()">${evalActuelle['commentaire_'+domaine]||''}</textarea>
+            ${evalProf['commentaire_prof']?`<div style="margin-top:.6rem;background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:.6rem .9rem;font-size:.8rem;"><strong style="color:#92400e;">📝 Note du professeur :</strong><br><span style="color:#78350f;">${evalProf['commentaire_prof']}</span></div>`:''}
+          </div>
+        </div>`;
       });
     }
-    document.getElementById('main-content').innerHTML = html;
+    document.getElementById('main-content').innerHTML=html;
   }
   function setNiveau(num, code) {
     const key = `obj_${num}`;
