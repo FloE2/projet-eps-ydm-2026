@@ -90,7 +90,7 @@
 
   <!-- ÉTAPE 2 : Choix du cycle (APSA) -->
   <div class="step" id="step-cycle">
-    <button class="back-btn" onclick="retour('step-classe')">← Retour aux classes</button>
+    <button class="back-btn" onclick="changerDeClasse()">← Changer de classe</button>
     <div class="card">
       <div class="card-header">
         <div>
@@ -178,6 +178,12 @@
 
   async function choisirClasse(id, nom, niveau) {
     classeSelectionnee = { id, nom, niveau };
+    // 🔒 Verrouiller la classe en session (élèves uniquement, pas les profs)
+    if (!localStorage.getItem('eps_prof')) {
+      sessionStorage.setItem('eps_classeId',  id);
+      sessionStorage.setItem('eps_classeNom', nom);
+      sessionStorage.setItem('eps_classeNiv', niveau);
+    }
     document.getElementById('titre-cycle').textContent = `APSA en cours — ${nom}`;
     document.getElementById('sous-titre-cycle').textContent = `Clique sur l'activité que tu es en train de travailler`;
     afficher('step-cycle');
@@ -251,7 +257,7 @@
     }
     el.innerHTML = eleves.map(e => {
       const initiales = (e.prenom?.[0]||'') + (e.nom?.[0]||'');
-      const url = `fiche.html?eleveId=${e.id}&cycleId=${cycleSelectionne.cycleId}&apsaId=${cycleSelectionne.apsaId}&niveau=${classeSelectionnee.niveau}&classeId=${classeSelectionnee.id}`;
+      const url = `fiche.html?eleveId=${e.id}&cycleId=${cycleSelectionne.cycleId}&apsaId=${cycleSelectionne.apsaId}&niveau=${classeSelectionnee.niveau}`;
       return `
         <a href="${url}" class="eleve-card">
           <div class="eleve-initiales">${initiales.toUpperCase()}</div>
@@ -275,28 +281,47 @@
     document.getElementById(stepId).classList.add('active');
   }
   function retour(stepId) { afficher(stepId); }
+  function changerDeClasse() {
+    sessionStorage.removeItem('eps_classeId');
+    sessionStorage.removeItem('eps_classeNom');
+    sessionStorage.removeItem('eps_classeNiv');
+    afficher('step-classe');
+  }
 
-  // Si on revient de fiche.html avec classeId+cycleId → restaurer directement la liste élèves
   async function init() {
     await chargerClasses();
+
     const p = new URLSearchParams(window.location.search);
     const retourClasseId = p.get('classeId');
     const retourCycleId  = p.get('cycleId');
+
+    // Priorité 1 : retour depuis fiche.html (classeId+cycleId dans URL)
     if (retourClasseId && retourCycleId) {
       try {
         const classes = await getClasses();
         const cl = classes.find(c => c.id === retourClasseId);
-        if (!cl) return;
-        // 1. Sélectionner la classe
-        await choisirClasse(cl.id, cl.nom, cl.niveau);
-        // 2. Trouver le cycle et l'APSA
-        const cycles = await getCyclesActifs(cl.id);
-        const cy = cycles.find(c => c.id === retourCycleId);
-        if (!cy) return;
-        const apsa = await getApsa(cy.apsaId);
-        // 3. Sélectionner le cycle — signature: (cycleId, apsaNom, apsaId)
-        await choisirCycle(cy.id, apsa?.nom || '', cy.apsaId);
+        if (cl) {
+          await choisirClasse(cl.id, cl.nom, cl.niveau);
+          const cycles = await getCyclesActifs(cl.id);
+          const cy = cycles.find(c => c.id === retourCycleId);
+          if (cy) {
+            const apsa = await getApsa(cy.apsaId);
+            await choisirCycle(cy.id, apsa?.nom || '', cy.apsaId);
+          }
+        }
       } catch(e) { /* silencieux */ }
+      return;
+    }
+
+    // Priorité 2 : classe déjà verrouillée en session (élèves uniquement)
+    const estProf = !!localStorage.getItem('eps_prof');
+    const sessId  = sessionStorage.getItem('eps_classeId');
+    const sessNom = sessionStorage.getItem('eps_classeNom');
+    const sessNiv = sessionStorage.getItem('eps_classeNiv');
+    if (!estProf && sessId && sessNom && sessNiv) {
+      try {
+        await choisirClasse(sessId, sessNom, sessNiv);
+      } catch(e) { sessionStorage.clear(); }
     }
   }
   init();
