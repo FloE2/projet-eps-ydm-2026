@@ -283,17 +283,19 @@
     const retourClasseId = p.get('classeId');
     const retourCycleId  = p.get('cycleId');
     if (retourClasseId && retourCycleId) {
-      // Trouver la classe et le cycle, puis afficher directement les élèves
       try {
-        const [classes, tousCycles] = await Promise.all([getClasses(), getTousCycles()]);
+        const classes = await getClasses();
         const cl = classes.find(c => c.id === retourClasseId);
-        const cy = tousCycles.find(c => c.id === retourCycleId);
-        if (cl && cy) {
-          await choisirClasse(cl.id, cl.nom, cl.niveau);
-          // Sélectionner le bon cycle visuellement et déclencher choisirCycle
-          const apsa = await getApsa(cy.apsaId);
-          await choisirCycle(cy.id, cy.apsaId, apsa?.nom || '');
-        }
+        if (!cl) return;
+        // 1. Sélectionner la classe
+        await choisirClasse(cl.id, cl.nom, cl.niveau);
+        // 2. Trouver le cycle et l'APSA
+        const cycles = await getCyclesActifs(cl.id);
+        const cy = cycles.find(c => c.id === retourCycleId);
+        if (!cy) return;
+        const apsa = await getApsa(cy.apsaId);
+        // 3. Sélectionner le cycle — signature: (cycleId, apsaNom, apsaId)
+        await choisirCycle(cy.id, apsa?.nom || '', cy.apsaId);
       } catch(e) { /* silencieux */ }
     }
   }
