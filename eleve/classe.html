@@ -190,40 +190,107 @@
     await chargerCycles(id, nom, niveau);
   }
 
-  // ── Étape 2 : cycles actifs ────────────────────────────────
+  // ── Étape 2 : APSA depuis la programmation (source de vérité) ─
   async function chargerCycles(classeId, classeNom, niveau) {
     const el = document.getElementById('liste-cycles');
     el.innerHTML = '<div class="loader-wrap"><div class="spinner"></div><span>Chargement...</span></div>';
     try {
-      const cycles = await getCyclesActifs(classeId);
-      if (cycles.length === 0) {
-        el.innerHTML = '<div class="alert alert-info">ℹ️ Aucun cycle actif pour cette classe. Contactez votre professeur.</div>';
+      // Lire depuis programmation/{classeNom} comme le dashboard
+      const [progClasse, toutesApsa, tousCycles] = await Promise.all([
+        dbGet('programmation/' + classeNom),
+        getToutesApsa(),
+        getTousCycles()
+      ]);
+
+      if (!progClasse) {
+        el.innerHTML = '<div class="alert alert-info">ℹ️ Aucune programmation configurée pour cette classe.</div>';
         return;
       }
-      // Charger les noms des APSA
-      const apsaMap = {};
-      for (const cy of cycles) {
-        if (!apsaMap[cy.apsaId]) {
-          apsaMap[cy.apsaId] = await getApsa(cy.apsaId);
-        }
+
+      // Index APSA par nom (fuzzy) et par id
+      function matchApsa(slotNom) {
+        return toutesApsa.find(a => {
+          const an = a.nom.toLowerCase().trim();
+          const sn = slotNom.toLowerCase().trim();
+          return an===sn || an.includes(sn) || sn.includes(an) ||
+                 sn.split('/').some(p=>an.includes(p.trim())) ||
+                 an.split('/').some(p=>sn.includes(p.trim()));
+        });
       }
-      let html = '';
-      cycles.forEach(cy => {
-        const apsa = apsaMap[cy.apsaId] || {};
-        const ca   = window.CHAMPS_APPRENTISSAGE[apsa.champAppr] || apsa.champAppr || '';
-        const debut = cy.dateDebut ? new Date(cy.dateDebut).toLocaleDateString('fr-FR') : '';
-        const fin   = cy.dateFin   ? new Date(cy.dateFin).toLocaleDateString('fr-FR') : '';
-        html += `
-          <div class="cycle-card" onclick="choisirCycle('${cy.id}','${apsa.nom}','${apsa.id}')">
-            <div>
-              <div class="cycle-apsa">${apsa.nom || cy.apsaId}</div>
-              <div class="cycle-meta">${apsa.champAppr ? apsa.champAppr + ' · ' : ''}${ca.substring(0,40)}${ca.length>40?'…':''}</div>
-              ${debut ? `<div class="cycle-meta">📅 ${debut}${fin ? ' → ' + fin : ''}</div>` : ''}
-            </div>
-            <span class="cycle-badge">EN COURS</span>
-          </div>`;
+
+      // Cycles de cette classe indexés par apsaId
+      const cyclesParApsa = {};
+      tousCycles.filter(c => c.classeId === classeId).forEach(c => {
+        if (!cyclesParApsa[c.apsaId]) cyclesParApsa[c.apsaId] = [];
+        cyclesParApsa[c.apsaId].push(c);
       });
-      el.innerHTML = html;
+
+      const PERIODES = ['P1','P2','P3','P4'];
+      const PERIODE_COLORS = { P1:'#3B82F6', P2:'#10b981', P3:'#f59e0b', P4:'#ef4444' };
+      const aujourd_hui = new Date();
+
+      let html = '';
+      let totalApsa = 0;
+
+      PERIODES.forEach(p => {
+        const periode = progClasse[p];
+        if (!periode?.slots?.length) return;
+
+        periode.slots.forEach(slotNom => {
+          const apsa = matchApsa(slotNom);
+          if (!apsa) return;
+          totalApsa++;
+
+          // Trouver le cycle correspondant
+          const cyclesApsa = cyclesParApsa[apsa.id] || [];
+          const cycle = cyclesApsa[0]; // prendre le premier cycle trouvé
+          const cycleId = cycle?.id || null;
+
+          // Déterminer le statut
+          let badge = '', badgeStyle = '';
+          if (cycle) {
+            const debut = cycle.dateDebut ? new Date(cycle.dateDebut) : null;
+            const fin   = cycle.dateFin   ? new Date(cycle.dateFin)   : null;
+            if (fin && aujourd_hui > fin) {
+              badge = 'TERMINÉE'; badgeStyle = 'background:#6b7280;';
+            } else if (debut && aujourd_hui < debut) {
+              badge = 'À VENIR'; badgeStyle = 'background:#94a3b8;';
+            } else {
+              badge = 'EN COURS'; badgeStyle = '';
+            }
+          } else {
+            badge = 'EN COURS'; badgeStyle = '';
+          }
+
+          const ca = window.CHAMPS_APPRENTISSAGE[apsa.champAppr] || apsa.champAppr || '';
+          const debut = cycle?.dateDebut ? new Date(cycle.dateDebut).toLocaleDateString('fr-FR') : '';
+          const fin   = cycle?.dateFin   ? new Date(cycle.dateFin).toLocaleDateString('fr-FR')   : '';
+
+          // Si pas de cycleId on ne peut pas naviguer → désactiver le clic
+          const onclick = cycleId
+            ? `onclick="choisirCycle('${cycleId}','${apsa.nom}','${apsa.id}')"`
+            : `onclick="alert('Ce cycle n\\'a pas encore été créé. Contactez votre professeur.')"`;
+
+          html += `
+            <div class="cycle-card" ${onclick} style="${badge==='À VENIR'?'opacity:.55;':''}">
+              <div>
+                <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.2rem;">
+                  <span style="background:${PERIODE_COLORS[p]};color:#fff;border-radius:4px;padding:.1rem .4rem;font-size:.62rem;font-weight:800;">${p}</span>
+                  <div class="cycle-apsa">${apsa.nom}</div>
+                </div>
+                <div class="cycle-meta">${apsa.champAppr ? apsa.champAppr + ' · ' : ''}${ca.substring(0,45)}${ca.length>45?'…':''}</div>
+                ${debut ? `<div class="cycle-meta">📅 ${debut}${fin ? ' → '+fin : ''}</div>` : ''}
+              </div>
+              <span class="cycle-badge" style="${badgeStyle}">${badge}</span>
+            </div>`;
+        });
+      });
+
+      if (!totalApsa) {
+        el.innerHTML = '<div class="alert alert-info">ℹ️ Aucune APSA dans la programmation.</div>';
+      } else {
+        el.innerHTML = html;
+      }
     } catch(e) {
       el.innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
     }
@@ -257,7 +324,7 @@
     }
     el.innerHTML = eleves.map(e => {
       const initiales = (e.prenom?.[0]||'') + (e.nom?.[0]||'');
-      const url = `fiche.html?eleveId=${e.id}&cycleId=${cycleSelectionne.cycleId}&apsaId=${cycleSelectionne.apsaId}&niveau=${classeSelectionnee.niveau}`;
+      const url = `fiche.html?eleveId=${e.id}&cycleId=${cycleSelectionne.cycleId}&apsaId=${cycleSelectionne.apsaId}&niveau=${classeSelectionnee.niveau}&classeId=${classeSelectionnee.id}`;
       return `
         <a href="${url}" class="eleve-card">
           <div class="eleve-initiales">${initiales.toUpperCase()}</div>
@@ -302,8 +369,8 @@
         const cl = classes.find(c => c.id === retourClasseId);
         if (cl) {
           await choisirClasse(cl.id, cl.nom, cl.niveau);
-          const cycles = await getCyclesActifs(cl.id);
-          const cy = cycles.find(c => c.id === retourCycleId);
+          const tousCycles = await getTousCycles();
+          const cy = tousCycles.find(c => c.id === retourCycleId);
           if (cy) {
             const apsa = await getApsa(cy.apsaId);
             await choisirCycle(cy.id, apsa?.nom || '', cy.apsaId);
