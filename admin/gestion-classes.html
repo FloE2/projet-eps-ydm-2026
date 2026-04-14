@@ -70,6 +70,26 @@
 </nav>
 
 <div class="container">
+
+  <!-- ══ Sélecteur d'année scolaire ══ -->
+  <div id="annee-banner" style="
+    display:flex;align-items:center;gap:.8rem;
+    background:linear-gradient(90deg,#0d2545,#1a3a6b);
+    border:1px solid rgba(255,255,255,.1);border-radius:12px;
+    padding:.7rem 1.2rem;margin-bottom:1.2rem;flex-wrap:wrap;">
+    <span style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.45);">📅 Année scolaire</span>
+    <div style="display:flex;align-items:center;gap:.5rem;margin-left:.2rem;">
+      <button onclick="naviguerAnnee(-1)" style="background:rgba(255,255,255,.1);border:none;border-radius:6px;color:#fff;width:28px;height:28px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;">◀</button>
+      <span id="annee-display" style="font-family:var(--font-h);font-size:1.05rem;font-weight:700;color:#fff;min-width:90px;text-align:center;"></span>
+      <button onclick="naviguerAnnee(+1)" style="background:rgba(255,255,255,.1);border:none;border-radius:6px;color:#fff;width:28px;height:28px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;">▶</button>
+    </div>
+    <div id="annee-pills" style="display:flex;gap:.35rem;flex-wrap:wrap;margin-left:.5rem;"></div>
+    <div style="margin-left:auto;display:flex;gap:.5rem;align-items:center;">
+      <span id="annee-active-badge" style="font-size:.7rem;background:rgba(45,158,104,.2);color:#4ade80;border:1px solid rgba(45,158,104,.4);border-radius:20px;padding:.2rem .7rem;font-weight:700;"></span>
+      <button onclick="ajouterAnnee()" class="btn btn-ghost btn-sm" style="font-size:.78rem;">+ Nouvelle année</button>
+    </div>
+  </div>
+
   <div class="tabs">
     <button class="tab-btn active" onclick="showTab('classes')">📚 Classes</button>
     <button class="tab-btn" onclick="showTab('eleves')">👥 Élèves</button>
@@ -99,6 +119,7 @@
           </select>
           <button class="btn btn-primary btn-sm" onclick="ouvrirModalEleve()">+ Ajouter</button>
           <button class="btn btn-ghost btn-sm" onclick="ouvrirModalImport()">📋 Import liste</button>
+          <button class="btn btn-ghost btn-sm" title="Générer les identifiants stables pour les anciens élèves" onclick="migrerEleveUID()">🔧 Générer IDs</button>
         </div>
       </div>
       <div id="liste-eleves-classe">
@@ -141,6 +162,10 @@
         <option value="4e">4e</option>
         <option value="3e">3e</option>
       </select>
+    </div>
+    <div class="form-group">
+      <label>Année scolaire *</label>
+      <input type="text" id="cl-annee" placeholder="Ex : 2025-2026">
     </div>
     <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;">
       <button class="btn btn-ghost" onclick="fermerModal('modal-classe-bg')">Annuler</button>
@@ -230,6 +255,8 @@
                 <th style="padding:8px 12px;text-align:left;color:var(--or-light);font-weight:600;border-bottom:1px solid var(--border);">Nom</th>
                 <th style="padding:8px 12px;text-align:left;color:var(--or-light);font-weight:600;border-bottom:1px solid var(--border);">Prénom</th>
                 <th style="padding:8px 12px;text-align:left;color:var(--or-light);font-weight:600;border-bottom:1px solid var(--border);">Genre</th>
+                <th style="padding:8px 12px;text-align:left;color:var(--or-light);font-weight:600;border-bottom:1px solid var(--border);">Naissance</th>
+                <th style="padding:8px 12px;text-align:left;color:var(--or-light);font-weight:600;border-bottom:1px solid var(--border);">Statut</th>
               </tr>
             </thead>
             <tbody id="pronote-tbody"></tbody>
@@ -275,22 +302,11 @@ BERNARD Clara
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
       <div class="form-group">
         <label>Date de début</label>
-        <input type="date" id="cy-debut" oninput="calculerSeances()">
+        <input type="date" id="cy-debut">
       </div>
       <div class="form-group">
         <label>Date de fin</label>
-        <input type="date" id="cy-fin" oninput="calculerSeances()">
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-      <div class="form-group">
-        <label>Nombre de séances
-          <span style="font-size:.72rem;color:var(--gray-3);font-weight:400"> (1/semaine · Zone C · calculé auto)</span>
-        </label>
-        <input type="number" id="cy-seances" min="1" max="40" placeholder="Ex : 12" style="font-size:1.05rem;font-weight:700;">
-      </div>
-      <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:.1rem;">
-        <div id="cy-seances-info" style="font-size:.78rem;color:var(--gray-3);line-height:1.5;"></div>
+        <input type="date" id="cy-fin">
       </div>
     </div>
     <div class="form-group">
@@ -308,7 +324,6 @@ BERNARD Clara
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="../firebase-config.js"></script>
 <script>
   requireProf();
@@ -318,6 +333,61 @@ BERNARD Clara
   let classeEditId     = null;
   let eleveEditId      = null;
   let cycleEditId      = null;
+  let anneesDisponibles = [];
+
+  // ── Gestion de l'année scolaire ────────────────────────────
+  function afficherAnneeBanner() {
+    const annee = getAnneeActive();
+    document.getElementById('annee-display').textContent = annee;
+    const anneeEnCours = calculerAnneeEnCours();
+    const badge = document.getElementById('annee-active-badge');
+    badge.textContent = annee === anneeEnCours ? '✓ Année en cours' : '📂 Archives';
+    badge.style.background = annee === anneeEnCours ? 'rgba(45,158,104,.2)' : 'rgba(255,109,0,.15)';
+    badge.style.color = annee === anneeEnCours ? '#4ade80' : '#fb923c';
+    badge.style.borderColor = annee === anneeEnCours ? 'rgba(45,158,104,.4)' : 'rgba(255,109,0,.3)';
+
+    const pills = document.getElementById('annee-pills');
+    pills.innerHTML = anneesDisponibles.map(a =>
+      `<button onclick="changerAnnee('${a}')"
+        style="background:${a===annee?'rgba(255,255,255,.22)':'rgba(255,255,255,.07)'};
+               border:1px solid ${a===annee?'rgba(255,255,255,.4)':'rgba(255,255,255,.12)'};
+               color:${a===annee?'#fff':'rgba(255,255,255,.5)'};
+               border-radius:20px;padding:.15rem .6rem;font-size:.72rem;font-weight:${a===annee?'700':'400'};cursor:pointer;">
+        ${a}
+      </button>`
+    ).join('');
+  }
+
+  function changerAnnee(annee) {
+    setAnneeActive(annee);
+    afficherAnneeBanner();
+    init();
+  }
+
+  async function naviguerAnnee(delta) {
+    const annee = getAnneeActive();
+    const idx = anneesDisponibles.indexOf(annee);
+    const newIdx = idx - delta; // reversed: desc order, so -1 = older
+    if (newIdx >= 0 && newIdx < anneesDisponibles.length) {
+      changerAnnee(anneesDisponibles[newIdx]);
+    }
+  }
+
+  async function ajouterAnnee() {
+    const annee = prompt('Nouvelle année scolaire (ex: 2026-2027) :',
+      (() => {
+        const [,fin] = getAnneeActive().split('-').map(Number);
+        return `${fin}-${fin+1}`;
+      })()
+    );
+    if (!annee || !/^\d{4}-\d{4}$/.test(annee)) {
+      showToast('⚠️ Format attendu : YYYY-YYYY', 'error'); return;
+    }
+    if (!anneesDisponibles.includes(annee)) {
+      anneesDisponibles = [annee, ...anneesDisponibles];
+    }
+    changerAnnee(annee);
+  }
 
   // ── Tabs ───────────────────────────────────────────────────
   function showTab(name) {
@@ -330,7 +400,10 @@ BERNARD Clara
 
   // ── Chargement initial ─────────────────────────────────────
   async function init() {
-    const [classesArr, apsaArr] = await Promise.all([getClasses(), getToutesApsa()]);
+    anneesDisponibles = await getAnneesDisponibles();
+    const annee = getAnneeActive();
+    afficherAnneeBanner();
+    const [classesArr, apsaArr] = await Promise.all([getClassesByAnnee(annee), getToutesApsa()]);
     toutesLesClasses = classesArr;
     tousLesApsa      = apsaArr;
     chargerClasses();
@@ -352,7 +425,7 @@ BERNARD Clara
   function chargerClasses() {
     const el = document.getElementById('liste-classes');
     if (toutesLesClasses.length === 0) {
-      el.innerHTML = `<div class="alert alert-info">ℹ️ Aucune classe. Créez-en une !</div>`;
+      el.innerHTML = `<div class="alert alert-info">ℹ️ Aucune classe pour l'année ${getAnneeActive()}. Créez-en une !</div>`;
       return;
     }
     const ordreNiv = ['6e','5e','4e','3e'];
@@ -361,10 +434,11 @@ BERNARD Clara
       if (ia!==ib) return ia-ib; return a.nom.localeCompare(b.nom);
     });
     el.innerHTML = `<div class="table-wrapper"><table>
-      <thead><tr><th>Classe</th><th>Niveau</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Classe</th><th>Niveau</th><th>Année</th><th>Actions</th></tr></thead>
       <tbody>${tri.map(c => `<tr>
         <td><strong>${c.nom}</strong></td>
         <td>${c.niveau}</td>
+        <td><span style="font-size:.75rem;color:var(--gray-3)">${c.anneeScolaire||'—'}</span></td>
         <td><button class="btn btn-ghost btn-sm" onclick="supprimerClasse('${c.id}','${c.nom}')">🗑 Supprimer</button></td>
       </tr>`).join('')}</tbody>
     </table></div>`;
@@ -372,8 +446,9 @@ BERNARD Clara
 
   function ouvrirModalClasse() {
     classeEditId = null;
-    document.getElementById('cl-nom').value   = '';
+    document.getElementById('cl-nom').value    = '';
     document.getElementById('cl-niveau').value = '6e';
+    document.getElementById('cl-annee').value  = getAnneeActive();
     ouvrirModal('modal-classe-bg');
     document.getElementById('cl-nom').focus();
   }
@@ -381,12 +456,18 @@ BERNARD Clara
   async function sauvegarderClasse() {
     const nom    = document.getElementById('cl-nom').value.trim();
     const niveau = document.getElementById('cl-niveau').value;
+    const annee  = (document.getElementById('cl-annee').value.trim()) || getAnneeActive();
     if (!nom) { showToast('⚠️ Entrez un nom de classe', 'error'); return; }
+    if (!/^\d{4}-\d{4}$/.test(annee)) { showToast('⚠️ Format année : YYYY-YYYY', 'error'); return; }
     try {
-      const data = { nom, niveau, annee: window.ANNEE_SCOLAIRE };
-      await dbPush('classes', data);
+      await dbPush('classes', { nom, niveau, anneeScolaire: annee });
       showToast('✓ Classe créée !', 'success');
       fermerModal('modal-classe-bg');
+      // Mettre à jour l'année active si nouvelle
+      if (!anneesDisponibles.includes(annee)) {
+        anneesDisponibles = [annee, ...anneesDisponibles];
+        setAnneeActive(annee);
+      }
       await init();
     } catch(e) { showToast('❌ ' + e.message, 'error'); }
   }
@@ -407,43 +488,26 @@ BERNARD Clara
     if (eleves.length === 0) {
       el.innerHTML = '<div class="alert alert-info">ℹ️ Aucun élève dans cette classe.</div>'; return;
     }
-    const baseUrl = window.location.origin + window.location.pathname.replace('gestion-classes.html','');
     el.innerHTML = `<div class="table-wrapper"><table>
-      <thead><tr><th>#</th><th>Prénom</th><th>Nom</th><th>Genre</th><th>Actions</th></tr></thead>
+      <thead><tr><th>#</th><th>Prénom</th><th>Nom</th><th>Naissance</th><th>ID stable</th><th>Actions</th></tr></thead>
       <tbody>${eleves.map((e,i) => {
-        const lienSuivi = `${baseUrl}admin/suivi-eleve.html?eleveId=${e.id}`;
-        const genreBadge = e.genre === 'F'
-          ? '<span style="color:#ec4899;font-size:.8rem;">♀</span>'
-          : e.genre === 'M'
-          ? '<span style="color:#3b82f6;font-size:.8rem;">♂</span>'
-          : '<span style="color:#94a3b8;font-size:.75rem;">—</span>';
+        const ddnStr = e.dateNaissance ? `<span style="font-size:.75rem;color:var(--gray-3)">${e.dateNaissance}</span>` : '<span style="color:#aaa;font-size:.75rem;">—</span>';
+        const uidBadge = e.eleveUID
+          ? `<span title="${e.eleveUID}" style="font-size:.65rem;background:rgba(45,158,104,.15);color:#4ade80;border-radius:4px;padding:.1rem .4rem;font-family:monospace;">✓ ID</span>`
+          : `<span style="font-size:.65rem;background:rgba(255,109,0,.15);color:#fb923c;border-radius:4px;padding:.1rem .4rem;">⚠ manquant</span>`;
         return `<tr>
           <td>${i+1}</td>
           <td>${e.prenom}</td>
           <td>${e.nom.toUpperCase()}</td>
-          <td>${genreBadge}</td>
-          <td style="display:flex;gap:.3rem;flex-wrap:wrap;">
-            <a href="suivi-eleve.html?eleveId=${e.id}" class="btn btn-ghost btn-sm" title="Voir le suivi">📈 Suivi</a>
-            <button class="btn btn-ghost btn-sm" onclick="copierLienEleve('${e.id}','${e.prenom} ${e.nom}')" title="Copier le lien partageable">🔗 Lien</button>
+          <td>${ddnStr}</td>
+          <td>${uidBadge}</td>
+          <td>
+            <a href="suivi-eleve.html?eleveId=${e.id}" class="btn btn-ghost btn-sm">📈 Suivi</a>
             <button class="btn btn-danger btn-sm" onclick="supprimerEleve('${e.id}','${e.prenom} ${e.nom}')">🗑</button>
           </td>
         </tr>`;
       }).join('')}</tbody>
-    </table></div>
-    <div style="margin-top:.6rem;font-size:.75rem;color:#64748b;">
-      💡 Le bouton <strong>🔗 Lien</strong> génère une URL partageable — l'élève peut consulter sa fiche sans mot de passe.
-    </div>`;
-  }
-
-  function copierLienEleve(eleveId, nom) {
-    const baseUrl = window.location.origin + window.location.pathname.replace('gestion-classes.html','');
-    const lien = `${baseUrl}admin/suivi-eleve.html?eleveId=${eleveId}`;
-    navigator.clipboard.writeText(lien).then(() => {
-      showToast(`🔗 Lien copié pour ${nom}`, 'success');
-    }).catch(() => {
-      // Fallback si clipboard API indisponible
-      prompt(`Lien pour ${nom} :`, lien);
-    });
+    </table></div>`;
   }
 
   function ouvrirModalEleve() {
@@ -462,11 +526,14 @@ BERNARD Clara
     const classeId = document.getElementById('el-classe').value;
     const classe   = toutesLesClasses.find(c => c.id === classeId);
     if (!prenom||!nom||!classeId) { showToast('⚠️ Tous les champs sont requis', 'error'); return; }
+    const eleveUID = genererEleveUID(nom, prenom, '');
     try {
       await dbPush('eleves', {
         prenom, nom, classeId,
-        classe: classe?.nom || '',
-        niveau: classe?.niveau || '',
+        classe:       classe?.nom || '',
+        niveau:       classe?.niveau || '',
+        anneeScolaire: classe?.anneeScolaire || getAnneeActive(),
+        eleveUID,
         dateAjout: new Date().toISOString()
       });
       showToast('✓ Élève ajouté !', 'success');
@@ -483,9 +550,38 @@ BERNARD Clara
     if (sel?.value) chargerElevesClasse(sel.value);
   }
 
+  // ── MIGRATION : générer eleveUID pour les anciens élèves ───
+  async function migrerEleveUID() {
+    const btn = event.target;
+    btn.disabled = true; btn.textContent = '⏳ Analyse...';
+    try {
+      const data = await dbGet('eleves');
+      if (!data) { showToast('ℹ️ Aucun élève en base', 'error'); return; }
+      const tous = Object.entries(data).map(([id, v]) => ({ id, ...v }));
+      const sansUID = tous.filter(e => !e.eleveUID);
+      if (sansUID.length === 0) {
+        showToast('✓ Tous les élèves ont déjà un identifiant !', 'success');
+        btn.disabled = false; btn.textContent = '🔧 Générer IDs'; return;
+      }
+      if (!confirm(`${sansUID.length} élève(s) sans identifiant stable. Générer maintenant ?
+(Ils auront un ID temporaire sans date de naissance, qui sera automatiquement mis à jour à la prochaine importation ProNote.)`)) {
+        btn.disabled = false; btn.textContent = '🔧 Générer IDs'; return;
+      }
+      let ok = 0;
+      for (const e of sansUID) {
+        const uid = genererEleveUID(e.nom || '', e.prenom || '', ''); // sans DDN
+        await dbUpdate('eleves/' + e.id, { eleveUID: uid });
+        ok++;
+      }
+      showToast(`✓ ${ok} identifiant(s) généré(s) !`, 'success');
+      const sel = document.getElementById('select-classe-eleves');
+      if (sel?.value) chargerElevesClasse(sel.value);
+    } catch(e) { showToast('❌ ' + e.message, 'error'); }
+    btn.disabled = false; btn.textContent = '🔧 Générer IDs';
+  }
+
   // ── IMPORT élèves ──────────────────────────────────────────
-  // ── Import modal ───────────────────────────────────────────
-  let pronoteEleves = []; // élèves parsés depuis CSV ProNote
+  let pronoteEleves = [];
   let importTab = 'pronote';
 
   function ouvrirModalImport() {
@@ -518,56 +614,100 @@ BERNARD Clara
     if (file) lireCSVPronote(file);
   }
 
-  function lireCSVPronote(file) {
+  async function lireCSVPronote(file) {
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
-        // Supprime le BOM UTF-8 si présent
         let text = e.target.result.replace(/^\uFEFF/, '');
-        // Détecte séparateur (ProNote = ; )
         const sep = text.includes(';') ? ';' : ',';
         const lignes = text.split(/\r?\n/).filter(l => l.trim());
         if (lignes.length < 2) throw new Error('Fichier vide ou format incorrect');
 
-        // Trouve les indices des colonnes
         const headers = parseCSVLine(lignes[0], sep).map(h => h.trim().toLowerCase());
         const iEleve  = headers.findIndex(h => h.includes('élève') || h.includes('eleve') || h === 'nom');
         const iSexe   = headers.findIndex(h => h.includes('sexe'));
+        const iDDN    = headers.findIndex(h => h.includes('naissance') || h === 'ddn' || h.includes('né') || h.includes('ne '));
         if (iEleve === -1) throw new Error('Colonne "Élèves" introuvable');
+
+        // Pré-charger tous les élèves existants pour la reconnaissance
+        const statsEl = document.getElementById('pronote-stats');
+        statsEl.textContent = '🔍 Reconnaissance des élèves existants...';
+        const tousElevesData = await dbGet('eleves');
+        const tousExistants = tousElevesData
+          ? Object.entries(tousElevesData).map(([id, v]) => ({ id, ...v }))
+          : [];
 
         pronoteEleves = [];
         const tbody = document.getElementById('pronote-tbody');
         tbody.innerHTML = '';
+
+        let nbReconnus = 0;
 
         for (let i = 1; i < lignes.length; i++) {
           const cols = parseCSVLine(lignes[i], sep);
           const eleveRaw = (cols[iEleve] || '').trim();
           if (!eleveRaw) continue;
 
-          // ProNote : "NOM Prénom" → tout en MAJ = nom jusqu'au premier mot minuscule
           const { nom, prenom } = splitNomPrenom(eleveRaw);
           const sexeRaw = iSexe !== -1 ? (cols[iSexe] || '').trim() : '';
           const genre   = sexeRaw.toLowerCase().startsWith('f') ? 'F' : sexeRaw.toLowerCase().startsWith('m') ? 'M' : '';
+          const ddn     = iDDN !== -1 ? (cols[iDDN] || '').trim() : '';
 
-          pronoteEleves.push({ nom, prenom, genre });
+          // Générer l'eleveUID et chercher un élève existant
+          const eleveUID = genererEleveUID(nom, prenom, ddn);
+          const uidSansDDN = genererEleveUID(nom, prenom, '');
 
-          const tr = document.createElement('tr');
-          tr.style.borderBottom = '1px solid rgba(240,234,216,0.05)';
+          let existant = tousExistants.find(e => e.eleveUID === eleveUID);
+          let matchType = 'nouveau';
+          if (existant) {
+            matchType = 'reconnu';
+            nbReconnus++;
+          } else {
+            // Fallback : chercher par UID sans DDN (élèves migrés)
+            existant = tousExistants.find(e => e.eleveUID === uidSansDDN);
+            if (existant) {
+              matchType = 'reconnu-partiel';
+              nbReconnus++;
+            }
+          }
+
+          pronoteEleves.push({ nom, prenom, genre, ddn, eleveUID, matchType, existant });
+
           const badgeGenre = genre === 'F'
             ? '<span style="background:rgba(236,72,153,0.15);color:#f9a8d4;padding:2px 7px;border-radius:3px;font-size:0.72rem;">♀ F</span>'
             : genre === 'M'
             ? '<span style="background:rgba(59,130,246,0.15);color:#93c5fd;padding:2px 7px;border-radius:3px;font-size:0.72rem;">♂ M</span>'
             : '<span style="color:var(--text-muted);font-size:0.72rem;">—</span>';
+
+          let badgeStatut;
+          if (matchType === 'reconnu') {
+            const anneePrec = existant?.anneeScolaire || '?';
+            const classePrec = existant?.classe || '?';
+            badgeStatut = `<span style="background:rgba(45,158,104,.2);color:#4ade80;border:1px solid rgba(45,158,104,.3);border-radius:4px;padding:2px 7px;font-size:.7rem;font-weight:700;">✓ Reconnu · ${classePrec} ${anneePrec}</span>`;
+          } else if (matchType === 'reconnu-partiel') {
+            const anneePrec = existant?.anneeScolaire || '?';
+            badgeStatut = `<span style="background:rgba(251,146,60,.15);color:#fb923c;border:1px solid rgba(251,146,60,.3);border-radius:4px;padding:2px 7px;font-size:.7rem;font-weight:700;">⚡ Reconnu (DDN manquante) · ${anneePrec}</span>`;
+          } else {
+            badgeStatut = `<span style="background:rgba(59,130,246,.15);color:#93c5fd;border:1px solid rgba(59,130,246,.3);border-radius:4px;padding:2px 7px;font-size:.7rem;font-weight:700;">🆕 Nouveau</span>`;
+          }
+
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid rgba(240,234,216,0.05)';
           tr.innerHTML = `
             <td style="padding:7px 12px;color:rgba(240,234,216,0.85);font-weight:600;">${nom}</td>
             <td style="padding:7px 12px;color:rgba(240,234,216,0.75);">${prenom}</td>
-            <td style="padding:7px 12px;">${badgeGenre}</td>`;
+            <td style="padding:7px 12px;">${badgeGenre}</td>
+            <td style="padding:7px 12px;font-size:.75rem;color:rgba(240,234,216,.6);">${ddn || '—'}</td>
+            <td style="padding:7px 12px;">${badgeStatut}</td>`;
           tbody.appendChild(tr);
         }
 
-        document.getElementById('pronote-stats').textContent =
-          `✅ ${pronoteEleves.length} élève${pronoteEleves.length > 1 ? 's' : ''} détecté${pronoteEleves.length > 1 ? 's' : ''} · Source : ${file.name}`;
+        statsEl.innerHTML =
+          `✅ <strong>${pronoteEleves.length}</strong> élève(s) · ` +
+          `<span style="color:#4ade80">✓ ${nbReconnus} reconnu(s)</span> · ` +
+          `<span style="color:#93c5fd">🆕 ${pronoteEleves.length - nbReconnus} nouveau(x)</span> · ` +
+          `Source : ${file.name}`;
         document.getElementById('pronote-preview').style.display = 'block';
         document.getElementById('drop-zone').style.display = 'none';
 
@@ -579,7 +719,6 @@ BERNARD Clara
   }
 
   function parseCSVLine(line, sep) {
-    // Gère les champs entre guillemets
     const result = [];
     let cur = '', inQ = false;
     for (let i = 0; i < line.length; i++) {
@@ -593,13 +732,9 @@ BERNARD Clara
   }
 
   function splitNomPrenom(raw) {
-    // ProNote exporte "NOM COMPOSE Prénom" ou "NOM Prénom"
-    // Les noms de famille sont en MAJUSCULES, le prénom commence par une majuscule
     const parts = raw.trim().split(/\s+/);
-    // Cherche le premier mot qui n'est pas tout en majuscules → début du prénom
-    let split = parts.length - 1; // par défaut le dernier mot est le prénom
+    let split = parts.length - 1;
     for (let i = 0; i < parts.length; i++) {
-      // Un mot est "prénom" s'il contient au moins une minuscule
       if (/[a-zàâäéèêëîïôùûü]/.test(parts[i])) { split = i; break; }
     }
     const nom    = parts.slice(0, split).join(' ');
@@ -622,6 +757,7 @@ BERNARD Clara
     if (!classeId) { showToast('⚠️ Sélectionnez une classe cible', 'error'); return; }
 
     let elevesList = [];
+
     if (importTab === 'pronote') {
       if (pronoteEleves.length === 0) { showToast('⚠️ Aucun fichier CSV chargé', 'error'); return; }
       elevesList = pronoteEleves;
@@ -638,79 +774,57 @@ BERNARD Clara
         } else {
           prenom = parts[0]; nom = parts.slice(1).join(' ').toUpperCase();
         }
-        elevesList.push({ nom, prenom, genre: '' });
+        elevesList.push({ nom, prenom, genre: '', ddn: '', eleveUID: genererEleveUID(nom, prenom, ''), matchType: 'nouveau', existant: null });
       }
     }
 
     const btn = document.getElementById('btn-importer');
     btn.disabled = true; btn.textContent = '⏳ Import…';
 
-    // Charger TOUS les élèves en base pour détecter fusions inter-classes (rentrée)
-    const tousEleves = await getTousEleves();
-    const dejaDansClasse = new Set(
-      tousEleves.filter(e => e.classeId === classeId)
-               .map(e => (e.nom + '|' + e.prenom).toLowerCase())
-    );
+    // Récupère les inscriptions existantes dans cette classe précise
+    const existantsClasse = await getEleves(classeId);
+    const dejaDansClasse = new Set(existantsClasse.map(e => (e.nom + '|' + e.prenom).toLowerCase()));
 
-    let ok = 0, fusionnes = 0, doublons = 0, erreurs = 0;
-    const fusionDetails = [];
+    let ok = 0, doublons = 0, erreurs = 0, miseAJour = 0;
 
-    for (const { nom, prenom, genre } of elevesList) {
-      const cle = (nom + '|' + prenom).toLowerCase();
+    for (const { nom, prenom, genre, ddn, eleveUID, matchType, existant } of elevesList) {
+      const cleClasse = (nom + '|' + prenom).toLowerCase();
 
-      // Déjà dans cette classe → doublon
-      if (dejaDansClasse.has(cle)) { doublons++; continue; }
+      // Doublon dans la même classe = ignorer
+      if (dejaDansClasse.has(cleClasse)) { doublons++; continue; }
 
-      // Existe dans une autre classe → fusion (changement de classe à la rentrée)
-      const existant = tousEleves.find(e =>
-        e.nom.toLowerCase() === nom.toLowerCase() &&
-        e.prenom.toLowerCase() === prenom.toLowerCase() &&
-        e.classeId !== classeId
-      );
+      const anneeScolaire = classe?.anneeScolaire || getAnneeActive();
+      const data = {
+        prenom, nom,
+        genre:         genre || '',
+        classeId,
+        classe:        classe?.nom || '',
+        niveau:        classe?.niveau || '',
+        anneeScolaire,
+        eleveUID,
+        dateNaissance: ddn || '',
+        dateAjout:     new Date().toISOString()
+      };
 
-      if (existant) {
-        try {
-          await dbUpdate('eleves/' + existant.id, {
-            classeId,
-            classe:     classe?.nom    || '',
-            niveau:     classe?.niveau || '',
-            classePrec: existant.classe || '',
-            niveauPrec: existant.niveau || '',
-            anneePrec:  window.ANNEE_SCOLAIRE,
-            dateMAJ:    new Date().toISOString()
-          });
-          fusionnes++;
-          fusionDetails.push(`${prenom} ${nom} (${existant.classe || '?'} → ${classe?.nom || '?'})`);
-        } catch { erreurs++; }
-        continue;
-      }
-
-      // Nouvel élève
       try {
-        await dbPush('eleves', {
-          prenom, nom,
-          genre:    genre || '',
-          classeId,
-          classe:   classe?.nom    || '',
-          niveau:   classe?.niveau || '',
-          dateAjout: new Date().toISOString()
-        });
+        const newId = await dbPush('eleves', data);
         ok++;
+
+        // Si c'était une correspondance partielle (sans DDN), mettre à jour l'ancien UID
+        if (matchType === 'reconnu-partiel' && existant?.id) {
+          await dbUpdate('eleves/' + existant.id, { eleveUID });
+          miseAJour++;
+        }
       } catch { erreurs++; }
     }
 
     btn.disabled = false; btn.textContent = '⬆️ Importer';
 
-    let msg = '';
-    if (ok)        msg += `✓ ${ok} nouveau${ok>1?'x':''} élève${ok>1?'s':''}`;
-    if (fusionnes) msg += `${msg?' · ':''}🔄 ${fusionnes} réaffecté${fusionnes>1?'s':''}`;
-    if (doublons)  msg += `${msg?' · ':''}${doublons} doublon${doublons>1?'s':''} ignoré${doublons>1?'s':''}`;
-    if (erreurs)   msg += `${msg?' · ':''}❌ ${erreurs} erreur${erreurs>1?'s':''}`;
-    showToast(msg || '✓ Import terminé', (ok + fusionnes) > 0 ? 'success' : 'error');
-    if (fusionDetails.length > 0) {
-      const apercu = fusionDetails.slice(0,3).join(', ') + (fusionDetails.length>3?' …':'');
-      setTimeout(() => showToast(`🔄 Réaffectés : ${apercu}`, 'success'), 1200);
-    }
+    let msg = `✓ ${ok} élève${ok > 1 ? 's' : ''} importé${ok > 1 ? 's' : ''}`;
+    if (doublons)   msg += ` · ${doublons} doublon${doublons > 1 ? 's' : ''} ignoré${doublons > 1 ? 's' : ''}`;
+    if (miseAJour)  msg += ` · ${miseAJour} ID mis à jour`;
+    if (erreurs)    msg += ` · ${erreurs} erreur${erreurs > 1 ? 's' : ''}`;
+    showToast(msg, ok > 0 ? 'success' : 'error');
 
     fermerModal('modal-import-bg');
     viderPreview();
@@ -718,22 +832,30 @@ BERNARD Clara
     chargerElevesClasse(classeId);
   }
 
-
   // ── CYCLES ─────────────────────────────────────────────────
   async function chargerCycles() {
     const el = document.getElementById('liste-cycles');
     el.innerHTML = '<div class="loader-wrap"><div class="spinner"></div></div>';
+    const annee = getAnneeActive();
     const cyclesArr = await getTousCycles();
-    cyclesArr.sort((a,b) => (b.dateCreation||'').localeCompare(a.dateCreation||''));
-    if (cyclesArr.length === 0) {
-      el.innerHTML = '<div class="alert alert-info">ℹ️ Aucun cycle créé.</div>'; return;
+    // Filtrer par année via la classe associée
+    const classeMap = {};
+    toutesLesClasses.forEach(c => classeMap[c.id] = c);
+    // Charger TOUTES les classes pour le filtre
+    const toutesClasses = await getClasses();
+    toutesClasses.forEach(c => { if (!classeMap[c.id]) classeMap[c.id] = c; });
+    const cyclesFiltres = cyclesArr.filter(cy => {
+      const cl = classeMap[cy.classeId];
+      return cl ? cl.anneeScolaire === annee : false;
+    });
+    cyclesFiltres.sort((a,b) => (b.dateCreation||'').localeCompare(a.dateCreation||''));
+    if (cyclesFiltres.length === 0) {
+      el.innerHTML = '<div class="alert alert-info">ℹ️ Aucun cycle pour cette année.</div>'; return;
     }
     const apsaMap = {};
     tousLesApsa.forEach(a => apsaMap[a.id] = a);
-    const classeMap = {};
-    toutesLesClasses.forEach(c => classeMap[c.id] = c);
 
-    el.innerHTML = cyclesArr.map(cy => {
+    el.innerHTML = cyclesFiltres.map(cy => {
       const apsa   = apsaMap[cy.apsaId] || {};
       const classe = classeMap[cy.classeId] || {};
       const debut  = cy.dateDebut ? new Date(cy.dateDebut).toLocaleDateString('fr-FR') : '—';
@@ -756,85 +878,21 @@ BERNARD Clara
   function ouvrirModalCycle() {
     cycleEditId = null;
     document.getElementById('cy-actif').checked = true;
-    document.getElementById('cy-seances').value = '';
-    document.getElementById('cy-seances-info').textContent = '';
     ouvrirModal('modal-cycle-bg');
   }
 
-  // ── Vacances scolaires Zone C 2025-2026 ────────────────────
-  const VACANCES_ZONE_C = [
-    { debut: '2025-10-18', fin: '2025-11-02', label: 'Toussaint' },
-    { debut: '2025-12-20', fin: '2026-01-04', label: 'Noël' },
-    { debut: '2026-02-14', fin: '2026-03-01', label: 'Hiver' },
-    { debut: '2026-04-25', fin: '2026-05-10', label: 'Printemps' },
-    { debut: '2026-07-04', fin: '2026-09-01', label: 'Été' }
-  ];
-
-  function calculerSeances() {
-    const debutStr = document.getElementById('cy-debut').value;
-    const finStr   = document.getElementById('cy-fin').value;
-    const info     = document.getElementById('cy-seances-info');
-    const input    = document.getElementById('cy-seances');
-
-    if (!debutStr || !finStr) { info.textContent = ''; return; }
-
-    const debut = new Date(debutStr);
-    const fin   = new Date(finStr);
-    if (fin <= debut) { info.textContent = '⚠️ La date de fin doit être après le début'; return; }
-
-    // Compter les semaines entre les deux dates en excluant les vacances
-    let semaines = 0;
-    let vacancesCoupees = [];
-    let cur = new Date(debut);
-
-    // On avance semaine par semaine (lundi)
-    // Trouver le lundi de la semaine de début
-    const jourSemaine = cur.getDay();
-    const offsetLundi = jourSemaine === 0 ? -6 : 1 - jourSemaine;
-    cur.setDate(cur.getDate() + offsetLundi);
-    if (cur < debut) cur.setDate(cur.getDate() + 7);
-
-    while (cur <= fin) {
-      // Vérifier si cette semaine (lundi) est en vacances
-      const estVac = VACANCES_ZONE_C.find(v => {
-        const vd = new Date(v.debut);
-        const vf = new Date(v.fin);
-        return cur >= vd && cur <= vf;
-      });
-      if (estVac) {
-        if (!vacancesCoupees.includes(estVac.label)) vacancesCoupees.push(estVac.label);
-      } else {
-        semaines++;
-      }
-      cur.setDate(cur.getDate() + 7);
-    }
-
-    // Nombre de semaines total brut
-    const joursTotal = Math.round((fin - debut) / (1000 * 60 * 60 * 24));
-    const semainesTotal = Math.round(joursTotal / 7);
-
-    info.innerHTML = `<strong>${semaines} séance${semaines>1?'s':''}</strong> estimée${semaines>1?'s':''}<br>
-      <span style="color:#64748b">${semainesTotal} semaines · ${joursTotal} jours</span><br>
-      ${vacancesCoupees.length ? `<span style="color:#f59e0b">✂ ${vacancesCoupees.join(', ')}</span>` : '<span style="color:#22c55e">✓ Pas de vacances</span>'}`;
-
-    // Pré-remplir si pas encore saisi manuellement
-    if (!input.value) input.value = semaines;
-  }
-
   async function sauvegarderCycle() {
-    const classeId  = document.getElementById('cy-classe').value;
-    const apsaId    = document.getElementById('cy-apsa').value;
-    const debutVal  = document.getElementById('cy-debut').value;
-    const finVal    = document.getElementById('cy-fin').value;
-    const actif     = document.getElementById('cy-actif').checked;
-    const nbSeances = parseInt(document.getElementById('cy-seances').value) || null;
+    const classeId = document.getElementById('cy-classe').value;
+    const apsaId   = document.getElementById('cy-apsa').value;
+    const debutVal = document.getElementById('cy-debut').value;
+    const finVal   = document.getElementById('cy-fin').value;
+    const actif    = document.getElementById('cy-actif').checked;
     if (!classeId||!apsaId) { showToast('⚠️ Choisissez une classe et une APSA', 'error'); return; }
     try {
       await dbPush('cycles', {
         classeId, apsaId, actif,
-        dateDebut:  debutVal  || null,
-        dateFin:    finVal    || null,
-        nbSeances:  nbSeances || null,
+        dateDebut:    debutVal || null,
+        dateFin:      finVal   || null,
         dateCreation: new Date().toISOString()
       });
       showToast('✓ Cycle créé !', 'success');
