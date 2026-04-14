@@ -400,7 +400,33 @@ BERNARD Clara
   }
 
   // ── Chargement initial ─────────────────────────────────────
+  // ── Migration silencieuse : tamponner anneeScolaire sur les anciens enreg. ──
+  async function migrerAnneeScolaire() {
+    const anneeDefaut = calculerAnneeEnCours();
+    try {
+      // Classes sans anneeScolaire
+      const classesData = await dbGet('classes');
+      if (classesData) {
+        for (const [id, cl] of Object.entries(classesData)) {
+          if (!cl.anneeScolaire) await dbUpdate('classes/' + id, { anneeScolaire: anneeDefaut });
+        }
+      }
+      // Élèves sans anneeScolaire
+      const elevesData = await dbGet('eleves');
+      if (elevesData) {
+        for (const [id, el] of Object.entries(elevesData)) {
+          if (!el.anneeScolaire) {
+            // Récupérer l'année depuis la classe si possible
+            const cl = classesData?.[el.classeId];
+            await dbUpdate('eleves/' + id, { anneeScolaire: cl?.anneeScolaire || anneeDefaut });
+          }
+        }
+      }
+    } catch(e) { console.warn('Migration anneeScolaire:', e.message); }
+  }
+
   async function init() {
+    await migrerAnneeScolaire();   // ← migration silencieuse (sans effet si déjà fait)
     anneesDisponibles = await getAnneesDisponibles();
     const annee = getAnneeActive();
     afficherAnneeBanner();
