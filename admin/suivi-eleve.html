@@ -128,7 +128,46 @@
       document.querySelectorAll('.prof-btns, .save-correction-btn, .commentaire-prof').forEach(el => el.style.display = 'none');
     });
   }
-  let tousEleves=[], apsaCache={}, cycleCache={}, correctionsEnCours={};
+  let tousEleves=[], inscriptionsCache={}, apsaCache={}, cycleCache={}, correctionsEnCours={};
+
+  // ── Chargement multi-années ─────────────────────────────────
+  // Pour un élève donné, charge TOUTES ses inscriptions (via eleveUID)
+  // et TOUTES ses évaluations sur l'ensemble de sa scolarité.
+  async function chargerSuiviComplet(eleveRef) {
+    // Toutes les inscriptions avec le même eleveUID
+    let inscriptions = [eleveRef];
+    if (eleveRef.eleveUID) {
+      const autres = await getElevesParUID(eleveRef.eleveUID);
+      // Fusionner sans doublons
+      const vus = new Set(autres.map(e => e.id));
+      vus.add(eleveRef.id);
+      // Si l'eleveRef n'est pas dans les résultats (eleveUID nouvellement attribué)
+      inscriptions = autres;
+      if (!inscriptions.find(e => e.id === eleveRef.id)) inscriptions.push(eleveRef);
+    }
+    // Tri par année scolaire croissante
+    inscriptions.sort((a, b) => (a.anneeScolaire || '').localeCompare(b.anneeScolaire || ''));
+
+    // Charger toutes les évaluations pour tous les eleveIds
+    const allIds = inscriptions.map(e => e.id);
+    const allEvals = await getEvaluationsMultiEleves(allIds);
+
+    // Mapper chaque inscription par son id
+    const inscMap = {};
+    inscriptions.forEach(i => { inscMap[i.id] = i; });
+
+    // Enrichir chaque eval avec le niveau et l'année de l'inscription correspondante
+    const evalsEnrichies = allEvals.map(ev => ({
+      ...ev,
+      _niveau:       inscMap[ev.eleveId]?.niveau       || ev.niveau || '6e',
+      _anneeScolaire:inscMap[ev.eleveId]?.anneeScolaire|| '',
+      _classe:       inscMap[ev.eleveId]?.classe       || ''
+    }));
+
+    // Stocker pour usage dans afficherSuivi
+    inscriptionsCache = { inscriptions, inscMap };
+    return { inscriptions, evals: evalsEnrichies };
+  }
   const NIVEAUX = {
     NA:  {label:'Non Atteint',          scale:'0 — 2',  icon:'✕', couleur:'#ef4444'},
     ECA: {label:'Partiellement Atteint',scale:'3 — 5',  icon:'⊙', couleur:'#f59e0b'},
@@ -139,15 +178,48 @@
     tousEleves = await getTousEleves();
     const params = new URLSearchParams(window.location.search);
     const eleveId = params.get('eleveId');
-    if (eleveId) { const e = tousEleves.find(x=>x.id===eleveId); if(e) afficherSuivi(e); }
+    if (eleveId) {
+      // Chercher par eleveId direct OU par eleveUID (pour les liens cross-années)
+      let e = tousEleves.find(x => x.id === eleveId);
+      if (!e) {
+        // Peut-être que le lien pointe vers une ancienne inscription — chercher par eleveUID
+        const data = await dbGet('eleves/' + eleveId);
+        if (data) e = { id: eleveId, ...data };
+      }
+      if (e) afficherSuivi(e);
+    }
   }
   function rechercherEleve() {
     const q = document.getElementById('search-input').value.toLowerCase();
     const res = document.getElementById('resultats-recherche');
     if (!q||q.length<2){res.classList.add('hidden');return;}
-    const filtres = tousEleves.filter(e=>(e.nom+' '+e.prenom).toLowerCase().includes(q)||(e.prenom+' '+e.nom).toLowerCase().includes(q)).slice(0,10);
+
+    // Dédupliquer par eleveUID : garder l'inscription la plus récente
+    const byUID = {};
+    tousEleves.forEach(e => {
+      const uid = e.eleveUID || ('__' + e.id);
+      const curAnnee = byUID[uid]?.anneeScolaire || '';
+      if (!byUID[uid] || (e.anneeScolaire || '') > curAnnee) byUID[uid] = e;
+    });
+    const dedupe = Object.values(byUID);
+
+    const filtres = dedupe
+      .filter(e => (e.nom+' '+e.prenom).toLowerCase().includes(q)||(e.prenom+' '+e.nom).toLowerCase().includes(q))
+      .slice(0,10);
     if(!filtres.length){res.innerHTML='<div class="resultat-item text-muted">Aucun résultat</div>';}
-    else{res.innerHTML=filtres.map(e=>`<div class="resultat-item" onclick="selectionnerEleve('${e.id}')"><strong>${e.prenom} ${e.nom.toUpperCase()}</strong><span class="text-muted"> — ${e.classe||''} ${e.niveau||''}</span></div>`).join('');}
+    else{
+      res.innerHTML=filtres.map(e=>{
+        // Compter le nombre d'années pour cet élève
+        const uid = e.eleveUID || ('__' + e.id);
+        const nbAnnees = tousEleves.filter(x => (x.eleveUID || ('__' + x.id)) === uid).length;
+        const anneesBadge = nbAnnees > 1
+          ? `<span style="background:#1e40af;color:#93c5fd;font-size:.62rem;border-radius:10px;padding:.1rem .4rem;margin-left:.4rem;">${nbAnnees} ans</span>`
+          : '';
+        return `<div class="resultat-item" onclick="selectionnerEleve('${e.id}')">
+          <strong>${e.prenom} ${e.nom.toUpperCase()}</strong>${anneesBadge}
+          <span class="text-muted"> — ${e.classe||''} ${e.niveau||''} ${e.anneeScolaire ? '('+e.anneeScolaire+')' : ''}</span>
+        </div>`;
+      }).join('');}
     res.classList.remove('hidden');
   }
   function selectionnerEleve(id) {
@@ -161,8 +233,12 @@
   async function afficherSuivi(eleve) {
     const el=document.getElementById('suivi-content');
     el.classList.remove('hidden');
-    el.innerHTML=`<div class="loader-wrap"><div class="spinner"></div><span>Chargement...</span></div>`;
-    const evals=(await getHistoriqueEleve(eleve.id)).reverse();
+    el.innerHTML=`<div class="loader-wrap"><div class="spinner"></div><span>Chargement du parcours complet...</span></div>`;
+
+    // Charger toutes les évaluations de toutes les années via eleveUID
+    const { inscriptions, evals: evalsAll } = await chargerSuiviComplet(eleve);
+    const evals = evalsAll; // déjà enrichis avec _niveau, _anneeScolaire, _classe
+
     correctionsEnCours={};
     const cycleIds=[...new Set(evals.map(e=>e.cycleId))];
     const apsaIds=[...new Set(evals.map(e=>e.apsaId).filter(Boolean))];
@@ -254,7 +330,12 @@
     if(!periodesHtml) periodesHtml = `<span style="font-size:.8rem;color:rgba(255,255,255,.4);font-style:italic;">Aucune programmation enregistrée</span>`;
 
     const parNiveau={'6e':[],'5e':[],'4e':[],'3e':[]};
-    evals.forEach(ev=>{const cy=cycleCache[ev.cycleId];const niv=ev.niveau||cy?.niveau||eleve.niveau||'6e';if(parNiveau[niv])parNiveau[niv].push(ev);});
+    evals.forEach(ev=>{
+      // Utiliser _niveau (enrichi lors du chargement multi-années) ou fallback
+      const cy=cycleCache[ev.cycleId];
+      const niv=ev._niveau||ev.niveau||cy?.niveau||eleve.niveau||'6e';
+      if(parNiveau[niv])parNiveau[niv].push(ev);
+    });
     let totalObj=0,totalA=0,totalD=0,totalECA=0;
     evals.forEach(ev=>{Object.entries(ev.resultats||{}).forEach(([k,v])=>{if(!k.startsWith('obj_'))return;totalObj++;if(v==='A')totalA++;if(v==='D')totalD++;if(v==='ECA')totalECA++;});});
     const pct=totalObj>0?Math.round((totalA+totalD)/totalObj*100):0;
@@ -265,9 +346,10 @@
           <div class="suivi-avatar">${ini.toUpperCase()}</div>
           <div class="suivi-info">
             <h2>${eleve.prenom} ${(eleve.nom||'').toUpperCase()}</h2>
-            <p>${eleve.classe||'—'} · ${eleve.niveau||'—'} · ${window.ANNEE_SCOLAIRE}</p>
-            ${eleve.classePrec?`<p style="font-size:.78rem;color:rgba(255,255,255,.5);margin-top:.1rem;">↳ ${eleve.classePrec} (${eleve.niveauPrec||''})</p>`:''}
-            <p style="margin-top:.3rem;">${evals.length} auto-évaluation${evals.length>1?'s':''} enregistrée${evals.length>1?'s':''}</p>
+            <p>${inscriptions[inscriptions.length-1]?.classe||eleve.classe||'—'} · ${inscriptions[inscriptions.length-1]?.niveau||eleve.niveau||'—'} · ${inscriptions[inscriptions.length-1]?.anneeScolaire||''}</p>
+            ${inscriptions.length>1?`<p style="font-size:.75rem;color:rgba(255,255,255,.55);margin-top:.2rem;line-height:1.6;">
+              Parcours : ${inscriptions.map(i=>`<span style="background:rgba(255,255,255,.1);border-radius:4px;padding:.05rem .35rem;">${i.niveau} · ${i.classe} <span style="opacity:.6;font-size:.65rem;">${i.anneeScolaire||''}</span></span>`).join(' → ')}</p>`:''}
+            <p style="margin-top:.3rem;">${evals.length} auto-évaluation${evals.length>1?'s':''} sur ${inscriptions.length} année${inscriptions.length>1?'s':''}</p>
           </div>
         </div>
         <div style="flex:1;min-width:300px;border-left:1px solid rgba(255,255,255,.12);padding:1rem 1.4rem;background:rgba(0,0,0,.15);">
