@@ -31,9 +31,24 @@ window.EMAILS_AUTORISES = [
 // ============================================================
 //  CONFIGURATION DU COLLÈGE
 // ============================================================
-window.COLLEGE_NOM    = "Collège Yves du Manoir";
-window.COLLEGE_VILLE  = "Vaucresson";
-window.ANNEE_SCOLAIRE = "2025-2026";
+window.COLLEGE_NOM   = "Collège Yves du Manoir";
+window.COLLEGE_VILLE = "Vaucresson";
+
+// ── Année scolaire dynamique ────────────────────────────────
+function calculerAnneeEnCours() {
+  const now = new Date();
+  const y = now.getFullYear();
+  return now.getMonth() >= 8 ? `${y}-${y+1}` : `${y-1}-${y}`;
+}
+function getAnneeActive() {
+  return localStorage.getItem('eps_annee_active') || calculerAnneeEnCours();
+}
+function setAnneeActive(annee) {
+  localStorage.setItem('eps_annee_active', annee);
+  window.ANNEE_SCOLAIRE = annee;
+}
+// Compatibilité rétroactive
+window.ANNEE_SCOLAIRE = getAnneeActive();
 
 // ============================================================
 //  CONSTANTES PÉDAGOGIQUES
@@ -198,4 +213,112 @@ async function getEvaluationsParEleves(eleveIds) {
 // ── Config profs ───────────────────────────────────────────
 async function getConfigProfs() {
   return await dbGet("config/profs");
+}
+
+// ============================================================
+//  IDENTIFIANTS STABLES ÉLÈVES (multi-années)
+// ============================================================
+
+/**
+ * Convertit DD/MM/YYYY → YYYYMMDD (chaîne de chiffres)
+ */
+function parseDDN(ddn) {
+  if (!ddn) return '';
+  const parts = ddn.trim().split(/[\/\-\.]/);
+  if (parts.length === 3) {
+    const [d, m, y] = parts;
+    if (y.length === 4) return `${y}${m.padStart(2,'0')}${d.padStart(2,'0')}`;
+    if (d.length === 4) return `${d}${m.padStart(2,'0')}${y.padStart(2,'0')}`;
+  }
+  return ddn.replace(/[^0-9]/g, '');
+}
+
+/**
+ * Génère un identifiant stable et unique pour un élève.
+ * Format : NOM_PRENOM_YYYYMMDD  (ou NOM_PRENOM_  si pas de DDN)
+ */
+function genererEleveUID(nom, prenom, dateNaissance) {
+  const normalize = s => (s || '').toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Z0-9]/g, '');
+  const n = normalize(nom);
+  const p = normalize(prenom);
+  const d = parseDDN(dateNaissance);
+  return `${n}_${p}_${d}`;
+}
+
+/**
+ * Retourne toutes les inscriptions (une par année) partageant le même eleveUID.
+ */
+async function getElevesParUID(eleveUID) {
+  const data = await dbGet("eleves");
+  if (!data) return [];
+  return Object.entries(data)
+    .map(([id, v]) => ({ id, ...v }))
+    .filter(e => e.eleveUID === eleveUID)
+    .sort((a, b) => (a.anneeScolaire || '').localeCompare(b.anneeScolaire || ''));
+}
+
+/**
+ * Retourne toutes les évaluations pour une liste d'eleveIds (multi-années).
+ */
+async function getEvaluationsMultiEleves(eleveIds) {
+  const data = await dbGet("evaluations");
+  if (!data) return [];
+  return Object.entries(data)
+    .map(([id, v]) => ({ id, ...v }))
+    .filter(e => eleveIds.includes(e.eleveId))
+    .sort((a, b) => (a.dateModif || '').localeCompare(b.dateModif || ''));
+}
+
+/**
+ * Liste toutes les années scolaires présentes dans la base.
+ */
+async function getAnneesDisponibles() {
+  const data = await dbGet("classes");
+  if (!data) return [getAnneeActive()];
+  const set = new Set(
+    Object.values(data).map(c => c.anneeScolaire).filter(Boolean)
+  );
+  set.add(calculerAnneeEnCours());
+  return [...set].sort().reverse();
+}
+
+/**
+ * Retourne les classes filtrées par année scolaire (optionnel).
+ */
+async function getClassesByAnnee(anneeScolaire) {
+  const data = await dbGet("classes");
+  if (!data) return [];
+  let arr = Object.entries(data).map(([id, v]) => ({ id, ...v }));
+  if (anneeScolaire) arr = arr.filter(c => c.anneeScolaire === anneeScolaire);
+  return arr.sort((a, b) => a.nom.localeCompare(b.nom));
+}
+
+/**
+ * Recherche un élève existant par eleveUID (exact ou partiel pour migration).
+ * Retourne le record le plus récent ou null.
+ */
+async function trouverEleveExistant(eleveUID) {
+  const data = await dbGet("eleves");
+  if (!data) return null;
+  const tous = Object.entries(data).map(([id, v]) => ({ id, ...v }));
+
+  // 1. Match exact (avec DDN)
+  let trouve = tous.filter(e => e.eleveUID === eleveUID);
+  if (trouve.length) {
+    return trouve.sort((a, b) => (b.anneeScolaire || '').localeCompare(a.anneeScolaire || ''))[0];
+  }
+
+  // 2. Match sans DDN (élèves migrés sans date de naissance : NOM_PRENOM_)
+  const uidSansDDN = eleveUID.replace(/_\d+$/, '_');
+  trouve = tous.filter(e => e.eleveUID === uidSansDDN);
+  if (trouve.length) {
+    return {
+      ...trouve.sort((a, b) => (b.anneeScolaire || '').localeCompare(a.anneeScolaire || ''))[0],
+      _matchPartiel: true
+    };
+  }
+
+  return null;
 }
