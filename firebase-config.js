@@ -280,7 +280,10 @@ async function getAnneesDisponibles() {
   const set = new Set(
     Object.values(data).map(c => c.anneeScolaire).filter(Boolean)
   );
-  set.add(calculerAnneeEnCours());
+  // Si des classes sans anneeScolaire existent → les rattacher à l'année par défaut
+  const hasUntagged = Object.values(data).some(c => !c.anneeScolaire);
+  if (hasUntagged) set.add(calculerAnneeEnCours());
+  set.add(calculerAnneeEnCours()); // Toujours inclure l'année en cours
   return [...set].sort().reverse();
 }
 
@@ -291,7 +294,15 @@ async function getClassesByAnnee(anneeScolaire) {
   const data = await dbGet("classes");
   if (!data) return [];
   let arr = Object.entries(data).map(([id, v]) => ({ id, ...v }));
-  if (anneeScolaire) arr = arr.filter(c => c.anneeScolaire === anneeScolaire);
+  if (anneeScolaire) {
+    // Les classes sans anneeScolaire (créées avant la mise à jour) appartiennent
+    // à l'année par défaut calculée automatiquement.
+    const anneeDefaut = calculerAnneeEnCours();
+    arr = arr.filter(c =>
+      c.anneeScolaire === anneeScolaire ||
+      (!c.anneeScolaire && anneeScolaire === anneeDefaut)
+    );
+  }
   return arr.sort((a, b) => a.nom.localeCompare(b.nom));
 }
 
